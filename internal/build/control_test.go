@@ -1,7 +1,6 @@
 package build
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -31,6 +30,7 @@ Architecture: amd64
 Maintainer: me
 Description: meh
 `
-	fmt.Printf("'%s'\n", actual)
-	fmt.Printf("'%s'\n", expected)
+	if actual != expected {
+		t.Fatalf("'%s' was not '%s'\n", actual, expected)
+	}
 }
