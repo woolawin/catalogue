@@ -20,7 +20,7 @@ func TestParseDiskRef(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		expected := DiskRef{Anchor: "root", Targets: []string{"foo"}}
+		expected := DiskRef{Anchor: "root", Targets: []string{"foo"}, Target: "foo"}
 		if diff := cmp.Diff(actual, expected); diff != "" {
 			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 		}
@@ -32,7 +32,7 @@ func TestParseDiskRef(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		expected := DiskRef{Anchor: "root", Targets: []string{"foo", "bar"}}
+		expected := DiskRef{Anchor: "root", Targets: []string{"foo", "bar"}, Target: "foo-bar"}
 		if diff := cmp.Diff(actual, expected); diff != "" {
 			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 		}

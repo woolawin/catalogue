@@ -28,7 +28,11 @@ func disk(src BuildSrc, system target.System) error {
 	}
 
 	for _, dir := range dirs {
-		parseDiskRef(dir)
+		_, err := parseDiskRef(dir)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	return nil
@@ -37,6 +41,7 @@ func disk(src BuildSrc, system target.System) error {
 type DiskRef struct {
 	Anchor  string
 	Targets []string
+	Target  string
 }
 
 func parseDiskRef(value string) (DiskRef, error) {
@@ -49,11 +54,12 @@ func parseDiskRef(value string) (DiskRef, error) {
 	if err != nil {
 		return DiskRef{}, err
 	}
-	targets, err := target.ParseTargetNamesString(value[idx+1:])
+	targetStr := value[idx+1:]
+	targets, err := target.ParseTargetNamesString(targetStr)
 	if err != nil {
 		return DiskRef{}, err
 	}
-	return DiskRef{Anchor: anchor, Targets: targets}, nil
+	return DiskRef{Anchor: anchor, Targets: targets, Target: targetStr}, nil
 }
 
 func validAnchorName(value string) error {
