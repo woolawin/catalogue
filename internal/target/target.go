@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"runtime"
+	"strings"
+	"unicode"
 )
 
 type Architecture string
@@ -125,4 +127,29 @@ func BuiltIns() []Target {
 			All:  true,
 		},
 	}
+}
+
+func ParseTargetNamesString(value string) ([]string, error) {
+	parts := strings.Split(value, "-")
+
+	var names []string
+	for _, part := range parts {
+		valid, invalid := ValidTargetName(part)
+		if !valid {
+			return nil, fmt.Errorf("invalid target name '%s', '%s' not valid", part, invalid)
+		}
+		names = append(names, part)
+	}
+	return names, nil
+}
+
+func ValidTargetName(value string) (bool, string) {
+	for _, r := range value {
+		if unicode.IsLower(r) || unicode.IsDigit(r) || string(r) == "_" {
+			continue
+		}
+		return false, string(r)
+
+	}
+	return true, ""
 }

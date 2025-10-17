@@ -147,3 +147,23 @@ func filePath(src BuildSrc, parts ...string) string {
 func createDir(path string) error {
 	return os.Mkdir(path, 0755)
 }
+
+func lsDir(path string) ([]string, []string, error) {
+	entries, err := os.ReadDir(path)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to read directory contents: %w", err)
+	}
+
+	var files []string
+	var dirs []string
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			files = append(files, entry.Name())
+		} else {
+			dirs = append(dirs, entry.Name())
+		}
+	}
+
+	return files, dirs, nil
+}

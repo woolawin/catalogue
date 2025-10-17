@@ -57,3 +57,56 @@ func TestRank(t *testing.T) {
 	})
 
 }
+
+func TestParseValidTargetNames(t *testing.T) {
+	t.Run("single_valid", func(t *testing.T) {
+		actual, err := ParseTargetNamesString("abc")
+		if err != nil {
+			t.Fatal(err)
+		}
+		expected := []string{"abc"}
+		if diff := cmp.Diff(actual, expected); diff != "" {
+			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+		}
+	})
+
+	t.Run("multi_valid", func(t *testing.T) {
+		actual, err := ParseTargetNamesString("abc-def")
+		if err != nil {
+			t.Fatal(err)
+		}
+		expected := []string{"abc", "def"}
+		if diff := cmp.Diff(actual, expected); diff != "" {
+			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+		}
+	})
+
+	t.Run("single_valid_number", func(t *testing.T) {
+		actual, err := ParseTargetNamesString("abc123")
+		if err != nil {
+			t.Fatal(err)
+		}
+		expected := []string{"abc123"}
+		if diff := cmp.Diff(actual, expected); diff != "" {
+			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+		}
+	})
+
+	t.Run("single_valid_underscore", func(t *testing.T) {
+		actual, err := ParseTargetNamesString("abc_123")
+		if err != nil {
+			t.Fatal(err)
+		}
+		expected := []string{"abc_123"}
+		if diff := cmp.Diff(actual, expected); diff != "" {
+			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+		}
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		_, err := ParseTargetNamesString("abc%")
+		if err == nil {
+			t.Fatal("expected to FAIL")
+		}
+	})
+}
