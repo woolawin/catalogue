@@ -16,9 +16,13 @@ const (
 )
 
 type Target struct {
-	Name         string
-	Architecture Architecture
-	All          bool
+	Name                     string
+	All                      bool
+	Architecture             Architecture
+	OSReleaseID              string
+	OSReleaseVersion         string
+	OSReleaseVersionID       string
+	OSReleaseVersionCodename string
 }
 
 type System struct {
@@ -99,6 +103,80 @@ func IsReservedTargetName(value string) bool {
 	return value == "all" ||
 		value == "amd64" ||
 		value == "arm64"
+}
+
+func MergeTargets(targets []Target) (Target, error) {
+	merged := Target{}
+	name := strings.Builder{}
+
+	for _, target := range targets {
+		if target.All {
+			return Target{}, fmt.Errorf("can not create target from all")
+		}
+		if name.Len() == 0 {
+			name.WriteString(target.Name)
+		} else {
+			name.WriteString("-")
+			name.WriteString(target.Name)
+		}
+
+		err := mergeArchitecture(&merged.Architecture, target.Architecture)
+		if err != nil {
+			return Target{}, err
+		}
+		err = mergeString(&merged.OSReleaseID, target.OSReleaseID, "os_release_id")
+		if err != nil {
+			return Target{}, err
+		}
+		err = mergeString(&merged.OSReleaseVersion, target.OSReleaseVersion, "os_release_version")
+		if err != nil {
+			return Target{}, err
+		}
+		err = mergeString(&merged.OSReleaseVersionID, target.OSReleaseVersionID, "os_release_version_id")
+		if err != nil {
+			return Target{}, err
+		}
+		err = mergeString(&merged.OSReleaseVersionCodename, target.OSReleaseVersionCodename, "os_release_version_code_name")
+		if err != nil {
+			return Target{}, err
+		}
+	}
+
+	merged.Name = name.String()
+
+	return merged, nil
+}
+
+func mergeString(a *string, b string, predicate string) error {
+	if len(b) == 0 {
+		return nil
+	}
+
+	if len(*a) == 0 {
+		*a = b
+		return nil
+	}
+
+	if *a != b {
+		return fmt.Errorf("incompatible %s, '%s' and '%s'", predicate, *a, b)
+	}
+
+	return nil
+}
+
+func mergeArchitecture(a *Architecture, b Architecture) error {
+	if len(b) == 0 {
+		return nil
+	}
+	if len(*a) == 0 {
+		*a = b
+		return nil
+	}
+
+	if *a != b {
+		return fmt.Errorf("incompatible architecture, '%s' and '%s'", *a, b)
+	}
+	return nil
 }
 
 func getArch(value string) (Architecture, bool) {

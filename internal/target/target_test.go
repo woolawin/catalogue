@@ -110,3 +110,48 @@ func TestParseValidTargetNames(t *testing.T) {
 		}
 	})
 }
+
+func TestMergeTargets(t *testing.T) {
+	t.Run("compatible", func(t *testing.T) {
+		a := Target{Name: "a", Architecture: AMD64}
+		b := Target{Name: "b", OSReleaseID: "17"}
+		c := Target{Name: "c", OSReleaseVersionCodename: "dingo"}
+
+		actual, err := MergeTargets([]Target{a, b, c})
+		if err != nil {
+			t.Fatal(err)
+		}
+		expected := Target{
+			Name:                     "a-b-c",
+			Architecture:             AMD64,
+			OSReleaseID:              "17",
+			OSReleaseVersionCodename: "dingo",
+		}
+
+		if diff := cmp.Diff(actual, expected); diff != "" {
+			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+		}
+	})
+
+	t.Run("can_not_merge_all", func(t *testing.T) {
+		a := Target{Name: "a", Architecture: AMD64}
+		b := Target{Name: "b", OSReleaseID: "17"}
+		c := Target{Name: "all", All: true}
+
+		_, err := MergeTargets([]Target{a, b, c})
+		if err == nil {
+			t.Fatal("expected to FAIL")
+		}
+	})
+
+	t.Run("conflict", func(t *testing.T) {
+		a := Target{Name: "a", Architecture: AMD64}
+		b := Target{Name: "b", OSReleaseID: "17"}
+		c := Target{Name: "c", OSReleaseID: "16"}
+
+		_, err := MergeTargets([]Target{a, b, c})
+		if err == nil {
+			t.Fatal("expected to FAIL")
+		}
+	})
+}
