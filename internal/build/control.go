@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/woolawin/catalogue/internal/pkge"
 )
 
-func control(src BuildSrc) error {
+func control(src BuildSrc, index pkge.Index) error {
 
 	tarPath := filePath(src, "control.tar.gz")
 	dirPath := filePath(src, "control")
@@ -45,6 +47,7 @@ func control(src BuildSrc) error {
 	defer file.Close()
 
 	data := ControlData{}
+	data.SetFrom(index)
 
 	_, err = file.Write([]byte(data.String()))
 	if err != nil {
@@ -65,6 +68,40 @@ type ControlData struct {
 	Architecture string
 	Maintainer   string
 	Description  string
+}
+
+func (data *ControlData) SetFrom(index pkge.Index) {
+	if len(data.Package) == 0 {
+		data.Package = index.Meta.Name
+	}
+
+	if len(data.Depends) == 0 {
+		data.Depends = index.Meta.Dependencies
+	}
+
+	if len(data.Section) == 0 {
+		data.Section = index.Meta.Section
+	}
+
+	if len(data.Priority) == 0 {
+		data.Priority = index.Meta.Priority
+	}
+
+	if len(data.Homepage) == 0 {
+		data.Homepage = index.Meta.Homepage
+	}
+
+	if len(data.Architecture) == 0 {
+		data.Architecture = index.Meta.Architecture
+	}
+
+	if len(data.Maintainer) == 0 {
+		data.Maintainer = index.Meta.Maintainer
+	}
+
+	if len(data.Description) == 0 {
+		data.Description = index.Meta.Description
+	}
 }
 
 func (data *ControlData) String() string {

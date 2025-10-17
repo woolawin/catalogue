@@ -1,4 +1,4 @@
-package internal
+package pkge
 
 import (
 	"fmt"
@@ -41,6 +41,10 @@ func Parse(src io.Reader) (Index, error) {
 	index := Index{}
 	index.Meta = MergeMeta(&raw, system, target.BuiltIns())
 	return index, nil
+}
+
+func EmptyIndex() Index {
+	return Index{}
 }
 
 func deserialize(src io.Reader) (Raw, error) {

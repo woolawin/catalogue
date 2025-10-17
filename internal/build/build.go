@@ -2,18 +2,27 @@ package build
 
 import (
 	"archive/tar"
+	"bytes"
 	"compress/gzip"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"slices"
+
+	"github.com/woolawin/catalogue/internal/pkge"
 )
 
 type BuildSrc string
 
 func Build(src BuildSrc, dst string) error {
-	err := debianBinary(src)
+
+	index, err := readPkgeIndex(src)
+	if err != nil {
+		return err
+	}
+
+	err = debianBinary(src)
 	if err != nil {
 		return err
 	}
@@ -28,6 +37,29 @@ func Build(src BuildSrc, dst string) error {
 		return err
 	}
 	return nil
+}
+
+func readPkgeIndex(src BuildSrc) (pkge.Index, error) {
+	path := filePath(src, "index.catalogue.toml")
+	exists, asFile, err := fileExists(path)
+	if err != nil {
+		return pkge.EmptyIndex(), err
+	}
+
+	if !asFile {
+		return pkge.EmptyIndex(), fmt.Errorf("index.catalogue.toml is not a file")
+	}
+
+	if !exists {
+		return pkge.EmptyIndex(), nil
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return pkge.EmptyIndex(), fmt.Errorf("could not read index.catalogue.toml: %w", err)
+	}
+
+	return pkge.Parse(bytes.NewReader(data))
 }
 
 func fileExists(path string) (bool, bool, error) {
