@@ -86,7 +86,7 @@ scoreTarget:
 }
 
 func (target Target) Score(system System) (int, bool) {
-	if target.Architecture != system.Architecture {
+	if len(target.Architecture) != 0 && target.Architecture != system.Architecture {
 		return 0, false
 	}
 
