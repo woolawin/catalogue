@@ -150,6 +150,7 @@ func (disk *DiskImpl) Move(toPath string, fromPath string, files []string, overw
 			return err
 		}
 		oldPath := disk.Path(disk.base, fromPath, file)
+		err = disk.safe(oldPath)
 		if err != nil {
 			return err
 		}
