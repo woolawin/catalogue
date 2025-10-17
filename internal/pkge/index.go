@@ -28,15 +28,10 @@ type Index struct {
 	Meta Meta
 }
 
-func Parse(src io.Reader) (Index, error) {
+func Parse(src io.Reader, system target.System) (Index, error) {
 	raw, err := deserialize(src)
 	if err != nil {
 		return Index{}, nil
-	}
-
-	system, err := target.GetSystem()
-	if err != nil {
-		return Index{}, err
 	}
 
 	index := Index{}

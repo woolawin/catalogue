@@ -11,13 +11,14 @@ import (
 	"slices"
 
 	"github.com/woolawin/catalogue/internal/pkge"
+	"github.com/woolawin/catalogue/internal/target"
 )
 
 type BuildSrc string
 
-func Build(src BuildSrc, dst string) error {
+func Build(src BuildSrc, dst string, system target.System) error {
 
-	index, err := readPkgeIndex(src)
+	index, err := readPkgeIndex(src, system)
 	if err != nil {
 		return err
 	}
@@ -39,7 +40,7 @@ func Build(src BuildSrc, dst string) error {
 	return nil
 }
 
-func readPkgeIndex(src BuildSrc) (pkge.Index, error) {
+func readPkgeIndex(src BuildSrc, system target.System) (pkge.Index, error) {
 	path := filePath(src, "index.catalogue.toml")
 	exists, asFile, err := fileExists(path)
 	if err != nil {
@@ -59,7 +60,7 @@ func readPkgeIndex(src BuildSrc) (pkge.Index, error) {
 		return pkge.EmptyIndex(), fmt.Errorf("could not read index.catalogue.toml: %w", err)
 	}
 
-	return pkge.Parse(bytes.NewReader(data))
+	return pkge.Parse(bytes.NewReader(data), system)
 }
 
 func fileExists(path string) (bool, bool, error) {

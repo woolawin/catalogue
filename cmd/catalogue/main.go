@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/build"
+	"github.com/woolawin/catalogue/internal/target"
 )
 
 func main() {
@@ -22,9 +23,13 @@ func runAdd(cmd *cobra.Command, args []string) {
 }
 
 func runBuild(cmd *cobra.Command, args []string) {
+	system, err := target.GetSystem()
+	if err != nil {
+		return
+	}
 	src, _ := cmd.Flags().GetString("src")
 	dst, _ := cmd.Flags().GetString("dst")
-	build.Build(build.BuildSrc(src), dst)
+	build.Build(build.BuildSrc(src), dst, system)
 }
 
 func args() *cobra.Command {
