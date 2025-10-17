@@ -3,6 +3,7 @@ package target
 import (
 	"fmt"
 	"math"
+	"os"
 	"runtime"
 	"strings"
 	"unicode"
@@ -36,6 +37,11 @@ func GetSystem() (System, error) {
 		return System{}, fmt.Errorf("unknown system architecture '%s'", runtime.GOARCH)
 	}
 	system.Architecture = arch
+	_, err := os.ReadFile("/etc/os-release")
+	if err != nil {
+		return System{}, fmt.Errorf("can not read /etc/os-release: %w", err)
+	}
+	//osRelease := strings.Split(string(osReleaseBytes), "\n")
 	return system, nil
 }
 
@@ -230,4 +236,21 @@ func ValidTargetName(value string) (bool, string) {
 
 	}
 	return true, ""
+}
+
+func findOSReleaseValue(lines []string, key string) (string, bool) {
+	prefix := key + "="
+	for _, line := range lines {
+		if !strings.HasPrefix(line, prefix) {
+			continue
+		}
+		value := line[len(prefix):]
+		value = strings.TrimPrefix(value, "\"")
+		value = strings.TrimSuffix(value, "\"")
+		if len(value) == 0 {
+			continue
+		}
+		return value, true
+	}
+	return "", false
 }
