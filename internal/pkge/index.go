@@ -22,11 +22,21 @@ type Meta struct {
 }
 
 type Raw struct {
-	Meta map[string]Meta `toml:"meta"`
+	Meta   map[string]Meta      `toml:"meta"`
+	Target map[string]RawTarget `toml:"target"`
+}
+
+type RawTarget struct {
+	Architecture             string `toml:"architecture"`
+	OSReleaseID              string `toml:"os_release_id"`
+	OSReleaseVersion         string `toml:"os_release_version"`
+	OSReleaseVersionID       string `toml:"os_release_version_id"`
+	OSReleaseVersionCodeName string `toml:"os_release_version_code_name"`
 }
 
 type Index struct {
-	Meta Meta
+	Meta    Meta
+	Targets []target.Target
 }
 
 func Parse(src io.Reader, system target.System) (Index, error) {
@@ -34,9 +44,35 @@ func Parse(src io.Reader, system target.System) (Index, error) {
 	if err != nil {
 		return Index{}, nil
 	}
+	return construct(&raw, system)
+}
 
+func construct(raw *Raw, system target.System) (Index, error) {
 	index := Index{}
-	index.Meta = MergeMeta(&raw, system, target.BuiltIns())
+
+	targets := target.BuiltIns()
+
+	for name, values := range raw.Target {
+		if target.IsReservedTargetName(name) {
+			return Index{}, fmt.Errorf("can not define target with reserved name '%s'", name)
+		}
+		valid, invalid := target.ValidTargetName(name)
+		if !valid {
+			return Index{}, fmt.Errorf("invalid target name, '%s' not valid", invalid)
+		}
+		tgt := target.Target{
+			Name:                     name,
+			Architecture:             target.Architecture(values.Architecture),
+			OSReleaseID:              values.OSReleaseID,
+			OSReleaseVersion:         values.OSReleaseVersion,
+			OSReleaseVersionID:       values.OSReleaseVersionID,
+			OSReleaseVersionCodeName: values.OSReleaseVersionCodeName,
+		}
+		index.Targets = append(index.Targets, tgt)
+		targets = append(targets, tgt)
+	}
+
+	index.Meta = MergeMeta(raw, system, targets)
 	return index, nil
 }
 
@@ -99,9 +135,15 @@ func MergeMeta(pi *Raw, system target.System, targets []target.Target) Meta {
 
 func (raw *Raw) Clean() {
 	for key := range raw.Meta {
-		a := raw.Meta[key]
-		a.Clean()
-		raw.Meta[key] = a
+		meta := raw.Meta[key]
+		meta.Clean()
+		raw.Meta[key] = meta
+	}
+
+	for key := range raw.Target {
+		target := raw.Target[key]
+		target.Clean()
+		raw.Target[key] = target
 	}
 }
 
@@ -115,6 +157,14 @@ func (meta *Meta) Clean() {
 	cleanString(&meta.Description)
 	cleanString(&meta.Architecture)
 	cleanList(&meta.Recommendations)
+}
+
+func (target *RawTarget) Clean() {
+	cleanString(&target.Architecture)
+	cleanString(&target.OSReleaseID)
+	cleanString(&target.OSReleaseVersion)
+	cleanString(&target.OSReleaseVersionID)
+	cleanString(&target.OSReleaseVersionCodeName)
 }
 
 func cleanString(value *string) {

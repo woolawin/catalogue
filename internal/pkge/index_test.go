@@ -48,8 +48,12 @@ architecture='amd64'
 
 }
 
-func TestDeserializeMetaTarget(t *testing.T) {
+func TestDeserializeFull(t *testing.T) {
 	input := `
+
+[target.ubuntu]
+os_release_id='ubuntu'
+
 [meta.all]
 name='FooBar'
 dependencies=['foo', 'bar']
@@ -85,12 +89,78 @@ maintainer='Jane Doe'
 				Maintainer:   "Jane Doe",
 			},
 		},
+		Target: map[string]RawTarget{
+			"ubuntu": {
+				OSReleaseID: "ubuntu",
+			},
+		},
 	}
 
 	if diff := cmp.Diff(actual, expected); diff != "" {
 		fmt.Printf("Mismatch (-actual +expected):\n%s", diff)
 	}
 
+}
+
+func TestConstruct(t *testing.T) {
+	raw := Raw{
+		Target: map[string]RawTarget{
+			"ubuntu": {
+				Architecture:             "amd64",
+				OSReleaseID:              "ubuntu",
+				OSReleaseVersion:         "22",
+				OSReleaseVersionID:       "22.04",
+				OSReleaseVersionCodeName: "cody cod",
+			},
+		},
+		Meta: map[string]Meta{
+			"all": {
+				Name:            "foo",
+				Dependencies:    []string{"bar", "baz"},
+				Section:         "other",
+				Priority:        "normal",
+				Homepage:        "https://foo.com",
+				Maintainer:      "me",
+				Description:     "example",
+				Architecture:    "amd64",
+				Recommendations: []string{"baz"},
+			},
+		},
+	}
+	system := target.System{Architecture: target.AMD64}
+	actual, err := construct(&raw, system)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := Index{
+		Targets: []target.Target{
+			{
+				Name:                     "ubuntu",
+				All:                      false,
+				Architecture:             "amd64",
+				OSReleaseID:              "ubuntu",
+				OSReleaseVersion:         "22",
+				OSReleaseVersionID:       "22.04",
+				OSReleaseVersionCodeName: "cody cod",
+			},
+		},
+		Meta: Meta{
+			Name:            "foo",
+			Dependencies:    []string{"bar", "baz"},
+			Section:         "other",
+			Priority:        "normal",
+			Homepage:        "https://foo.com",
+			Maintainer:      "me",
+			Description:     "example",
+			Architecture:    "amd64",
+			Recommendations: []string{"baz"},
+		},
+	}
+
+	if diff := cmp.Diff(actual, expected); diff != "" {
+		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+	}
 }
 
 func TestMergeMeta(t *testing.T) {
@@ -204,6 +274,15 @@ func TestCleanRaw(t *testing.T) {
 		Meta: map[string]Meta{
 			"all": Meta{Name: " fooo  "},
 		},
+		Target: map[string]RawTarget{
+			"mine": {
+				Architecture:             "  arch ",
+				OSReleaseID:              "   id  ",
+				OSReleaseVersion:         "  ver   ",
+				OSReleaseVersionID:       "   ver_id   ",
+				OSReleaseVersionCodeName: "   ",
+			},
+		},
 	}
 
 	actual.Clean()
@@ -211,6 +290,15 @@ func TestCleanRaw(t *testing.T) {
 	expected := Raw{
 		Meta: map[string]Meta{
 			"all": Meta{Name: "fooo"},
+		},
+		Target: map[string]RawTarget{
+			"mine": {
+				Architecture:             "arch",
+				OSReleaseID:              "id",
+				OSReleaseVersion:         "ver",
+				OSReleaseVersionID:       "ver_id",
+				OSReleaseVersionCodeName: "",
+			},
 		},
 	}
 
