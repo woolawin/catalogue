@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 )
 
 type Disk interface {
@@ -34,6 +35,10 @@ func (disk *DiskImpl) Path(parts ...string) string {
 }
 
 func (disk *DiskImpl) FileExists(path string) (bool, bool, error) {
+	err := disk.safe(path)
+	if err != nil {
+		return false, false, err
+	}
 	info, err := os.Stat(path)
 	if err != nil {
 		return false, false, err
@@ -42,6 +47,10 @@ func (disk *DiskImpl) FileExists(path string) (bool, bool, error) {
 }
 
 func (disk *DiskImpl) DirExists(path string) (bool, bool, error) {
+	err := disk.safe(path)
+	if err != nil {
+		return false, false, err
+	}
 	info, err := os.Stat(path)
 	if err != nil {
 		return false, false, err
@@ -50,10 +59,18 @@ func (disk *DiskImpl) DirExists(path string) (bool, bool, error) {
 }
 
 func (disk *DiskImpl) CreateDir(path string) error {
+	err := disk.safe(path)
+	if err != nil {
+		return err
+	}
 	return os.Mkdir(path, 0755)
 }
 
 func (disk *DiskImpl) List(path string) ([]string, []string, error) {
+	err := disk.safe(path)
+	if err != nil {
+		return nil, nil, err
+	}
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to read directory contents: %w", err)
@@ -74,8 +91,12 @@ func (disk *DiskImpl) List(path string) ([]string, []string, error) {
 }
 
 func (disk *DiskImpl) ListRec(path string) ([]string, error) {
+	err := disk.safe(path)
+	if err != nil {
+		return nil, err
+	}
 	var files []string
-	err := filepath.WalkDir(path, func(path string, entry os.DirEntry, err error) error {
+	err = filepath.WalkDir(path, func(path string, entry os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -93,6 +114,10 @@ func (disk *DiskImpl) ListRec(path string) ([]string, error) {
 }
 
 func (disk *DiskImpl) CreateTar(path string) error {
+	err := disk.safe(path)
+	if err != nil {
+		return err
+	}
 	file, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("can not create data.tar.gz: %w", err)
@@ -106,6 +131,15 @@ func (disk *DiskImpl) CreateTar(path string) error {
 }
 
 func (disk *DiskImpl) Archive(src string, dst string) error {
+	err := disk.safe(src)
+	if err != nil {
+		return err
+	}
+	err = disk.safe(dst)
+	if err != nil {
+		return err
+	}
+
 	file, err := os.Create(dst)
 	if err != nil {
 		return nil
@@ -151,4 +185,33 @@ func (disk *DiskImpl) Archive(src string, dst string) error {
 		_, err = io.Copy(tarWriter, f)
 		return err
 	})
+}
+
+func (disk *DiskImpl) safe(path string) error {
+	baseAbs, err := filepath.Abs(disk.base)
+	unsafe := fmt.Errorf("file access not allowed: '%s'", path)
+	if err != nil {
+		return unsafe
+	}
+
+	pathAbs, err := filepath.Abs(path)
+	if err != nil {
+		return unsafe
+	}
+
+	baseAbs = filepath.Clean(baseAbs)
+	pathAbs = filepath.Clean(pathAbs)
+
+	if !strings.HasSuffix(baseAbs, string(filepath.Separator)) {
+		baseAbs += string(filepath.Separator)
+	}
+
+	if !strings.HasSuffix(baseAbs, string(filepath.Separator)) {
+		baseAbs += string(filepath.Separator)
+	}
+
+	if !strings.HasPrefix(pathAbs, baseAbs) {
+		return unsafe
+	}
+	return nil
 }
