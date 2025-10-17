@@ -135,6 +135,6 @@ func TestMergeMeta(t *testing.T) {
 	}
 
 	if diff := cmp.Diff(actual, expected); diff != "" {
-		fmt.Printf("Mismatch (-actual +expected):\n%s", diff)
+		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 	}
 }

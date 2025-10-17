@@ -1,7 +1,6 @@
 package target
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -20,7 +19,7 @@ func TestRank(t *testing.T) {
 		expected := []int{0}
 
 		if diff := cmp.Diff(actual, expected); diff != "" {
-			fmt.Printf("Mismatch (-actual +expected):\n%s", diff)
+			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 		}
 	})
 
@@ -36,7 +35,7 @@ func TestRank(t *testing.T) {
 		expected := []int{1}
 
 		if diff := cmp.Diff(actual, expected); diff != "" {
-			fmt.Printf("Mismatch (-actual +expected):\n%s", diff)
+			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 		}
 	})
 
@@ -53,7 +52,7 @@ func TestRank(t *testing.T) {
 		expected := []int{2, 0}
 
 		if diff := cmp.Diff(actual, expected); diff != "" {
-			fmt.Printf("Mismatch (-actual +expected):\n%s", diff)
+			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 		}
 	})
 

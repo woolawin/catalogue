@@ -154,7 +154,7 @@ func (data *ControlData) String() string {
 	}
 
 	if len(data.Architecture) != 0 {
-		builder.WriteString("Architeture: ")
+		builder.WriteString("Architecture: ")
 		builder.WriteString(data.Architecture)
 		builder.WriteString("\n")
 	}
