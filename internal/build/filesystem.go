@@ -57,9 +57,21 @@ func filesystem(system target.System, disk api.Disk, reg target.Registry) error 
 
 	for idx := range filesystems {
 		fs := &filesystems[idx]
-		_, err := reg.Load(fs.Targets)
+		targets, err := reg.Load(fs.Targets)
 		if err != nil {
 			return err
+		}
+		for _, idx := range system.Rank(targets) {
+			fromPath := strings.Builder{}
+			fromPath.WriteString("filesystem/")
+			fromPath.WriteString(fs.Anchor)
+			targetName := targets[idx].Name
+			fromPath.WriteString(targetName)
+			files := fs.TargetFiles[targetName]
+			err := disk.Move("data", fromPath.String(), files, false)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

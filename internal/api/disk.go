@@ -20,6 +20,7 @@ type Disk interface {
 	ListRec(path string) ([]string, error)
 	CreateTar(path string) error
 	Archive(src, dst string) error
+	Move(toPath string, fromPath string, files []string, overwrite bool) error
 }
 
 func NewDisk(base string) Disk {
@@ -41,6 +42,9 @@ func (disk *DiskImpl) FileExists(path string) (bool, bool, error) {
 	}
 	info, err := os.Stat(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return false, false, nil
+		}
 		return false, false, err
 	}
 	return true, !info.IsDir(), nil
@@ -53,6 +57,9 @@ func (disk *DiskImpl) DirExists(path string) (bool, bool, error) {
 	}
 	info, err := os.Stat(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return false, false, nil
+		}
 		return false, false, err
 	}
 	return true, info.IsDir(), nil
@@ -127,6 +134,37 @@ func (disk *DiskImpl) CreateTar(path string) error {
 	defer gzipWriter.Close()
 	tarWriter := tar.NewWriter(gzipWriter)
 	defer tarWriter.Close()
+	return nil
+}
+
+func (disk *DiskImpl) Move(toPath string, fromPath string, files []string, overwrite bool) error {
+	err := disk.safe(toPath)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		newPath := disk.Path(disk.base, toPath, file)
+		err = disk.safe(newPath)
+		if err != nil {
+			return err
+		}
+		oldPath := disk.Path(disk.base, fromPath, file)
+		if err != nil {
+			return err
+		}
+		_, err := os.Stat(newPath)
+		if err == nil {
+			continue
+		} else if !os.IsNotExist(err) {
+			continue
+		}
+		err = os.Rename(oldPath, newPath)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
