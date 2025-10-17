@@ -23,22 +23,22 @@ type Raw struct {
 	Meta map[string]Meta `toml:"meta"`
 }
 
-type PackageIndex struct {
+type Index struct {
 	Meta Meta
 }
 
-func Parse(src io.Reader) (PackageIndex, error) {
+func Parse(src io.Reader) (Index, error) {
 	raw, err := deserialize(src)
 	if err != nil {
-		return PackageIndex{}, nil
+		return Index{}, nil
 	}
 
 	system, err := target.GetSystem()
 	if err != nil {
-		return PackageIndex{}, err
+		return Index{}, err
 	}
 
-	index := PackageIndex{}
+	index := Index{}
 	index.Meta = MergeMeta(&raw, system, target.BuiltIns())
 	return index, nil
 }
