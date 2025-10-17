@@ -9,7 +9,7 @@ import (
 	"github.com/woolawin/catalogue/internal/target"
 )
 
-func filesystem(system target.System, disk api.Disk) error {
+func filesystem(system target.System, disk api.Disk, reg target.Registry) error {
 	fsPath := disk.Path("filesystem")
 	exists, asDir, err := disk.DirExists(fsPath)
 	if err != nil {
@@ -54,13 +54,14 @@ func filesystem(system target.System, disk api.Disk) error {
 		filesystem.Targets = append(filesystem.Targets, ref.Target)
 		filesystem.TargetFiles[ref.Target] = files
 	}
-	/*
-		targets.Load()
 
-		for idx := range filesystems {
-			fs := &filesystems[idx]
-
-		}*/
+	for idx := range filesystems {
+		fs := &filesystems[idx]
+		_, err := reg.Load(fs.Targets)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

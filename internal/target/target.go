@@ -244,14 +244,14 @@ func getArch(value string) (Architecture, bool) {
 	}
 }
 
-func BuiltIns() []Target {
+func builtIns() []Target {
 	return []Target{
 		{
 			Name:         "amd64",
 			Architecture: AMD64,
 		},
 		{
-			Name:         "arm",
+			Name:         "arm64",
 			Architecture: ARM64,
 		},
 		{
@@ -305,6 +305,10 @@ func findOSReleaseValue(lines []string, key string) (string, bool) {
 
 type Registry struct {
 	base []Target
+}
+
+func NewRegistry(tgts []Target) Registry {
+	return Registry{base: append(builtIns(), tgts...)}
 }
 
 func (reg *Registry) Load(names []string) ([]Target, error) {

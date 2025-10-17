@@ -31,6 +31,11 @@ func Build(dst string, system target.System, disk api.Disk) error {
 	if err != nil {
 		return err
 	}
+
+	err = filesystem(system, disk, index.Registry)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

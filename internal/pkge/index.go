@@ -35,8 +35,9 @@ type RawTarget struct {
 }
 
 type Index struct {
-	Meta    Meta
-	Targets []target.Target
+	Meta     Meta
+	Targets  []target.Target
+	Registry target.Registry
 }
 
 func Parse(src io.Reader, system target.System) (Index, error) {
@@ -48,9 +49,8 @@ func Parse(src io.Reader, system target.System) (Index, error) {
 }
 
 func construct(raw *Raw, system target.System) (Index, error) {
-	index := Index{}
 
-	targets := target.BuiltIns()
+	var targets []target.Target
 
 	for name, values := range raw.Target {
 		if target.IsReservedTargetName(name) {
@@ -68,12 +68,15 @@ func construct(raw *Raw, system target.System) (Index, error) {
 			OSReleaseVersionID:       values.OSReleaseVersionID,
 			OSReleaseVersionCodeName: values.OSReleaseVersionCodeName,
 		}
-		index.Targets = append(index.Targets, tgt)
 		targets = append(targets, tgt)
 	}
 
-	index.Meta = MergeMeta(raw, system, targets)
-	return index, nil
+	registry := target.NewRegistry(targets)
+	meta, err := mergeMeta(raw, system, registry)
+	if err != nil {
+		return Index{}, err
+	}
+	return Index{Meta: meta, Registry: registry, Targets: targets}, nil
 }
 
 func EmptyIndex() Index {
@@ -89,8 +92,17 @@ func deserialize(src io.Reader) (Raw, error) {
 	return raw, nil
 }
 
-func MergeMeta(pi *Raw, system target.System, targets []target.Target) Meta {
+func mergeMeta(pi *Raw, system target.System, registry target.Registry) (Meta, error) {
 	meta := Meta{}
+	var targetNames []string
+	for key := range pi.Meta {
+		targetNames = append(targetNames, key)
+	}
+	targets, err := registry.Load(targetNames)
+	if err != nil {
+		return Meta{}, err
+	}
+
 	for _, idx := range system.Rank(targets) {
 		data := pi.Meta[targets[idx].Name]
 
@@ -130,7 +142,7 @@ func MergeMeta(pi *Raw, system target.System, targets []target.Target) Meta {
 			meta.Recommendations = data.Recommendations
 		}
 	}
-	return meta
+	return meta, nil
 }
 
 func (raw *Raw) Clean() {

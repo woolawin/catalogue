@@ -164,11 +164,6 @@ func TestConstruct(t *testing.T) {
 }
 
 func TestMergeMeta(t *testing.T) {
-	targets := []target.Target{
-		{Name: "arm64", Architecture: target.ARM64},
-		{Name: "amd64", Architecture: target.AMD64},
-		{Name: "all", All: true},
-	}
 	system := target.System{Architecture: target.AMD64}
 
 	raw := Raw{
@@ -192,7 +187,10 @@ func TestMergeMeta(t *testing.T) {
 		},
 	}
 
-	actual := MergeMeta(&raw, system, targets)
+	actual, err := mergeMeta(&raw, system, target.NewRegistry(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
 	expected := Meta{
 		Name:         "FooBar",
 		Dependencies: []string{"foo", "bar"},
