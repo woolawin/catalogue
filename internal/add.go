@@ -1,5 +1,5 @@
 package internal
 
-func Add(target Target) {
+func Add(target string) {
 
 }

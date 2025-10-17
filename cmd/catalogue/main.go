@@ -18,8 +18,7 @@ func main() {
 }
 
 func runAdd(cmd *cobra.Command, args []string) {
-	target, _ := internal.ParseTarget(args[0])
-	internal.Add(target)
+	internal.Add(args[0])
 }
 
 func runBuild(cmd *cobra.Command, args []string) {
