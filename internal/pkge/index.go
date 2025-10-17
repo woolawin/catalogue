@@ -9,14 +9,15 @@ import (
 )
 
 type Meta struct {
-	Name         string   `toml:"name"`
-	Dependencies []string `toml:"dependencies"`
-	Section      string   `toml:"section"`
-	Priority     string   `toml:"priority"`
-	Homepage     string   `toml:"homepage"`
-	Maintainer   string   `toml:"maintainer"`
-	Description  string   `toml:"description"`
-	Architecture string   `toml:"architecture"`
+	Name            string   `toml:"name"`
+	Dependencies    []string `toml:"dependencies"`
+	Section         string   `toml:"section"`
+	Priority        string   `toml:"priority"`
+	Homepage        string   `toml:"homepage"`
+	Maintainer      string   `toml:"maintainer"`
+	Description     string   `toml:"description"`
+	Architecture    string   `toml:"architecture"`
+	Recommendations []string `toml:"recommendations"`
 }
 
 type Raw struct {
@@ -91,6 +92,10 @@ func MergeMeta(pi *Raw, system target.System, targets []target.Target) Meta {
 
 		if len(meta.Architecture) == 0 && len(data.Architecture) != 0 {
 			meta.Architecture = data.Architecture
+		}
+
+		if len(meta.Recommendations) == 0 && len(data.Recommendations) != 0 {
+			meta.Recommendations = data.Recommendations
 		}
 	}
 	return meta

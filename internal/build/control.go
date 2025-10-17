@@ -102,6 +102,10 @@ func (data *ControlData) SetFrom(index pkge.Index) {
 	if len(data.Description) == 0 {
 		data.Description = index.Meta.Description
 	}
+
+	if len(data.Recommends) == 0 {
+		data.Recommends = index.Meta.Recommendations
+	}
 }
 
 func (data *ControlData) String() string {

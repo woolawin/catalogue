@@ -117,7 +117,7 @@ func TestMergeMeta(t *testing.T) {
 				Maintainer:   "Jane Doe",
 			},
 			"arm64": {
-				Maintainer: "Riley Doe",
+				Recommendations: []string{"happy", "puppy"},
 			},
 		},
 	}
