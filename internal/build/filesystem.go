@@ -54,6 +54,13 @@ func filesystem(system target.System, disk api.Disk) error {
 		filesystem.Targets = append(filesystem.Targets, ref.Target)
 		filesystem.TargetFiles[ref.Target] = files
 	}
+	/*
+		targets.Load()
+
+		for idx := range filesystems {
+			fs := &filesystems[idx]
+
+		}*/
 
 	return nil
 }

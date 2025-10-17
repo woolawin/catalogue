@@ -369,5 +369,67 @@ func TestScore(t *testing.T) {
 			t.Fatal("expected NOT to be applicable")
 		}
 	})
+}
 
+func TestSplitTargetNames(t *testing.T) {
+	actual := splitTargetNames("foo")
+	expected := []string{"foo"}
+
+	if diff := cmp.Diff(actual, expected); diff != "" {
+		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+	}
+
+	actual = splitTargetNames("foo-bar")
+	expected = []string{"foo", "bar"}
+
+	if diff := cmp.Diff(actual, expected); diff != "" {
+		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+	}
+}
+
+func TestRegistryLoad(t *testing.T) {
+	reg := Registry{
+		base: []Target{
+			{
+				Name: "all",
+				All:  true,
+			},
+			{
+				Name:         "amd64",
+				Architecture: AMD64,
+			},
+			{
+				Name:         "arm64",
+				Architecture: "arm64",
+			},
+			{
+				Name:        "ubuntu",
+				OSReleaseID: "ubuntu",
+			},
+		},
+	}
+
+	actual, err := reg.Load([]string{"all", "amd64-ubuntu", "amd64"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := []Target{
+		{
+			Name: "all",
+			All:  true,
+		},
+		{
+			Name:         "amd64-ubuntu",
+			Architecture: AMD64,
+			OSReleaseID:  "ubuntu",
+		},
+		{
+			Name:         "amd64",
+			Architecture: AMD64,
+		},
+	}
+
+	if diff := cmp.Diff(actual, expected); diff != "" {
+		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+	}
 }

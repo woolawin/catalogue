@@ -302,3 +302,46 @@ func findOSReleaseValue(lines []string, key string) (string, bool) {
 	}
 	return "", false
 }
+
+type Registry struct {
+	base []Target
+}
+
+func (reg *Registry) Load(names []string) ([]Target, error) {
+	var out []Target
+	for _, name := range names {
+		if name == "all" {
+			out = append(out, Target{Name: "all", All: true})
+			continue
+		}
+		parts := splitTargetNames(name)
+		var targets []Target
+		for _, part := range parts {
+			target, ok := reg.Find(part)
+			if !ok {
+				return nil, fmt.Errorf("unkowen target: '%s'", part)
+			}
+			targets = append(targets, target)
+		}
+
+		merged, err := MergeTargets(targets)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, merged)
+	}
+	return out, nil
+}
+
+func (reg *Registry) Find(name string) (Target, bool) {
+	for _, target := range reg.base {
+		if target.Name == name {
+			return target, true
+		}
+	}
+	return Target{}, false
+}
+
+func splitTargetNames(value string) []string {
+	return strings.Split(value, "-")
+}
