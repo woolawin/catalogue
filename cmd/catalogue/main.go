@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/api"
-	"github.com/woolawin/catalogue/internal/build"
 	"github.com/woolawin/catalogue/internal/target"
 )
 
@@ -24,14 +24,18 @@ func runAdd(cmd *cobra.Command, args []string) {
 }
 
 func runBuild(cmd *cobra.Command, args []string) {
-	system, err := target.GetSystem()
+	_, err := target.GetSystem()
 	if err != nil {
 		return
 	}
 	src, _ := cmd.Flags().GetString("src")
 	dst, _ := cmd.Flags().GetString("dst")
-	disk := api.NewDisk(src)
-	build.Build(dst, system, disk)
+	srcAbs, err := filepath.Abs(src)
+	api.NewDisk(srcAbs)
+
+	fmt.Println(srcAbs)
+	fmt.Println(dst)
+	// build.Build(dst, system, disk)
 }
 
 func args() *cobra.Command {
