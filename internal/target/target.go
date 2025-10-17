@@ -16,6 +16,7 @@ const (
 type Target struct {
 	Name         string
 	Architecture Architecture
+	All          bool
 }
 
 type System struct {
@@ -37,7 +38,12 @@ func (system System) Rank(targets []Target) []int {
 		return nil
 	}
 	scores := make(map[string]int)
+scoreTarget:
 	for _, target := range targets {
+		if target.All {
+			scores[target.Name] = 0
+			continue scoreTarget
+		}
 		score, applicable := target.Score(system)
 		if !applicable {
 			continue
@@ -52,9 +58,11 @@ func (system System) Rank(targets []Target) []int {
 			break
 		}
 		high := -1
+	rankTarget:
 		for _, score := range scores {
 			if score > high && score < previous {
 				high = score
+				continue rankTarget
 			}
 		}
 		if high == -1 {
@@ -111,6 +119,10 @@ func BuiltIns() []Target {
 		{
 			Name:         "arm",
 			Architecture: ARM64,
+		},
+		{
+			Name: "all",
+			All:  true,
 		},
 	}
 }
