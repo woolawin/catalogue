@@ -23,11 +23,15 @@ type Target struct {
 	OSReleaseID              string
 	OSReleaseVersion         string
 	OSReleaseVersionID       string
-	OSReleaseVersionCodename string
+	OSReleaseVersionCodeName string
 }
 
 type System struct {
-	Architecture Architecture
+	Architecture             Architecture
+	OSReleaseID              string
+	OSReleaseVersion         string
+	OSReleaseVersionID       string
+	OSReleaseVersionCodeName string
 }
 
 func GetSystem() (System, error) {
@@ -37,11 +41,15 @@ func GetSystem() (System, error) {
 		return System{}, fmt.Errorf("unknown system architecture '%s'", runtime.GOARCH)
 	}
 	system.Architecture = arch
-	_, err := os.ReadFile("/etc/os-release")
+	osReleaseBytes, err := os.ReadFile("/etc/os-release")
 	if err != nil {
 		return System{}, fmt.Errorf("can not read /etc/os-release: %w", err)
 	}
-	//osRelease := strings.Split(string(osReleaseBytes), "\n")
+	osRelease := strings.Split(string(osReleaseBytes), "\n")
+	system.OSReleaseID, _ = findOSReleaseValue(osRelease, "ID")
+	system.OSReleaseVersion, _ = findOSReleaseValue(osRelease, "VERSION")
+	system.OSReleaseVersionID, _ = findOSReleaseValue(osRelease, "VERSION_ID")
+	system.OSReleaseVersionCodeName, _ = findOSReleaseValue(osRelease, "VERSION_CODENAME")
 	return system, nil
 }
 
@@ -56,7 +64,7 @@ scoreTarget:
 			scores[target.Name] = 0
 			continue scoreTarget
 		}
-		score, applicable := target.Score(system)
+		score, applicable := score(system, target)
 		if !applicable {
 			continue
 		}
@@ -97,12 +105,52 @@ scoreTarget:
 	return ranking
 }
 
-func (target Target) Score(system System) (int, bool) {
-	if len(target.Architecture) != 0 && target.Architecture != system.Architecture {
+func score(system System, target Target) (int, bool) {
+	score := 0
+
+	if len(target.Architecture) != 0 {
+		if target.Architecture != system.Architecture {
+			return 0, false
+		}
+		score++
+	}
+
+	inc, rejected := scoreString(system.OSReleaseID, target.OSReleaseID)
+	if rejected {
+		return 0, false
+	}
+	score += inc
+
+	inc, rejected = scoreString(system.OSReleaseVersion, target.OSReleaseVersion)
+	if rejected {
+		return 0, false
+	}
+	score += inc
+
+	inc, rejected = scoreString(system.OSReleaseVersionID, target.OSReleaseVersionID)
+	if rejected {
+		return 0, false
+	}
+	score += inc
+
+	inc, rejected = scoreString(system.OSReleaseVersionCodeName, target.OSReleaseVersionCodeName)
+	if rejected {
+		return 0, false
+	}
+	score += inc
+
+	return score, true
+}
+
+func scoreString(sys, tgt string) (int, bool) {
+	if len(tgt) == 0 {
 		return 0, false
 	}
 
-	return 1, true
+	if sys != tgt {
+		return 0, true
+	}
+	return 1, false
 }
 
 func IsReservedTargetName(value string) bool {
@@ -142,7 +190,7 @@ func MergeTargets(targets []Target) (Target, error) {
 		if err != nil {
 			return Target{}, err
 		}
-		err = mergeString(&merged.OSReleaseVersionCodename, target.OSReleaseVersionCodename, "os_release_version_code_name")
+		err = mergeString(&merged.OSReleaseVersionCodeName, target.OSReleaseVersionCodeName, "os_release_version_code_name")
 		if err != nil {
 			return Target{}, err
 		}

@@ -115,7 +115,7 @@ func TestMergeTargets(t *testing.T) {
 	t.Run("compatible", func(t *testing.T) {
 		a := Target{Name: "a", Architecture: AMD64}
 		b := Target{Name: "b", OSReleaseID: "17"}
-		c := Target{Name: "c", OSReleaseVersionCodename: "dingo"}
+		c := Target{Name: "c", OSReleaseVersionCodeName: "dingo"}
 
 		actual, err := MergeTargets([]Target{a, b, c})
 		if err != nil {
@@ -125,7 +125,7 @@ func TestMergeTargets(t *testing.T) {
 			Name:                     "a-b-c",
 			Architecture:             AMD64,
 			OSReleaseID:              "17",
-			OSReleaseVersionCodename: "dingo",
+			OSReleaseVersionCodeName: "dingo",
 		}
 
 		if diff := cmp.Diff(actual, expected); diff != "" {
@@ -209,4 +209,165 @@ func TestFindOSReleaseValue(t *testing.T) {
 			t.Fatal("expected NOT to be found")
 		}
 	})
+}
+
+func TestScore(t *testing.T) {
+	t.Run("none", func(t *testing.T) {
+		system := System{
+			Architecture:             AMD64,
+			OSReleaseID:              "ubuntu",
+			OSReleaseVersion:         "4.0",
+			OSReleaseVersionID:       "4",
+			OSReleaseVersionCodeName: "dingo",
+		}
+
+		target := Target{
+			Architecture:             "",
+			OSReleaseID:              "",
+			OSReleaseVersion:         "",
+			OSReleaseVersionID:       "",
+			OSReleaseVersionCodeName: "",
+		}
+
+		actual, applicable := score(system, target)
+		if !applicable {
+			t.Fatal("expected to be APPLICABLE")
+		}
+		expected := 0
+
+		if actual != expected {
+			t.Fatalf("expected '%d' to be '%d'", actual, expected)
+		}
+	})
+
+	t.Run("one", func(t *testing.T) {
+		system := System{
+			Architecture:             AMD64,
+			OSReleaseID:              "ubuntu",
+			OSReleaseVersion:         "4.0",
+			OSReleaseVersionID:       "4",
+			OSReleaseVersionCodeName: "dingo",
+		}
+
+		target := Target{
+			Architecture:             AMD64,
+			OSReleaseID:              "",
+			OSReleaseVersion:         "",
+			OSReleaseVersionID:       "",
+			OSReleaseVersionCodeName: "",
+		}
+
+		actual, applicable := score(system, target)
+		if !applicable {
+			t.Fatal("expected to be APPLICABLE")
+		}
+		expected := 1
+
+		if actual != expected {
+			t.Fatalf("expected '%d' to be '%d'", actual, expected)
+		}
+	})
+
+	t.Run("two", func(t *testing.T) {
+		system := System{
+			Architecture:             AMD64,
+			OSReleaseID:              "ubuntu",
+			OSReleaseVersion:         "4.0",
+			OSReleaseVersionID:       "4",
+			OSReleaseVersionCodeName: "dingo",
+		}
+
+		target := Target{
+			Architecture:             AMD64,
+			OSReleaseID:              "",
+			OSReleaseVersion:         "",
+			OSReleaseVersionID:       "4",
+			OSReleaseVersionCodeName: "",
+		}
+
+		actual, applicable := score(system, target)
+		if !applicable {
+			t.Fatal("expected to be APPLICABLE")
+		}
+		expected := 2
+
+		if actual != expected {
+			t.Fatalf("expected '%d' to be '%d'", actual, expected)
+		}
+	})
+
+	t.Run("full", func(t *testing.T) {
+		system := System{
+			Architecture:             AMD64,
+			OSReleaseID:              "ubuntu",
+			OSReleaseVersion:         "4.0",
+			OSReleaseVersionID:       "4",
+			OSReleaseVersionCodeName: "dingo",
+		}
+
+		target := Target{
+			Architecture:             AMD64,
+			OSReleaseID:              "ubuntu",
+			OSReleaseVersion:         "4.0",
+			OSReleaseVersionID:       "4",
+			OSReleaseVersionCodeName: "dingo",
+		}
+
+		actual, applicable := score(system, target)
+		if !applicable {
+			t.Fatal("expected to be APPLICABLE")
+		}
+		expected := 5
+
+		if actual != expected {
+			t.Fatalf("expected '%d' to be '%d'", actual, expected)
+		}
+	})
+
+	t.Run("not_applicable", func(t *testing.T) {
+		system := System{
+			Architecture:             AMD64,
+			OSReleaseID:              "ubuntu",
+			OSReleaseVersion:         "4.0",
+			OSReleaseVersionID:       "4",
+			OSReleaseVersionCodeName: "dingo",
+		}
+
+		target := Target{
+			Architecture:             ARM64,
+			OSReleaseID:              "",
+			OSReleaseVersion:         "",
+			OSReleaseVersionID:       "",
+			OSReleaseVersionCodeName: "",
+		}
+
+		_, applicable := score(system, target)
+		if applicable {
+			t.Fatal("expected NOT to be applicable")
+		}
+	})
+
+	t.Run("not_applicable_other", func(t *testing.T) {
+		system := System{
+			Architecture:             AMD64,
+			OSReleaseID:              "ubuntu",
+			OSReleaseVersion:         "4.0",
+			OSReleaseVersionID:       "4",
+			OSReleaseVersionCodeName: "dingo",
+		}
+
+		target := Target{
+			Architecture:             AMD64,
+			OSReleaseID:              "",
+			OSReleaseVersion:         "",
+			OSReleaseVersionID:       "5",
+			OSReleaseVersionCodeName: "",
+		}
+
+		_, applicable := score(system, target)
+		if applicable {
+			t.Fatal("expected NOT to be applicable")
+		}
+	})
+
 }
