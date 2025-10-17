@@ -32,7 +32,7 @@ func Build(src BuildSrc, dst string) error {
 		return err
 	}
 
-	err = control(src)
+	err = control(src, index)
 	if err != nil {
 		return err
 	}
