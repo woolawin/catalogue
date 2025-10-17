@@ -167,3 +167,22 @@ func lsDir(path string) ([]string, []string, error) {
 
 	return files, dirs, nil
 }
+
+func lsDirFilesRec(path string) ([]string, error) {
+	var files []string
+	err := filepath.WalkDir(path, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !entry.IsDir() {
+			files = append(files, entry.Name())
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
+}

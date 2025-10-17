@@ -27,15 +27,40 @@ func disk(src BuildSrc, system target.System) error {
 		return err
 	}
 
+	var disks []Disk
 	for _, dir := range dirs {
-		_, err := parseDiskRef(dir)
+		ref, err := parseDiskRef(dir)
 		if err != nil {
 			return err
 		}
 
+		files, err := lsDirFilesRec(filePath(src, "disk", dir))
+		if err != nil {
+			return fmt.Errorf("failed to list directory %s: %w", dir, err)
+		}
+
+		var disk *Disk
+		for _, d := range disks {
+			if d.Anchor == ref.Anchor {
+				disk = &d
+				break
+			}
+		}
+		if disk == nil {
+			disks = append(disks, Disk{Anchor: ref.Anchor})
+			disk = &disks[len(disks)-1]
+		}
+		disk.Targets = append(disk.Targets, ref.Target)
+		disk.TargetFiles[ref.Target] = files
 	}
 
 	return nil
+}
+
+type Disk struct {
+	Anchor      string
+	Targets     []string
+	TargetFiles map[string][]string
 }
 
 type DiskRef struct {
