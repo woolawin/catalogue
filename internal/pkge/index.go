@@ -3,6 +3,7 @@ package pkge
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	toml "github.com/pelletier/go-toml/v2"
 	"github.com/woolawin/catalogue/internal/target"
@@ -94,4 +95,39 @@ func MergeMeta(pi *Raw, system target.System, targets []target.Target) Meta {
 		}
 	}
 	return meta
+}
+
+func (raw *Raw) Clean() {
+	for key := range raw.Meta {
+		a := raw.Meta[key]
+		a.Clean()
+		raw.Meta[key] = a
+	}
+}
+
+func (meta *Meta) Clean() {
+	cleanString(&meta.Name)
+	cleanList(&meta.Dependencies)
+	cleanString(&meta.Section)
+	cleanString(&meta.Priority)
+	cleanString(&meta.Homepage)
+	cleanString(&meta.Maintainer)
+	cleanString(&meta.Description)
+	cleanString(&meta.Architecture)
+	cleanList(&meta.Recommendations)
+}
+
+func cleanString(value *string) {
+	*value = strings.TrimSpace(*value)
+}
+
+func cleanList(list *[]string) {
+	var cleaned []string
+	for _, value := range *list {
+		cleanString(&value)
+		if len(value) != 0 {
+			cleaned = append(cleaned, value)
+		}
+	}
+	*list = cleaned
 }

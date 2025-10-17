@@ -138,3 +138,83 @@ func TestMergeMeta(t *testing.T) {
 		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 	}
 }
+
+func TestCleanString(t *testing.T) {
+	actual := "   foo   "
+	cleanString(&actual)
+	expected := "foo"
+
+	if actual != expected {
+		t.Fatalf("expected '%s' to be '%s'\n", actual, expected)
+	}
+
+	actual = "foo"
+	cleanString(&actual)
+	expected = "foo"
+
+	if actual != expected {
+		t.Fatalf("expected '%s' to be '%s'\n", actual, expected)
+	}
+
+	actual = ""
+	cleanString(&actual)
+	expected = ""
+
+	if actual != expected {
+		t.Fatalf("expected '%s' to be '%s'\n", actual, expected)
+	}
+}
+
+func TestCleanList(t *testing.T) {
+	actual := []string{"foo", "bar"}
+	cleanList(&actual)
+	expected := []string{"foo", "bar"}
+
+	if diff := cmp.Diff(actual, expected); diff != "" {
+		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+	}
+
+	actual = []string{" foo ", " bar "}
+	cleanList(&actual)
+	expected = []string{"foo", "bar"}
+
+	if diff := cmp.Diff(actual, expected); diff != "" {
+		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+	}
+
+	actual = []string{" foo ", " ", "baz"}
+	cleanList(&actual)
+	expected = []string{"foo", "baz"}
+
+	if diff := cmp.Diff(actual, expected); diff != "" {
+		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+	}
+
+	actual = []string{"  ", " "}
+	cleanList(&actual)
+	expected = nil
+
+	if diff := cmp.Diff(actual, expected); diff != "" {
+		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+	}
+}
+
+func TestCleanRaw(t *testing.T) {
+	actual := Raw{
+		Meta: map[string]Meta{
+			"all": Meta{Name: " fooo  "},
+		},
+	}
+
+	actual.Clean()
+
+	expected := Raw{
+		Meta: map[string]Meta{
+			"all": Meta{Name: "fooo"},
+		},
+	}
+
+	if diff := cmp.Diff(actual, expected); diff != "" {
+		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+	}
+}
