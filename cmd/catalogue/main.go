@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/woolawin/catalogue/internal"
+	"github.com/woolawin/catalogue/internal/api"
 	"github.com/woolawin/catalogue/internal/build"
 	"github.com/woolawin/catalogue/internal/target"
 )
@@ -29,7 +30,8 @@ func runBuild(cmd *cobra.Command, args []string) {
 	}
 	src, _ := cmd.Flags().GetString("src")
 	dst, _ := cmd.Flags().GetString("dst")
-	build.Build(build.BuildSrc(src), dst, system)
+	disk := api.NewDisk(src)
+	build.Build(dst, system, disk)
 }
 
 func args() *cobra.Command {

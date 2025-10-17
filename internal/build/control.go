@@ -5,15 +5,16 @@ import (
 	"os"
 	"strings"
 
+	"github.com/woolawin/catalogue/internal/api"
 	"github.com/woolawin/catalogue/internal/pkge"
 )
 
-func control(src BuildSrc, index pkge.Index) error {
+func control(index pkge.Index, disk api.Disk) error {
 
-	tarPath := filePath(src, "control.tar.gz")
-	dirPath := filePath(src, "control")
+	tarPath := disk.Path("control.tar.gz")
+	dirPath := disk.Path("control")
 
-	exists, asFile, err := fileExists(tarPath)
+	exists, asFile, err := disk.FileExists(tarPath)
 	if err != nil {
 		return err
 	}
@@ -24,7 +25,7 @@ func control(src BuildSrc, index pkge.Index) error {
 		return fmt.Errorf("data.tar.gz is not a file")
 	}
 
-	exists, asDir, err := dirExists(dirPath)
+	exists, asDir, err := disk.DirExists(dirPath)
 	if err != nil {
 		return err
 	}
@@ -33,13 +34,13 @@ func control(src BuildSrc, index pkge.Index) error {
 	}
 
 	if !exists {
-		err = createDir(dirPath)
+		err = disk.CreateDir(dirPath)
 		if err != nil {
 			return fmt.Errorf("can not create control directory: %w", err)
 		}
 	}
 
-	controlFile := filePath(src, "control", "control")
+	controlFile := disk.Path("control", "control")
 	file, err := os.OpenFile(controlFile, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return fmt.Errorf("can not open control file: %w", err)
@@ -54,7 +55,7 @@ func control(src BuildSrc, index pkge.Index) error {
 		return fmt.Errorf("failed to write to control file: %w", err)
 	}
 
-	return archiveDirectory(dirPath, tarPath)
+	return disk.Archive(dirPath, tarPath)
 }
 
 type ControlData struct {

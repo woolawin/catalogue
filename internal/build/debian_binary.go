@@ -3,11 +3,13 @@ package build
 import (
 	"fmt"
 	"os"
+
+	"github.com/woolawin/catalogue/internal/api"
 )
 
-func debianBinary(src BuildSrc) error {
-	path := filePath(src, "debian-binary")
-	exists, asFile, err := fileExists(path)
+func debianBinary(disk api.Disk) error {
+	path := disk.Path("debian-binary")
+	exists, asFile, err := disk.FileExists(path)
 	if err != nil {
 		return err
 	}

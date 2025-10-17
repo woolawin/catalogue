@@ -1,13 +1,17 @@
 package build
 
-import "fmt"
+import (
+	"fmt"
 
-func data(src BuildSrc) error {
+	"github.com/woolawin/catalogue/internal/api"
+)
 
-	tarPath := filePath(src, "data.tar.gz")
-	dirPath := filePath(src, "data")
+func data(disk api.Disk) error {
 
-	exists, asFile, err := fileExists(tarPath)
+	tarPath := disk.Path("data.tar.gz")
+	dirPath := disk.Path("data")
+
+	exists, asFile, err := disk.FileExists(tarPath)
 	if err != nil {
 		return err
 	}
@@ -18,7 +22,7 @@ func data(src BuildSrc) error {
 		return fmt.Errorf("data.tar.gz is not a file")
 	}
 
-	exists, asDir, err := dirExists(dirPath)
+	exists, asDir, err := disk.DirExists(dirPath)
 	if err != nil {
 		return err
 	}
@@ -27,9 +31,9 @@ func data(src BuildSrc) error {
 	}
 
 	if !exists {
-		emptyTar(tarPath)
+		disk.CreateTar(tarPath)
 	}
 
-	return archiveDirectory(dirPath, tarPath)
+	return disk.Archive(dirPath, tarPath)
 
 }

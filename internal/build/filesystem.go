@@ -5,12 +5,13 @@ import (
 	"strings"
 	"unicode"
 
+	"github.com/woolawin/catalogue/internal/api"
 	"github.com/woolawin/catalogue/internal/target"
 )
 
-func filesystem(src BuildSrc, system target.System) error {
-	fsPath := filePath(src, "filesyste,")
-	exists, asDir, err := dirExists(fsPath)
+func filesystem(system target.System, disk api.Disk) error {
+	fsPath := disk.Path("filesystem")
+	exists, asDir, err := disk.DirExists(fsPath)
 	if err != nil {
 		return err
 	}
@@ -22,7 +23,7 @@ func filesystem(src BuildSrc, system target.System) error {
 		return nil
 	}
 
-	_, dirs, err := lsDir(fsPath)
+	_, dirs, err := disk.List(fsPath)
 	if err != nil {
 		return err
 	}
@@ -34,7 +35,7 @@ func filesystem(src BuildSrc, system target.System) error {
 			return err
 		}
 
-		files, err := lsDirFilesRec(filePath(src, "filesystem", dir))
+		files, err := disk.ListRec(disk.Path("filesystem", dir))
 		if err != nil {
 			return fmt.Errorf("failed to list directory %s: %w", dir, err)
 		}

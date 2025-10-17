@@ -1,48 +1,42 @@
 package build
 
 import (
-	"archive/tar"
 	"bytes"
-	"compress/gzip"
 	"fmt"
-	"io"
 	"os"
-	"path/filepath"
-	"slices"
 
+	"github.com/woolawin/catalogue/internal/api"
 	"github.com/woolawin/catalogue/internal/pkge"
 	"github.com/woolawin/catalogue/internal/target"
 )
 
-type BuildSrc string
+func Build(dst string, system target.System, disk api.Disk) error {
 
-func Build(src BuildSrc, dst string, system target.System) error {
-
-	index, err := readPkgeIndex(src, system)
+	index, err := readPkgeIndex(system, disk)
 	if err != nil {
 		return err
 	}
 
-	err = debianBinary(src)
+	err = debianBinary(disk)
 	if err != nil {
 		return err
 	}
 
-	err = data(src)
+	err = data(disk)
 	if err != nil {
 		return err
 	}
 
-	err = control(src, index)
+	err = control(index, disk)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func readPkgeIndex(src BuildSrc, system target.System) (pkge.Index, error) {
-	path := filePath(src, "index.catalogue.toml")
-	exists, asFile, err := fileExists(path)
+func readPkgeIndex(system target.System, disk api.Disk) (pkge.Index, error) {
+	path := disk.Path("index.catalogue.toml")
+	exists, asFile, err := disk.FileExists(path)
 	if err != nil {
 		return pkge.EmptyIndex(), err
 	}
@@ -61,128 +55,4 @@ func readPkgeIndex(src BuildSrc, system target.System) (pkge.Index, error) {
 	}
 
 	return pkge.Parse(bytes.NewReader(data), system)
-}
-
-func fileExists(path string) (bool, bool, error) {
-	info, err := os.Stat(path)
-	if err != nil {
-		return false, false, err
-	}
-	return true, !info.IsDir(), nil
-}
-
-func dirExists(path string) (bool, bool, error) {
-	info, err := os.Stat(path)
-	if err != nil {
-		return false, false, err
-	}
-	return true, info.IsDir(), nil
-}
-
-func archiveDirectory(src string, dst string) error {
-	file, err := os.Create(dst)
-	if err != nil {
-		return nil
-	}
-	defer file.Close()
-
-	gzipWriter := gzip.NewWriter(file)
-	defer gzipWriter.Close()
-
-	tarWriter := tar.NewWriter(gzipWriter)
-	defer tarWriter.Close()
-
-	return filepath.Walk(src, func(file string, fi os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		header, err := tar.FileInfoHeader(fi, fi.Name())
-		if err != nil {
-			return err
-		}
-
-		relPath, err := filepath.Rel(filepath.Dir(src), file)
-		if err != nil {
-			return err
-		}
-		header.Name = relPath
-
-		if err := tarWriter.WriteHeader(header); err != nil {
-			return err
-		}
-
-		if !fi.Mode().IsRegular() {
-			return nil
-		}
-
-		f, err := os.Open(file)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-
-		_, err = io.Copy(tarWriter, f)
-		return err
-	})
-}
-
-func emptyTar(path string) error {
-	file, err := os.Create(path)
-	if err != nil {
-		return fmt.Errorf("can not create data.tar.gz: %w", err)
-	}
-	defer file.Close()
-	gzipWriter := gzip.NewWriter(file)
-	defer gzipWriter.Close()
-	tarWriter := tar.NewWriter(gzipWriter)
-	defer tarWriter.Close()
-	return nil
-}
-
-func filePath(src BuildSrc, parts ...string) string {
-	return filepath.Join(slices.Insert(parts, 0, string(src))...)
-}
-
-func createDir(path string) error {
-	return os.Mkdir(path, 0755)
-}
-
-func lsDir(path string) ([]string, []string, error) {
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read directory contents: %w", err)
-	}
-
-	var files []string
-	var dirs []string
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-			files = append(files, entry.Name())
-		} else {
-			dirs = append(dirs, entry.Name())
-		}
-	}
-
-	return files, dirs, nil
-}
-
-func lsDirFilesRec(path string) ([]string, error) {
-	var files []string
-	err := filepath.WalkDir(path, func(path string, entry os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if !entry.IsDir() {
-			files = append(files, entry.Name())
-		}
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-	return files, nil
 }
