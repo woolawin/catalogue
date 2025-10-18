@@ -5,13 +5,13 @@ import (
 	"unicode"
 
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/api"
+	"github.com/woolawin/catalogue/internal/ext"
 	"github.com/woolawin/catalogue/internal/target"
 )
 
-func filesystem(system target.System, disk api.Disk, reg target.Registry) error {
-	fsPath := disk.Path("filesystem")
-	exists, asDir, err := disk.DirExists(fsPath)
+func filesystem(system target.System, reg target.Registry, api ext.API) error {
+	fsPath := api.Disk().Path("filesystem")
+	exists, asDir, err := api.Disk().DirExists(fsPath)
 	if err != nil {
 		return internal.ErrOf(err, "can not check if directory %s exists", fsPath)
 	}
@@ -23,7 +23,7 @@ func filesystem(system target.System, disk api.Disk, reg target.Registry) error 
 		return nil
 	}
 
-	_, dirs, err := disk.List(fsPath)
+	_, dirs, err := api.Disk().List(fsPath)
 	if err != nil {
 		return internal.ErrOf(err, "can not list filesystem %s files", fsPath)
 	}
@@ -35,7 +35,7 @@ func filesystem(system target.System, disk api.Disk, reg target.Registry) error 
 			return internal.ErrOf(err, "invalid filesystem reference %s", dir)
 		}
 
-		files, err := disk.ListRec(disk.Path("filesystem", dir))
+		files, err := api.Disk().ListRec(api.Disk().Path("filesystem", dir))
 		if err != nil {
 			return internal.ErrOf(err, "can not recusivly list flesystem %s", dir)
 		}
@@ -66,10 +66,10 @@ func filesystem(system target.System, disk api.Disk, reg target.Registry) error 
 		}
 		for _, idx := range system.Rank(targets) {
 			targetName := targets[idx].Name
-			toPath := disk.Path("data")
-			fromPath := disk.Path(fsDirName(fs.Anchor, targetName))
+			toPath := api.Disk().Path("data")
+			fromPath := api.Disk().Path(fsDirName(fs.Anchor, targetName))
 			files := fs.TargetFiles[targetName]
-			err := disk.Move(toPath, fromPath, files, false)
+			err := api.Disk().Move(toPath, fromPath, files, false)
 			if err != nil {
 				return internal.ErrOf(err, "failed to move files from filesystem %s", fromPath)
 			}

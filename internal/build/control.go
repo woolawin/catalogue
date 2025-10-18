@@ -5,16 +5,16 @@ import (
 	"strings"
 
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/api"
+	"github.com/woolawin/catalogue/internal/ext"
 	"github.com/woolawin/catalogue/internal/pkge"
 )
 
-func control(index pkge.Index, disk api.Disk) error {
+func control(index pkge.Index, api ext.API) error {
 
-	tarPath := disk.Path("control.tar.gz")
-	dirPath := disk.Path("control")
+	tarPath := api.Disk().Path("control.tar.gz")
+	dirPath := api.Disk().Path("control")
 
-	exists, asFile, err := disk.FileExists(tarPath)
+	exists, asFile, err := api.Disk().FileExists(tarPath)
 	if err != nil {
 		return internal.ErrOf(err, "can not check if file control.tar.gz exists")
 	}
@@ -25,7 +25,7 @@ func control(index pkge.Index, disk api.Disk) error {
 		return internal.Err("data.tar.gz is not a file")
 	}
 
-	exists, asDir, err := disk.DirExists(dirPath)
+	exists, asDir, err := api.Disk().DirExists(dirPath)
 	if err != nil {
 		return internal.ErrOf(err, "can not check if directory control exists")
 	}
@@ -34,13 +34,13 @@ func control(index pkge.Index, disk api.Disk) error {
 	}
 
 	if !exists {
-		err = disk.CreateDir(dirPath)
+		err = api.Disk().CreateDir(dirPath)
 		if err != nil {
 			return internal.ErrOf(err, "can not create control directory")
 		}
 	}
 
-	controlFile := disk.Path("control", "control")
+	controlFile := api.Disk().Path("control", "control")
 	file, err := os.OpenFile(controlFile, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		return internal.ErrOf(err, "can not open file control/control")
@@ -55,7 +55,7 @@ func control(index pkge.Index, disk api.Disk) error {
 		return internal.ErrOf(err, "can not write to file control/control")
 	}
 
-	return disk.Archive(dirPath, tarPath)
+	return api.Disk().Archive(dirPath, tarPath)
 }
 
 type ControlData struct {

@@ -1,4 +1,4 @@
-package api
+package ext
 
 import "github.com/woolawin/catalogue/internal"
 

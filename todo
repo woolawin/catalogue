@@ -1,6 +1,9 @@
-implement download
 validate target, filesystem
 return Index, Regisry, err from index.Parse
 override system value from CLI
 move index.mergeMeta into build/control
 read existing control data
+
+=====
+
+test download

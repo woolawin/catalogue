@@ -7,8 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/api"
 	"github.com/woolawin/catalogue/internal/build"
+	"github.com/woolawin/catalogue/internal/ext"
 	"github.com/woolawin/catalogue/internal/target"
 )
 
@@ -43,9 +43,9 @@ func runBuild(cmd *cobra.Command, args []string) {
 		fmt.Println("BAD COMMAND: source is not a valid path")
 	}
 
-	disk := api.NewDisk(srcAbs)
+	api := ext.NewAPI(srcAbs)
 
-	err = build.Build(dst, system, disk)
+	err = build.Build(dst, system, api)
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())

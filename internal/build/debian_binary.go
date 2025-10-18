@@ -4,12 +4,12 @@ import (
 	"os"
 
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/api"
+	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func debianBinary(disk api.Disk) error {
-	path := disk.Path("debian-binary")
-	exists, asFile, err := disk.FileExists(path)
+func debianBinary(api ext.API) error {
+	path := api.Disk().Path("debian-binary")
+	exists, asFile, err := api.Disk().FileExists(path)
 	if err != nil {
 		return internal.ErrOf(err, "can not check if file debian-binary exists")
 	}

@@ -4,12 +4,12 @@ import (
 	"bytes"
 
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/api"
+	"github.com/woolawin/catalogue/internal/ext"
 	"github.com/woolawin/catalogue/internal/pkge"
 	"github.com/woolawin/catalogue/internal/target"
 )
 
-func download(system target.System, index pkge.Index, disk api.Disk, host api.Host, http api.HTTP) error {
+func download(system target.System, index pkge.Index, api ext.API) error {
 	if len(index.Downloads) == 0 {
 		return nil
 	}
@@ -19,18 +19,18 @@ func download(system target.System, index pkge.Index, disk api.Disk, host api.Ho
 			continue
 		}
 		dst := tgt.Destination
-		anchorPath, err := host.ResolveAnchor(dst.Host)
+		anchorPath, err := api.Host().ResolveAnchor(dst.Host)
 		if err != nil {
 			return internal.ErrOf(err, "failed download %s", name)
 		}
 
-		dstPath := disk.Path("data", anchorPath, dst.Path)
-		data, err := http.Fetch(tgt.Source)
+		dstPath := api.Disk().Path("data", anchorPath, dst.Path)
+		data, err := api.Http().Fetch(tgt.Source)
 		if err != nil {
 			return internal.ErrOf(err, "failed to download %s", name)
 		}
 
-		err = disk.WriteFile(dstPath, bytes.NewReader(data))
+		err = api.Disk().WriteFile(dstPath, bytes.NewReader(data))
 		if err != nil {
 			return internal.ErrOf(err, "can not download file %s", dst.String())
 		}
