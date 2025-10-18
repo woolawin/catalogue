@@ -1,4 +1,4 @@
-package pkge
+package component
 
 import (
 	"strings"

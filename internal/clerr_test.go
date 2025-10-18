@@ -7,6 +7,6 @@ import (
 
 func TestCLerr(t *testing.T) {
 	var err error
-	err = ErrOf(Err("invalid target name"), "can not parse index file")
+	err = ErrOf(Err("invalid target name"), "can not parse config file")
 	fmt.Println(err.Error())
 }

@@ -5,12 +5,12 @@ import (
 	"strings"
 
 	"github.com/woolawin/catalogue/internal"
+	"github.com/woolawin/catalogue/internal/component"
 	"github.com/woolawin/catalogue/internal/ext"
-	"github.com/woolawin/catalogue/internal/pkge"
 	"github.com/woolawin/catalogue/internal/target"
 )
 
-func control(system target.System, index pkge.Index, api ext.API) error {
+func control(system target.System, config component.Config, api ext.API) error {
 
 	tarPath := api.Disk().Path("control.tar.gz")
 	dirPath := api.Disk().Path("control")
@@ -50,7 +50,7 @@ func control(system target.System, index pkge.Index, api ext.API) error {
 
 	data := ControlData{}
 
-	md, err := metadata(index.Metadata, system)
+	md, err := metadata(config.Metadata, system)
 	if err != nil {
 		return internal.ErrOf(err, "can not generate metadata for control")
 	}
@@ -64,8 +64,8 @@ func control(system target.System, index pkge.Index, api ext.API) error {
 	return api.Disk().ArchiveDir(dirPath, tarPath)
 }
 
-func metadata(metadatas []*pkge.Metadata, system target.System) (pkge.Metadata, error) {
-	metadata := pkge.Metadata{}
+func metadata(metadatas []*component.Metadata, system target.System) (component.Metadata, error) {
+	metadata := component.Metadata{}
 	for _, data := range target.Ranked(system, metadatas) {
 
 		if len(metadata.Name) == 0 && len(data.Name) != 0 {
@@ -120,7 +120,7 @@ type ControlData struct {
 	Description  string
 }
 
-func (data *ControlData) SetFrom(metadata pkge.Metadata) {
+func (data *ControlData) SetFrom(metadata component.Metadata) {
 	if len(data.Package) == 0 {
 		data.Package = metadata.Name
 	}

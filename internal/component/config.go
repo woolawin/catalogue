@@ -1,4 +1,4 @@
-package pkge
+package component
 
 import (
 	"bytes"
@@ -12,94 +12,90 @@ import (
 	"github.com/woolawin/catalogue/internal/target"
 )
 
-type IndexTOML struct {
+type ConfigTOML struct {
 	Metadata map[string]MetadataTOML            `toml:"metadata"`
 	Target   map[string]TargetTOML              `toml:"target"`
 	Download map[string]map[string]DownloadTOML `toml:"download"`
 }
 
-type Index struct {
+type Config struct {
 	Metadata    []*Metadata
 	Targets     []target.Target
 	Downloads   map[string][]*Download
 	FileSystems map[string][]*FileSystem
 }
 
-func Parse(src io.Reader) (Index, error) {
+func Parse(src io.Reader) (Config, error) {
 	deserialized, err := deserialize(src)
 	if err != nil {
-		return Index{}, err
+		return Config{}, err
 	}
 	return load(&deserialized)
 }
 
-func Build(path string, disk ext.Disk) (Index, error) {
+func Build(path string, disk ext.Disk) (Config, error) {
 	exists, asFile, err := disk.FileExists(path)
 	if err != nil {
-		return Index{}, internal.ErrOf(err, "can not read '%s'", path)
+		return Config{}, internal.ErrOf(err, "can not read '%s'", path)
 	}
 
 	if !asFile {
-		return Index{}, internal.Err("'%s' is not a file", path)
+		return Config{}, internal.Err("'%s' is not a file", path)
 	}
 
 	if !exists {
-		return Index{}, nil
+		return Config{}, nil
 	}
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return Index{}, internal.ErrOf(err, "can not read '%s'", path)
+		return Config{}, internal.ErrOf(err, "can not read '%s'", path)
 	}
 
 	deserialized, err := deserialize(bytes.NewReader(data))
 	if err != nil {
-		return Index{}, err
+		return Config{}, err
 	}
 
-	index, err := load(&deserialized)
+	config, err := load(&deserialized)
 	if err != nil {
-		return Index{}, err
+		return Config{}, err
 	}
-	filesystems, err := loadFileSystems(index.Targets, disk)
+	filesystems, err := loadFileSystems(config.Targets, disk)
 	if err != nil {
-		return Index{}, err
+		return Config{}, err
 	}
-	index.FileSystems = filesystems
-	return index, nil
+	config.FileSystems = filesystems
+	return config, nil
 }
 
-func load(deserialized *IndexTOML) (Index, error) {
+func load(deserialized *ConfigTOML) (Config, error) {
 	targets, err := loadTargets(deserialized.Target)
 	if err != nil {
-		return Index{}, internal.ErrOf(err, "invalid target")
+		return Config{}, internal.ErrOf(err, "invalid target")
 	}
 
 	downloads, err := loadDownloads(deserialized.Download, targets)
 	if err != nil {
-		return Index{}, internal.ErrOf(err, "invalid index download")
+		return Config{}, internal.ErrOf(err, "invalid config download")
 	}
 	metadatas, err := loadMetadata(deserialized.Metadata, targets)
 	if err != nil {
-		return Index{}, internal.ErrOf(err, "invalid index metadata")
+		return Config{}, internal.ErrOf(err, "invalid config metadata")
 	}
-	index := Index{
+	config := Config{
 		Targets:   targets,
 		Metadata:  metadatas,
 		Downloads: downloads,
 	}
-	return index, nil
+	return config, nil
 }
 
-func EmptyIndex() Index {
-	return Index{}
-}
-
-func deserialize(src io.Reader) (IndexTOML, error) {
-	deserialized := IndexTOML{}
+func deserialize(src io.Reader) (ConfigTOML, error) {
+	deserialized := ConfigTOML{}
 	err := toml.NewDecoder(src).Decode(&deserialized)
 	if err != nil {
-		return IndexTOML{}, internal.ErrOf(err, "can not deserialize index.package.toml")
+		return ConfigTOML{}, internal.ErrOf(err, "can not deserialize catalogue.toml")
 	}
 	return deserialized, nil
 }

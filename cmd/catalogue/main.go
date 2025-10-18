@@ -10,8 +10,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/build"
+	"github.com/woolawin/catalogue/internal/component"
 	"github.com/woolawin/catalogue/internal/ext"
-	"github.com/woolawin/catalogue/internal/pkge"
 	"github.com/woolawin/catalogue/internal/target"
 )
 
@@ -84,14 +84,14 @@ func runBuild(cmd *cobra.Command, args []string) {
 
 	api := ext.NewAPI(srcAbs)
 
-	index, err := pkge.Build("index.catalogue.toml", api.Disk())
+	config, err := component.Build("catalogue.toml", api.Disk())
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 
-	err = build.Build(dst, index, system, api)
+	err = build.Build(dst, config, system, api)
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())

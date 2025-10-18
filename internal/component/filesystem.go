@@ -1,4 +1,4 @@
-package pkge
+package component
 
 import (
 	"github.com/woolawin/catalogue/internal"

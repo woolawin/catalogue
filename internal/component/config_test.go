@@ -1,4 +1,4 @@
-package pkge
+package component
 
 import (
 	"fmt"
@@ -26,7 +26,7 @@ architecture='amd64'
 		t.Fatal(err)
 	}
 
-	expected := IndexTOML{
+	expected := ConfigTOML{
 		Metadata: map[string]MetadataTOML{
 			"all": {
 				Name:         "FooBar",
@@ -76,7 +76,7 @@ dst="path://root/usr/bin"
 		t.Fatal(err)
 	}
 
-	expected := IndexTOML{
+	expected := ConfigTOML{
 		Metadata: map[string]MetadataTOML{
 			"all": {
 				Name:         "FooBar",

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/woolawin/catalogue/internal/pkge"
+	"github.com/woolawin/catalogue/internal/component"
 	"github.com/woolawin/catalogue/internal/target"
 )
 
@@ -42,7 +42,7 @@ Description: meh
 func TestMergeMeta(t *testing.T) {
 	system := target.System{Architecture: target.AMD64}
 
-	metadatas := []*pkge.Metadata{
+	metadatas := []*component.Metadata{
 		{
 			Target:       target.Target{Name: "all", All: true},
 			Name:         "FooBar",
@@ -68,7 +68,7 @@ func TestMergeMeta(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := pkge.Metadata{
+	expected := component.Metadata{
 		Name:         "FooBar",
 		Dependencies: []string{"foo", "bar"},
 		Section:      "utilities",
