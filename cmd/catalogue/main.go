@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/api"
+	"github.com/woolawin/catalogue/internal/build"
 	"github.com/woolawin/catalogue/internal/target"
 )
 
@@ -24,18 +25,33 @@ func runAdd(cmd *cobra.Command, args []string) {
 }
 
 func runBuild(cmd *cobra.Command, args []string) {
-	_, err := target.GetSystem()
+	system, err := target.GetSystem()
 	if err != nil {
 		return
 	}
-	src, _ := cmd.Flags().GetString("src")
-	dst, _ := cmd.Flags().GetString("dst")
-	srcAbs, err := filepath.Abs(src)
-	api.NewDisk(srcAbs)
+	src, err := cmd.Flags().GetString("src")
+	if err != nil {
+		fmt.Println("BAD COMMAND: --src flag missing")
+	}
+	dst, err := cmd.Flags().GetString("dst")
+	if err != nil {
+		fmt.Println("BAD COMMAND: --dst flag missing")
+	}
 
-	fmt.Println(srcAbs)
-	fmt.Println(dst)
-	// build.Build(dst, system, disk)
+	srcAbs, err := filepath.Abs(src)
+	if err != nil {
+		fmt.Println("BAD COMMAND: source is not a valid path")
+	}
+
+	disk := api.NewDisk(srcAbs)
+
+	err = build.Build(dst, system, disk)
+	if err != nil {
+		fmt.Println("ERROR")
+		fmt.Println(err.Error())
+	} else {
+		fmt.Println("COMPLETED")
+	}
 }
 
 func args() *cobra.Command {
