@@ -36,11 +36,11 @@ func Parse(src io.Reader) (Index, error) {
 func Build(path string, disk ext.Disk) (Index, error) {
 	exists, asFile, err := disk.FileExists(path)
 	if err != nil {
-		return Index{}, internal.ErrOf(err, "can not read index.catalogue.toml")
+		return Index{}, internal.ErrOf(err, "can not read '%s'", path)
 	}
 
 	if !asFile {
-		return Index{}, internal.Err("index.catalogue.toml is not a file")
+		return Index{}, internal.Err("'%s' is not a file", path)
 	}
 
 	if !exists {
@@ -49,7 +49,7 @@ func Build(path string, disk ext.Disk) (Index, error) {
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return Index{}, internal.ErrOf(err, "can not read index.catalogue.toml")
+		return Index{}, internal.ErrOf(err, "can not read '%s'", path)
 	}
 
 	deserialized, err := deserialize(bytes.NewReader(data))
