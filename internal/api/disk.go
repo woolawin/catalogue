@@ -142,11 +142,11 @@ func (disk *DiskImpl) Move(toPath string, fromPath string, files []string, overw
 	}
 
 	for _, file := range files {
-		newPath := disk.Path(disk.base, toPath, file)
+		newPath := filepath.Join(toPath, file)
 		if disk.unsafe(newPath) {
 			return internal.ErrFileBlocked(toPath, "written")
 		}
-		oldPath := disk.Path(disk.base, fromPath, file)
+		oldPath := filepath.Join(fromPath, file)
 		if disk.unsafe(oldPath) {
 			return internal.ErrFileBlocked(oldPath, "read")
 		}
@@ -156,6 +156,7 @@ func (disk *DiskImpl) Move(toPath string, fromPath string, files []string, overw
 		} else if !os.IsNotExist(err) {
 			continue
 		}
+		os.MkdirAll(filepath.Dir(newPath), 0755)
 		err = os.Rename(oldPath, newPath)
 		if err != nil {
 			return internal.ErrOf(err, "can not move file %s to %s", fromPath, toPath)

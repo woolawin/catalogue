@@ -65,16 +65,13 @@ func filesystem(system target.System, disk api.Disk, reg target.Registry) error 
 			return internal.ErrOf(err, "invalid targets to move filesystem")
 		}
 		for _, idx := range system.Rank(targets) {
-			fromPath := strings.Builder{}
-			fromPath.WriteString("filesystem/")
-			fromPath.WriteString(fs.Anchor)
 			targetName := targets[idx].Name
-			fromPath.WriteString(targetName)
+			toPath := disk.Path("data")
+			fromPath := disk.Path(fsDirName(fs.Anchor, targetName))
 			files := fs.TargetFiles[targetName]
-			from := fromPath.String()
-			err := disk.Move("data", from, files, false)
+			err := disk.Move(toPath, fromPath, files, false)
 			if err != nil {
-				return internal.ErrOf(err, "failed to move files from filesystem %s", from)
+				return internal.ErrOf(err, "failed to move files from filesystem %s", fromPath)
 			}
 		}
 	}
@@ -86,6 +83,15 @@ type FileSystem struct {
 	Anchor      string
 	Targets     []string
 	TargetFiles map[string][]string
+}
+
+func fsDirName(anchor string, target string) string {
+	path := strings.Builder{}
+	path.WriteString("filesystem/")
+	path.WriteString(anchor)
+	path.WriteString(".")
+	path.WriteString(target)
+	return path.String()
 }
 
 type FileSystemRef struct {
