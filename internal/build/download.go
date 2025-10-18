@@ -9,11 +9,11 @@ import (
 	"github.com/woolawin/catalogue/internal/target"
 )
 
-func download(system target.System, index pkge.Index, api ext.API) error {
-	if len(index.Downloads) == 0 {
+func download(system target.System, downloads map[string][]*pkge.Download, api ext.API) error {
+	if len(downloads) == 0 {
 		return nil
 	}
-	for _, download := range index.Downloads {
+	for _, download := range downloads {
 		tgt, matched := target.RankedFirst(system, download, &pkge.Download{})
 		if !matched {
 			continue

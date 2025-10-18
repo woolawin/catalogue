@@ -5,6 +5,10 @@ import (
 	"unicode"
 )
 
+func ValidateNameAndTarget(value string) (string, []string, error) {
+	return "", nil, nil
+}
+
 func ValidateName(value string) error {
 	return validateNameWithOffset(value, 0)
 }

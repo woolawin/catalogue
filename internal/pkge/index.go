@@ -1,11 +1,14 @@
 package pkge
 
 import (
+	"bytes"
 	"io"
+	"os"
 	"strings"
 
 	toml "github.com/pelletier/go-toml/v2"
 	"github.com/woolawin/catalogue/internal"
+	"github.com/woolawin/catalogue/internal/ext"
 	"github.com/woolawin/catalogue/internal/target"
 )
 
@@ -36,10 +39,10 @@ type RawTarget struct {
 }
 
 type Index struct {
-	Meta      Meta
-	Targets   []target.Target
-	Registry  target.Registry
-	Downloads map[string][]*Download
+	Meta        Meta
+	Targets     []target.Target
+	Downloads   map[string][]*Download
+	FileSystems map[string][]*FileSystem
 }
 
 func Parse(src io.Reader, system target.System) (Index, error) {
@@ -48,6 +51,42 @@ func Parse(src io.Reader, system target.System) (Index, error) {
 		return Index{}, err
 	}
 	return construct(&raw, system)
+}
+
+func Build(path string, system target.System, disk ext.Disk) (Index, error) {
+	exists, asFile, err := disk.FileExists(path)
+	if err != nil {
+		return Index{}, internal.ErrOf(err, "can not read index.catalogue.toml")
+	}
+
+	if !asFile {
+		return Index{}, internal.Err("index.catalogue.toml is not a file")
+	}
+
+	if !exists {
+		return Index{}, nil
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return Index{}, internal.ErrOf(err, "can not read index.catalogue.toml")
+	}
+
+	raw, err := deserialize(bytes.NewReader(data))
+	if err != nil {
+		return Index{}, err
+	}
+
+	index, err := construct(&raw, system)
+	if err != nil {
+		return Index{}, err
+	}
+	filesystems, err := loadFileSystems(index.Targets, disk)
+	if err != nil {
+		return Index{}, err
+	}
+	index.FileSystems = filesystems
+	return index, nil
 }
 
 func construct(raw *Raw, system target.System) (Index, error) {
@@ -82,7 +121,7 @@ func construct(raw *Raw, system target.System) (Index, error) {
 	if err != nil {
 		return Index{}, internal.ErrOf(err, "failed to build package metadata")
 	}
-	return Index{Meta: meta, Registry: registry, Targets: targets, Downloads: downloads}, nil
+	return Index{Meta: meta, Targets: targets, Downloads: downloads}, nil
 }
 
 func EmptyIndex() Index {

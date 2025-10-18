@@ -8,7 +8,7 @@ import (
 	"github.com/woolawin/catalogue/internal/target"
 )
 
-func data(system target.System, index pkge.Index, registry target.Registry, api ext.API) error {
+func data(system target.System, index pkge.Index, api ext.API) error {
 	tarPath := api.Disk().Path("data.tar.gz")
 	dirPath := api.Disk().Path("data")
 
@@ -31,7 +31,7 @@ func data(system target.System, index pkge.Index, registry target.Registry, api 
 		return fmt.Errorf("data is not a directory")
 	}
 
-	filesystem(system, registry, api)
-	download(system, index, api)
+	filesystem(system, index.FileSystems, api)
+	download(system, index.Downloads, api)
 	return nil
 }
