@@ -8,6 +8,7 @@ import (
 )
 
 type Download struct {
+	ID          string
 	Name        string
 	Target      target.Target
 	Source      *url.URL

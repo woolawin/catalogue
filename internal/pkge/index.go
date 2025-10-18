@@ -232,7 +232,7 @@ func (raw *Raw) validate() (map[string][]*Download, error) {
 			if err != nil {
 				return nil, internal.ErrOf(err, "invalid download %s", name)
 			}
-
+			download.ID = name + "." + tgt
 			download.Name = name
 			download.Target = target
 			_, ok := downloads[name]
