@@ -30,7 +30,7 @@ func Parse(src io.Reader) (Index, error) {
 	if err != nil {
 		return Index{}, err
 	}
-	return construct(&deserialized)
+	return load(&deserialized)
 }
 
 func Build(path string, disk ext.Disk) (Index, error) {
@@ -57,7 +57,7 @@ func Build(path string, disk ext.Disk) (Index, error) {
 		return Index{}, err
 	}
 
-	index, err := construct(&deserialized)
+	index, err := load(&deserialized)
 	if err != nil {
 		return Index{}, err
 	}
@@ -69,8 +69,7 @@ func Build(path string, disk ext.Disk) (Index, error) {
 	return index, nil
 }
 
-func construct(deserialized *IndexTOML) (Index, error) {
-
+func load(deserialized *IndexTOML) (Index, error) {
 	targets, err := loadTargets(deserialized.Target)
 	if err != nil {
 		return Index{}, internal.ErrOf(err, "invalid target")
