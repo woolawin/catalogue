@@ -31,7 +31,7 @@ func (dl *RawDownload) clean() {
 }
 
 func loadDownloads(raw map[string]map[string]RawDownload, targets []target.Target) (map[string][]*Download, error) {
-	downloads := make(map[string][]*Download)
+	var downloads map[string][]*Download
 	for name, tgts := range raw {
 		err := internal.ValidateName(name)
 		if err != nil {
@@ -55,6 +55,9 @@ func loadDownloads(raw map[string]map[string]RawDownload, targets []target.Targe
 			download.ID = name + "." + tgt
 			download.Name = name
 			download.Target = target
+			if downloads == nil {
+				downloads = make(map[string][]*Download)
+			}
 			_, ok := downloads[name]
 			if !ok {
 				downloads[name] = []*Download{}

@@ -1,9 +1,23 @@
 package pkge
 
 import (
+	"strings"
+
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/target"
 )
+
+type RawMetadata struct {
+	Name            string   `toml:"name"`
+	Dependencies    []string `toml:"dependencies"`
+	Section         string   `toml:"section"`
+	Priority        string   `toml:"priority"`
+	Homepage        string   `toml:"homepage"`
+	Maintainer      string   `toml:"maintainer"`
+	Description     string   `toml:"description"`
+	Architecture    string   `toml:"architecture"`
+	Recommendations []string `toml:"recommendations"`
+}
 
 type Metadata struct {
 	Target          target.Target
@@ -22,7 +36,7 @@ func (metadata *Metadata) GetTarget() target.Target {
 	return metadata.Target
 }
 
-func loadMetadata(raw map[string]Meta, targets []target.Target) ([]*Metadata, error) {
+func loadMetadata(raw map[string]RawMetadata, targets []target.Target) ([]*Metadata, error) {
 
 	var metadatas []*Metadata
 
@@ -37,15 +51,15 @@ func loadMetadata(raw map[string]Meta, targets []target.Target) ([]*Metadata, er
 		}
 		metadata := Metadata{
 			Target:          tgt,
-			Name:            meta.Name,
-			Dependencies:    meta.Dependencies,
-			Section:         meta.Section,
-			Priority:        meta.Priority,
-			Homepage:        meta.Homepage,
-			Maintainer:      meta.Maintainer,
-			Description:     meta.Description,
-			Architecture:    meta.Architecture,
-			Recommendations: meta.Recommendations,
+			Name:            strings.TrimSpace(meta.Name),
+			Dependencies:    normalizeList(meta.Dependencies),
+			Section:         strings.TrimSpace(meta.Section),
+			Priority:        strings.TrimSpace(meta.Priority),
+			Homepage:        strings.TrimSpace(meta.Homepage),
+			Maintainer:      strings.TrimSpace(meta.Maintainer),
+			Description:     strings.TrimSpace(meta.Description),
+			Architecture:    strings.TrimSpace(meta.Architecture),
+			Recommendations: normalizeList(meta.Recommendations),
 		}
 		metadatas = append(metadatas, &metadata)
 	}

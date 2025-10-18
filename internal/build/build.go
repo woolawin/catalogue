@@ -13,7 +13,7 @@ func Build(dst string, index pkge.Index, system target.System, api ext.API) erro
 		return internal.ErrOf(err, "can not create debian-binary")
 	}
 
-	err = control(index, api)
+	err = control(system, index, api)
 	if err != nil {
 		return internal.ErrOf(err, "can not create control.tar.gz")
 	}

@@ -28,7 +28,7 @@ architecture='amd64'
 	}
 
 	expected := Raw{
-		Meta: map[string]Meta{
+		Meta: map[string]RawMetadata{
 			"all": {
 				Name:         "FooBar",
 				Dependencies: []string{"foo", "bar"},
@@ -78,7 +78,7 @@ dst="path://root/usr/bin"
 	}
 
 	expected := Raw{
-		Meta: map[string]Meta{
+		Meta: map[string]RawMetadata{
 			"all": {
 				Name:         "FooBar",
 				Dependencies: []string{"foo", "bar"},
@@ -125,7 +125,7 @@ func TestConstruct(t *testing.T) {
 				OSReleaseVersionCodeName: "cody cod",
 			},
 		},
-		Meta: map[string]Meta{
+		Meta: map[string]RawMetadata{
 			"all": {
 				Name:            "foo",
 				Dependencies:    []string{"bar", "baz"},
@@ -139,79 +139,37 @@ func TestConstruct(t *testing.T) {
 			},
 		},
 	}
-	system := target.System{Architecture: target.AMD64}
-	actual, err := construct(&raw, system)
+	actual, _, err := construct(&raw)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	expected := Index{
-		Targets: []target.Target{
+		/* 		Targets: []target.Target{
+		{
+			Name:                     "ubuntu",
+			All:                      false,
+			Architecture:             "amd64",
+			OSReleaseID:              "ubuntu",
+			OSReleaseVersion:         "22",
+			OSReleaseVersionID:       "22.04",
+			OSReleaseVersionCodeName: "cody cod",
+		},
+		},*/
+		Metadata: []*Metadata{
 			{
-				Name:                     "ubuntu",
-				All:                      false,
-				Architecture:             "amd64",
-				OSReleaseID:              "ubuntu",
-				OSReleaseVersion:         "22",
-				OSReleaseVersionID:       "22.04",
-				OSReleaseVersionCodeName: "cody cod",
+				Target:          target.Target{Name: "all", All: true},
+				Name:            "foo",
+				Dependencies:    []string{"bar", "baz"},
+				Section:         "other",
+				Priority:        "normal",
+				Homepage:        "https://foo.com",
+				Maintainer:      "me",
+				Description:     "example",
+				Architecture:    "amd64",
+				Recommendations: []string{"baz"},
 			},
 		},
-		Meta: Meta{
-			Name:            "foo",
-			Dependencies:    []string{"bar", "baz"},
-			Section:         "other",
-			Priority:        "normal",
-			Homepage:        "https://foo.com",
-			Maintainer:      "me",
-			Description:     "example",
-			Architecture:    "amd64",
-			Recommendations: []string{"baz"},
-		},
-	}
-
-	if diff := cmp.Diff(actual, expected); diff != "" {
-		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
-	}
-}
-
-func TestMergeMeta(t *testing.T) {
-	system := target.System{Architecture: target.AMD64}
-
-	raw := Raw{
-		Meta: map[string]Meta{
-			"all": {
-				Name:         "FooBar",
-				Dependencies: []string{"foo", "bar"},
-				Section:      "utilities",
-				Priority:     "normal",
-				Homepage:     "https://foobar.com",
-				Description:  "foo bar",
-				Maintainer:   "Bob Doe",
-			},
-			"amd64": {
-				Architecture: "amd64",
-				Maintainer:   "Jane Doe",
-			},
-			"arm64": {
-				Recommendations: []string{"happy", "puppy"},
-			},
-		},
-	}
-
-	actual, err := mergeMeta(&raw, system, target.NewRegistry(nil))
-	if err != nil {
-		t.Fatal(err)
-	}
-	expected := Meta{
-		Name:         "FooBar",
-		Dependencies: []string{"foo", "bar"},
-		Section:      "utilities",
-		Priority:     "normal",
-		Homepage:     "https://foobar.com",
-		Description:  "foo bar",
-		Maintainer:   "Jane Doe",
-		Architecture: "amd64",
 	}
 
 	if diff := cmp.Diff(actual, expected); diff != "" {
@@ -245,9 +203,9 @@ func TestCleanString(t *testing.T) {
 	}
 }
 
-func TestCleanList(t *testing.T) {
+func TestNormalizeList(t *testing.T) {
 	actual := []string{"foo", "bar"}
-	cleanList(&actual)
+	actual = normalizeList(actual)
 	expected := []string{"foo", "bar"}
 
 	if diff := cmp.Diff(actual, expected); diff != "" {
@@ -255,7 +213,7 @@ func TestCleanList(t *testing.T) {
 	}
 
 	actual = []string{" foo ", " bar "}
-	cleanList(&actual)
+	actual = normalizeList(actual)
 	expected = []string{"foo", "bar"}
 
 	if diff := cmp.Diff(actual, expected); diff != "" {
@@ -263,7 +221,7 @@ func TestCleanList(t *testing.T) {
 	}
 
 	actual = []string{" foo ", " ", "baz"}
-	cleanList(&actual)
+	actual = normalizeList(actual)
 	expected = []string{"foo", "baz"}
 
 	if diff := cmp.Diff(actual, expected); diff != "" {
@@ -271,7 +229,7 @@ func TestCleanList(t *testing.T) {
 	}
 
 	actual = []string{"  ", " "}
-	cleanList(&actual)
+	actual = normalizeList(actual)
 	expected = nil
 
 	if diff := cmp.Diff(actual, expected); diff != "" {
@@ -281,8 +239,8 @@ func TestCleanList(t *testing.T) {
 
 func TestCleanRaw(t *testing.T) {
 	actual := Raw{
-		Meta: map[string]Meta{
-			"all": Meta{Name: " fooo  "},
+		Meta: map[string]RawMetadata{
+			"all": RawMetadata{Name: " fooo  "},
 		},
 		Target: map[string]RawTarget{
 			"mine": {
@@ -306,8 +264,8 @@ func TestCleanRaw(t *testing.T) {
 	actual.Clean()
 
 	expected := Raw{
-		Meta: map[string]Meta{
-			"all": Meta{Name: "fooo"},
+		Meta: map[string]RawMetadata{
+			"all": RawMetadata{Name: "fooo"},
 		},
 		Target: map[string]RawTarget{
 			"mine": {

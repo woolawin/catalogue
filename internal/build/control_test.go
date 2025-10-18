@@ -2,6 +2,10 @@ package build
 
 import (
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/woolawin/catalogue/internal/pkge"
+	"github.com/woolawin/catalogue/internal/target"
 )
 
 func TestControlDataString(t *testing.T) {
@@ -32,5 +36,50 @@ Description: meh
 `
 	if actual != expected {
 		t.Fatalf("'%s' was not '%s'\n", actual, expected)
+	}
+}
+
+func TestMergeMeta(t *testing.T) {
+	system := target.System{Architecture: target.AMD64}
+
+	metadatas := []*pkge.Metadata{
+		{
+			Target:       target.Target{Name: "all", All: true},
+			Name:         "FooBar",
+			Dependencies: []string{"foo", "bar"},
+			Section:      "utilities",
+			Priority:     "normal",
+			Homepage:     "https://foobar.com",
+			Description:  "foo bar",
+			Maintainer:   "Bob Doe",
+		},
+		{
+			Target:       target.Target{Name: "amd64", Architecture: target.AMD64},
+			Architecture: "amd64",
+			Maintainer:   "Jane Doe",
+		},
+		{
+			Target:          target.Target{Name: "arm64", Architecture: target.ARM64},
+			Recommendations: []string{"happy", "puppy"},
+		},
+	}
+
+	actual, err := metadata(metadatas, system)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := pkge.Metadata{
+		Name:         "FooBar",
+		Dependencies: []string{"foo", "bar"},
+		Section:      "utilities",
+		Priority:     "normal",
+		Homepage:     "https://foobar.com",
+		Description:  "foo bar",
+		Maintainer:   "Jane Doe",
+		Architecture: "amd64",
+	}
+
+	if diff := cmp.Diff(actual, expected); diff != "" {
+		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 	}
 }

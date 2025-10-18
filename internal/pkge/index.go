@@ -12,20 +12,8 @@ import (
 	"github.com/woolawin/catalogue/internal/target"
 )
 
-type Meta struct {
-	Name            string   `toml:"name"`
-	Dependencies    []string `toml:"dependencies"`
-	Section         string   `toml:"section"`
-	Priority        string   `toml:"priority"`
-	Homepage        string   `toml:"homepage"`
-	Maintainer      string   `toml:"maintainer"`
-	Description     string   `toml:"description"`
-	Architecture    string   `toml:"architecture"`
-	Recommendations []string `toml:"recommendations"`
-}
-
 type Raw struct {
-	Meta     map[string]Meta                   `toml:"meta"`
+	Meta     map[string]RawMetadata            `toml:"meta"`
 	Target   map[string]RawTarget              `toml:"target"`
 	Download map[string]map[string]RawDownload `toml:"download"`
 }
@@ -39,21 +27,21 @@ type RawTarget struct {
 }
 
 type Index struct {
-	Meta        Meta
-	Targets     []target.Target
+	Metadata    []*Metadata
 	Downloads   map[string][]*Download
 	FileSystems map[string][]*FileSystem
 }
 
-func Parse(src io.Reader, system target.System) (Index, error) {
+func Parse(src io.Reader) (Index, error) {
 	raw, err := deserialize(src)
 	if err != nil {
 		return Index{}, err
 	}
-	return construct(&raw, system)
+	index, _, err := construct(&raw)
+	return index, err
 }
 
-func Build(path string, system target.System, disk ext.Disk) (Index, error) {
+func Build(path string, disk ext.Disk) (Index, error) {
 	exists, asFile, err := disk.FileExists(path)
 	if err != nil {
 		return Index{}, internal.ErrOf(err, "can not read index.catalogue.toml")
@@ -77,11 +65,11 @@ func Build(path string, system target.System, disk ext.Disk) (Index, error) {
 		return Index{}, err
 	}
 
-	index, err := construct(&raw, system)
+	index, targets, err := construct(&raw)
 	if err != nil {
 		return Index{}, err
 	}
-	filesystems, err := loadFileSystems(index.Targets, disk)
+	filesystems, err := loadFileSystems(targets, disk)
 	if err != nil {
 		return Index{}, err
 	}
@@ -89,17 +77,17 @@ func Build(path string, system target.System, disk ext.Disk) (Index, error) {
 	return index, nil
 }
 
-func construct(raw *Raw, system target.System) (Index, error) {
+func construct(raw *Raw) (Index, []target.Target, error) {
 
-	var targets []target.Target
+	targets := target.BuiltIns()
 
 	for name, values := range raw.Target {
 		if target.IsReservedTargetName(name) {
-			return Index{}, internal.Err("can not define target with reserved name '%s'", name)
+			return Index{}, nil, internal.Err("can not define target with reserved name '%s'", name)
 		}
 		valid, invalid := target.ValidTargetName(name)
 		if !valid {
-			return Index{}, internal.Err("invalid target name, '%s' not valid", invalid)
+			return Index{}, nil, internal.Err("invalid target name, '%s' not valid", invalid)
 		}
 		tgt := target.Target{
 			Name:                     name,
@@ -114,14 +102,17 @@ func construct(raw *Raw, system target.System) (Index, error) {
 
 	downloads, err := loadDownloads(raw.Download, targets)
 	if err != nil {
-		return Index{}, internal.ErrOf(err, "invalid index.package.json")
+		return Index{}, nil, internal.ErrOf(err, "invalid index download")
 	}
-	registry := target.NewRegistry(targets)
-	meta, err := mergeMeta(raw, system, registry)
+	metadatas, err := loadMetadata(raw.Meta, targets)
 	if err != nil {
-		return Index{}, internal.ErrOf(err, "failed to build package metadata")
+		return Index{}, nil, internal.ErrOf(err, "invalid index metadata")
 	}
-	return Index{Meta: meta, Targets: targets, Downloads: downloads}, nil
+	index := Index{
+		Metadata:  metadatas,
+		Downloads: downloads,
+	}
+	return index, targets, nil
 }
 
 func EmptyIndex() Index {
@@ -137,65 +128,7 @@ func deserialize(src io.Reader) (Raw, error) {
 	return raw, nil
 }
 
-func mergeMeta(pi *Raw, system target.System, registry target.Registry) (Meta, error) {
-	meta := Meta{}
-	var targetNames []string
-	for key := range pi.Meta {
-		targetNames = append(targetNames, key)
-	}
-	targets, err := registry.Load(targetNames)
-	if err != nil {
-		return Meta{}, internal.ErrOf(err, "can not find targets for metadata")
-	}
-
-	for _, idx := range system.Rank(targets) {
-		data := pi.Meta[targets[idx].Name]
-
-		if len(meta.Name) == 0 && len(data.Name) != 0 {
-			meta.Name = data.Name
-		}
-
-		if len(meta.Dependencies) == 0 && len(data.Dependencies) != 0 {
-			meta.Dependencies = data.Dependencies
-		}
-
-		if len(meta.Section) == 0 && len(data.Section) != 0 {
-			meta.Section = data.Section
-		}
-
-		if len(meta.Priority) == 0 && len(data.Priority) != 0 {
-			meta.Priority = data.Priority
-		}
-
-		if len(meta.Homepage) == 0 && len(data.Homepage) != 0 {
-			meta.Homepage = data.Homepage
-		}
-
-		if len(meta.Maintainer) == 0 && len(data.Maintainer) != 0 {
-			meta.Maintainer = data.Maintainer
-		}
-
-		if len(meta.Description) == 0 && len(data.Description) != 0 {
-			meta.Description = data.Description
-		}
-
-		if len(meta.Architecture) == 0 && len(data.Architecture) != 0 {
-			meta.Architecture = data.Architecture
-		}
-
-		if len(meta.Recommendations) == 0 && len(data.Recommendations) != 0 {
-			meta.Recommendations = data.Recommendations
-		}
-	}
-	return meta, nil
-}
-
 func (raw *Raw) Clean() {
-	for key := range raw.Meta {
-		meta := raw.Meta[key]
-		meta.clean()
-		raw.Meta[key] = meta
-	}
 
 	for key := range raw.Target {
 		target := raw.Target[key]
@@ -203,18 +136,6 @@ func (raw *Raw) Clean() {
 		raw.Target[key] = target
 	}
 
-}
-
-func (meta *Meta) clean() {
-	cleanString(&meta.Name)
-	cleanList(&meta.Dependencies)
-	cleanString(&meta.Section)
-	cleanString(&meta.Priority)
-	cleanString(&meta.Homepage)
-	cleanString(&meta.Maintainer)
-	cleanString(&meta.Description)
-	cleanString(&meta.Architecture)
-	cleanList(&meta.Recommendations)
 }
 
 func (target *RawTarget) clean() {
@@ -229,13 +150,13 @@ func cleanString(value *string) {
 	*value = strings.TrimSpace(*value)
 }
 
-func cleanList(list *[]string) {
+func normalizeList(list []string) []string {
 	var cleaned []string
-	for _, value := range *list {
+	for _, value := range list {
 		cleanString(&value)
 		if len(value) != 0 {
 			cleaned = append(cleaned, value)
 		}
 	}
-	*list = cleaned
+	return cleaned
 }

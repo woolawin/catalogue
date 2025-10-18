@@ -7,9 +7,10 @@ import (
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/ext"
 	"github.com/woolawin/catalogue/internal/pkge"
+	"github.com/woolawin/catalogue/internal/target"
 )
 
-func control(index pkge.Index, api ext.API) error {
+func control(system target.System, index pkge.Index, api ext.API) error {
 
 	tarPath := api.Disk().Path("control.tar.gz")
 	dirPath := api.Disk().Path("control")
@@ -48,7 +49,12 @@ func control(index pkge.Index, api ext.API) error {
 	defer file.Close()
 
 	data := ControlData{}
-	data.SetFrom(index)
+
+	md, err := metadata(index.Metadata, system)
+	if err != nil {
+		return internal.ErrOf(err, "can not generate metadata for control")
+	}
+	data.SetFrom(md)
 
 	_, err = file.Write([]byte(data.String()))
 	if err != nil {
@@ -56,6 +62,49 @@ func control(index pkge.Index, api ext.API) error {
 	}
 
 	return api.Disk().Archive(dirPath, tarPath)
+}
+
+func metadata(metadatas []*pkge.Metadata, system target.System) (pkge.Metadata, error) {
+	metadata := pkge.Metadata{}
+	for _, data := range target.Ranked(system, metadatas) {
+
+		if len(metadata.Name) == 0 && len(data.Name) != 0 {
+			metadata.Name = data.Name
+		}
+
+		if len(metadata.Dependencies) == 0 && len(data.Dependencies) != 0 {
+			metadata.Dependencies = data.Dependencies
+		}
+
+		if len(metadata.Section) == 0 && len(data.Section) != 0 {
+			metadata.Section = data.Section
+		}
+
+		if len(metadata.Priority) == 0 && len(data.Priority) != 0 {
+			metadata.Priority = data.Priority
+		}
+
+		if len(metadata.Homepage) == 0 && len(data.Homepage) != 0 {
+			metadata.Homepage = data.Homepage
+		}
+
+		if len(metadata.Maintainer) == 0 && len(data.Maintainer) != 0 {
+			metadata.Maintainer = data.Maintainer
+		}
+
+		if len(metadata.Description) == 0 && len(data.Description) != 0 {
+			metadata.Description = data.Description
+		}
+
+		if len(metadata.Architecture) == 0 && len(data.Architecture) != 0 {
+			metadata.Architecture = data.Architecture
+		}
+
+		if len(metadata.Recommendations) == 0 && len(data.Recommendations) != 0 {
+			metadata.Recommendations = data.Recommendations
+		}
+	}
+	return metadata, nil
 }
 
 type ControlData struct {
@@ -71,41 +120,41 @@ type ControlData struct {
 	Description  string
 }
 
-func (data *ControlData) SetFrom(index pkge.Index) {
+func (data *ControlData) SetFrom(metadata pkge.Metadata) {
 	if len(data.Package) == 0 {
-		data.Package = index.Meta.Name
+		data.Package = metadata.Name
 	}
 
 	if len(data.Depends) == 0 {
-		data.Depends = index.Meta.Dependencies
+		data.Depends = metadata.Dependencies
 	}
 
 	if len(data.Section) == 0 {
-		data.Section = index.Meta.Section
+		data.Section = metadata.Section
 	}
 
 	if len(data.Priority) == 0 {
-		data.Priority = index.Meta.Priority
+		data.Priority = metadata.Priority
 	}
 
 	if len(data.Homepage) == 0 {
-		data.Homepage = index.Meta.Homepage
+		data.Homepage = metadata.Homepage
 	}
 
 	if len(data.Architecture) == 0 {
-		data.Architecture = index.Meta.Architecture
+		data.Architecture = metadata.Architecture
 	}
 
 	if len(data.Maintainer) == 0 {
-		data.Maintainer = index.Meta.Maintainer
+		data.Maintainer = metadata.Maintainer
 	}
 
 	if len(data.Description) == 0 {
-		data.Description = index.Meta.Description
+		data.Description = metadata.Description
 	}
 
 	if len(data.Recommends) == 0 {
-		data.Recommends = index.Meta.Recommendations
+		data.Recommends = metadata.Recommendations
 	}
 }
 
