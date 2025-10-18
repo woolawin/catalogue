@@ -139,23 +139,35 @@ func TestConstruct(t *testing.T) {
 			},
 		},
 	}
-	actual, _, err := construct(&raw)
+	actual, err := construct(&raw)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	expected := Index{
-		/* 		Targets: []target.Target{
-		{
-			Name:                     "ubuntu",
-			All:                      false,
-			Architecture:             "amd64",
-			OSReleaseID:              "ubuntu",
-			OSReleaseVersion:         "22",
-			OSReleaseVersionID:       "22.04",
-			OSReleaseVersionCodeName: "cody cod",
+		Targets: []target.Target{
+			{
+				Name:         "amd64",
+				Architecture: target.AMD64,
+			},
+			{
+				Name:         "arm64",
+				Architecture: target.ARM64,
+			},
+			{
+				Name: "all",
+				All:  true,
+			},
+			{
+				Name:                     "ubuntu",
+				All:                      false,
+				Architecture:             "amd64",
+				OSReleaseID:              "ubuntu",
+				OSReleaseVersion:         "22",
+				OSReleaseVersionID:       "22.04",
+				OSReleaseVersionCodeName: "cody cod",
+			},
 		},
-		},*/
 		Metadata: []*Metadata{
 			{
 				Target:          target.Target{Name: "all", All: true},
@@ -174,32 +186,6 @@ func TestConstruct(t *testing.T) {
 
 	if diff := cmp.Diff(actual, expected); diff != "" {
 		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
-	}
-}
-
-func TestCleanString(t *testing.T) {
-	actual := "   foo   "
-	cleanString(&actual)
-	expected := "foo"
-
-	if actual != expected {
-		t.Fatalf("expected '%s' to be '%s'\n", actual, expected)
-	}
-
-	actual = "foo"
-	cleanString(&actual)
-	expected = "foo"
-
-	if actual != expected {
-		t.Fatalf("expected '%s' to be '%s'\n", actual, expected)
-	}
-
-	actual = ""
-	cleanString(&actual)
-	expected = ""
-
-	if actual != expected {
-		t.Fatalf("expected '%s' to be '%s'\n", actual, expected)
 	}
 }
 
@@ -231,60 +217,6 @@ func TestNormalizeList(t *testing.T) {
 	actual = []string{"  ", " "}
 	actual = normalizeList(actual)
 	expected = nil
-
-	if diff := cmp.Diff(actual, expected); diff != "" {
-		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
-	}
-}
-
-func TestCleanRaw(t *testing.T) {
-	actual := Raw{
-		Meta: map[string]RawMetadata{
-			"all": RawMetadata{Name: " fooo  "},
-		},
-		Target: map[string]RawTarget{
-			"mine": {
-				Architecture:             "  arch ",
-				OSReleaseID:              "   id  ",
-				OSReleaseVersion:         "  ver   ",
-				OSReleaseVersionID:       "   ver_id   ",
-				OSReleaseVersionCodeName: "   ",
-			},
-		},
-		Download: map[string]map[string]RawDownload{
-			"bin": {
-				"all": {
-					Source:      "   https://foo.com/bin  ",
-					Destination: "  path://root/usr/bin   ",
-				},
-			},
-		},
-	}
-
-	actual.Clean()
-
-	expected := Raw{
-		Meta: map[string]RawMetadata{
-			"all": RawMetadata{Name: "fooo"},
-		},
-		Target: map[string]RawTarget{
-			"mine": {
-				Architecture:             "arch",
-				OSReleaseID:              "id",
-				OSReleaseVersion:         "ver",
-				OSReleaseVersionID:       "ver_id",
-				OSReleaseVersionCodeName: "",
-			},
-		},
-		Download: map[string]map[string]RawDownload{
-			"bin": {
-				"all": {
-					Source:      "https://foo.com/bin",
-					Destination: "path://root/usr/bin",
-				},
-			},
-		},
-	}
 
 	if diff := cmp.Diff(actual, expected); diff != "" {
 		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)

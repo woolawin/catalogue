@@ -1,4 +1,3 @@
-validate target
 test load functions
 override system value from CLI
 read existing control data
