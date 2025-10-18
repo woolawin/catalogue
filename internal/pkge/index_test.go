@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
 func TestBasicDeserialize(t *testing.T) {
@@ -27,7 +26,7 @@ architecture='amd64'
 		t.Fatal(err)
 	}
 
-	expected := Raw{
+	expected := IndexTOML{
 		Meta: map[string]MetadataTOML{
 			"all": {
 				Name:         "FooBar",
@@ -77,7 +76,7 @@ dst="path://root/usr/bin"
 		t.Fatal(err)
 	}
 
-	expected := Raw{
+	expected := IndexTOML{
 		Meta: map[string]MetadataTOML{
 			"all": {
 				Name:         "FooBar",
@@ -112,81 +111,6 @@ dst="path://root/usr/bin"
 		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 	}
 
-}
-
-func TestConstruct(t *testing.T) {
-	raw := Raw{
-		Target: map[string]TargetTOML{
-			"ubuntu": {
-				Architecture:             "amd64",
-				OSReleaseID:              "ubuntu",
-				OSReleaseVersion:         "22",
-				OSReleaseVersionID:       "22.04",
-				OSReleaseVersionCodeName: "cody cod",
-			},
-		},
-		Meta: map[string]MetadataTOML{
-			"all": {
-				Name:            "foo",
-				Dependencies:    []string{"bar", "baz"},
-				Section:         "other",
-				Priority:        "normal",
-				Homepage:        "https://foo.com",
-				Maintainer:      "me",
-				Description:     "example",
-				Architecture:    "amd64",
-				Recommendations: []string{"baz"},
-			},
-		},
-	}
-	actual, err := construct(&raw)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expected := Index{
-		Targets: []target.Target{
-			{
-				Name:         "amd64",
-				Architecture: target.AMD64,
-			},
-			{
-				Name:         "arm64",
-				Architecture: target.ARM64,
-			},
-			{
-				Name: "all",
-				All:  true,
-			},
-			{
-				Name:                     "ubuntu",
-				All:                      false,
-				Architecture:             "amd64",
-				OSReleaseID:              "ubuntu",
-				OSReleaseVersion:         "22",
-				OSReleaseVersionID:       "22.04",
-				OSReleaseVersionCodeName: "cody cod",
-			},
-		},
-		Metadata: []*Metadata{
-			{
-				Target:          target.Target{Name: "all", All: true},
-				Name:            "foo",
-				Dependencies:    []string{"bar", "baz"},
-				Section:         "other",
-				Priority:        "normal",
-				Homepage:        "https://foo.com",
-				Maintainer:      "me",
-				Description:     "example",
-				Architecture:    "amd64",
-				Recommendations: []string{"baz"},
-			},
-		},
-	}
-
-	if diff := cmp.Diff(actual, expected); diff != "" {
-		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
-	}
 }
 
 func TestNormalizeList(t *testing.T) {

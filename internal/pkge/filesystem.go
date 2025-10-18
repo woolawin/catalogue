@@ -23,7 +23,7 @@ func loadFileSystems(targets []target.Target, disk ext.Disk) (map[string][]*File
 		return nil, internal.ErrOf(err, "can not check if directory %s exists", fsPath)
 	}
 	if !asDir {
-		return nil, internal.Err("filesystem directory %s is not adirectory", fsPath)
+		return nil, internal.Err("filesystem directory is not adirectory")
 	}
 
 	if !exists {
@@ -39,7 +39,7 @@ func loadFileSystems(targets []target.Target, disk ext.Disk) (map[string][]*File
 	for _, dir := range dirs {
 		anchor, targetNames, err := internal.ValidateNameAndTarget(dir)
 		if err != nil {
-			return nil, internal.ErrOf(err, "invalid filesystem reference %s", dir)
+			return nil, internal.ErrOf(err, "invalid filesystem reference '%s'", dir)
 		}
 
 		tgt, err := target.Build(targets, targetNames)

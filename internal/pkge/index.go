@@ -12,7 +12,7 @@ import (
 	"github.com/woolawin/catalogue/internal/target"
 )
 
-type Raw struct {
+type IndexTOML struct {
 	Meta     map[string]MetadataTOML            `toml:"meta"`
 	Target   map[string]TargetTOML              `toml:"target"`
 	Download map[string]map[string]DownloadTOML `toml:"download"`
@@ -26,11 +26,11 @@ type Index struct {
 }
 
 func Parse(src io.Reader) (Index, error) {
-	raw, err := deserialize(src)
+	deserialized, err := deserialize(src)
 	if err != nil {
 		return Index{}, err
 	}
-	return construct(&raw)
+	return construct(&deserialized)
 }
 
 func Build(path string, disk ext.Disk) (Index, error) {
@@ -52,12 +52,12 @@ func Build(path string, disk ext.Disk) (Index, error) {
 		return Index{}, internal.ErrOf(err, "can not read index.catalogue.toml")
 	}
 
-	raw, err := deserialize(bytes.NewReader(data))
+	deserialized, err := deserialize(bytes.NewReader(data))
 	if err != nil {
 		return Index{}, err
 	}
 
-	index, err := construct(&raw)
+	index, err := construct(&deserialized)
 	if err != nil {
 		return Index{}, err
 	}
@@ -69,18 +69,18 @@ func Build(path string, disk ext.Disk) (Index, error) {
 	return index, nil
 }
 
-func construct(raw *Raw) (Index, error) {
+func construct(deserialized *IndexTOML) (Index, error) {
 
-	targets, err := loadTargets(raw.Target)
+	targets, err := loadTargets(deserialized.Target)
 	if err != nil {
 		return Index{}, internal.ErrOf(err, "invalid target")
 	}
 
-	downloads, err := loadDownloads(raw.Download, targets)
+	downloads, err := loadDownloads(deserialized.Download, targets)
 	if err != nil {
 		return Index{}, internal.ErrOf(err, "invalid index download")
 	}
-	metadatas, err := loadMetadata(raw.Meta, targets)
+	metadatas, err := loadMetadata(deserialized.Meta, targets)
 	if err != nil {
 		return Index{}, internal.ErrOf(err, "invalid index metadata")
 	}
@@ -96,13 +96,13 @@ func EmptyIndex() Index {
 	return Index{}
 }
 
-func deserialize(src io.Reader) (Raw, error) {
-	raw := Raw{}
-	err := toml.NewDecoder(src).Decode(&raw)
+func deserialize(src io.Reader) (IndexTOML, error) {
+	deserialized := IndexTOML{}
+	err := toml.NewDecoder(src).Decode(&deserialized)
 	if err != nil {
-		return raw, internal.ErrOf(err, "can not deserialize index.package.toml")
+		return IndexTOML{}, internal.ErrOf(err, "can not deserialize index.package.toml")
 	}
-	return raw, nil
+	return deserialized, nil
 }
 
 func normalizeList(list []string) []string {

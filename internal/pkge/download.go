@@ -63,13 +63,13 @@ func loadDownloads(deserialized map[string]map[string]DownloadTOML, targets []ta
 	return downloads, nil
 }
 
-func (raw *DownloadTOML) validate() (Download, error) {
-	srcValue := strings.TrimSpace(raw.Source)
+func (dl *DownloadTOML) validate() (Download, error) {
+	srcValue := strings.TrimSpace(dl.Source)
 	if len(srcValue) == 0 {
 		return Download{}, internal.Err("download must specify a source")
 	}
 
-	dstValue := strings.TrimSpace(raw.Destination)
+	dstValue := strings.TrimSpace(dl.Destination)
 	if len(dstValue) == 0 {
 		return Download{}, internal.Err("download must specify a destination")
 	}
