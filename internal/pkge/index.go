@@ -22,9 +22,9 @@ type Meta struct {
 }
 
 type Raw struct {
-	Meta     map[string]Meta                `toml:"meta"`
-	Target   map[string]RawTarget           `toml:"target"`
-	Download map[string]map[string]Download `toml:"download"`
+	Meta     map[string]Meta                   `toml:"meta"`
+	Target   map[string]RawTarget              `toml:"target"`
+	Download map[string]map[string]RawDownload `toml:"download"`
 }
 
 type RawTarget struct {
@@ -35,15 +35,11 @@ type RawTarget struct {
 	OSReleaseVersionCodeName string `toml:"os_release_version_code_name"`
 }
 
-type Download struct {
-	Source      string `toml:"src"`
-	Destination string `toml:"dst"`
-}
-
 type Index struct {
-	Meta     Meta
-	Targets  []target.Target
-	Registry target.Registry
+	Meta      Meta
+	Targets   []target.Target
+	Registry  target.Registry
+	Downloads []Download
 }
 
 func Parse(src io.Reader, system target.System) (Index, error) {
@@ -56,6 +52,10 @@ func Parse(src io.Reader, system target.System) (Index, error) {
 
 func construct(raw *Raw, system target.System) (Index, error) {
 
+	downloads, err := raw.validate()
+	if err != nil {
+		return Index{}, internal.ErrOf(err, "invalid index.package.json")
+	}
 	var targets []target.Target
 
 	for name, values := range raw.Target {
@@ -82,7 +82,7 @@ func construct(raw *Raw, system target.System) (Index, error) {
 	if err != nil {
 		return Index{}, internal.ErrOf(err, "failed to build package metadata")
 	}
-	return Index{Meta: meta, Registry: registry, Targets: targets}, nil
+	return Index{Meta: meta, Registry: registry, Targets: targets, Downloads: downloads}, nil
 }
 
 func EmptyIndex() Index {
@@ -193,11 +193,6 @@ func (target *RawTarget) clean() {
 	cleanString(&target.OSReleaseVersionCodeName)
 }
 
-func (dl *Download) clean() {
-	cleanString(&dl.Source)
-	cleanString(&dl.Destination)
-}
-
 func cleanString(value *string) {
 	*value = strings.TrimSpace(*value)
 }
@@ -211,4 +206,29 @@ func cleanList(list *[]string) {
 		}
 	}
 	*list = cleaned
+}
+
+func (raw *Raw) validate() ([]Download, error) {
+	var downloads []Download
+	for name, tgts := range raw.Download {
+		err := internal.ValidateName(name)
+		if err != nil {
+			return nil, internal.ErrOf(err, "invalid download name %s", name)
+		}
+		for tgt, dl := range tgts {
+			targetNames, err := internal.ValidateNameList(tgt)
+			if err != nil {
+				return nil, internal.ErrOf(err, "invalid download target %s", name)
+			}
+
+			download, err := dl.validate()
+			if err != nil {
+				return nil, internal.ErrOf(err, "invalid download %s", name)
+			}
+			download.Name = name
+			download.TargetNames = targetNames
+			downloads = append(downloads, download)
+		}
+	}
+	return downloads, nil
 }

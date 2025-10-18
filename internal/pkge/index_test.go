@@ -98,7 +98,7 @@ dst="path://root/usr/bin"
 				OSReleaseID: "ubuntu",
 			},
 		},
-		Download: map[string]map[string]Download{
+		Download: map[string]map[string]RawDownload{
 			"bin": {
 				"all": {
 					Source:      "https://foo.com/bin",
@@ -293,7 +293,7 @@ func TestCleanRaw(t *testing.T) {
 				OSReleaseVersionCodeName: "   ",
 			},
 		},
-		Download: map[string]map[string]Download{
+		Download: map[string]map[string]RawDownload{
 			"bin": {
 				"all": {
 					Source:      "   https://foo.com/bin  ",
@@ -318,7 +318,7 @@ func TestCleanRaw(t *testing.T) {
 				OSReleaseVersionCodeName: "",
 			},
 		},
-		Download: map[string]map[string]Download{
+		Download: map[string]map[string]RawDownload{
 			"bin": {
 				"all": {
 					Source:      "https://foo.com/bin",
