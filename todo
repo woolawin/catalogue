@@ -1,0 +1,4 @@
+implement download
+return Index, Regisry, err from index.Parse
+override system value from CLI
+move index.mergeMeta into build/control
