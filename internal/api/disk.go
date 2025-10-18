@@ -3,6 +3,7 @@ package api
 import (
 	"archive/tar"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -43,7 +44,7 @@ func (disk *DiskImpl) FileExists(path string) (bool, bool, error) {
 	info, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, false, nil
+			return false, true, nil
 		}
 		return false, false, err
 	}
@@ -57,7 +58,7 @@ func (disk *DiskImpl) DirExists(path string) (bool, bool, error) {
 	info, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, false, nil
+			return false, true, nil
 		}
 		return false, false, err
 	}
@@ -80,6 +81,8 @@ func (disk *DiskImpl) List(path string) ([]string, []string, error) {
 		return nil, nil, internal.ErrFileBlocked(path, "read")
 	}
 	entries, err := os.ReadDir(path)
+	fmt.Println(path)
+	fmt.Println(entries)
 	if err != nil {
 		return nil, nil, internal.ErrOf(err, "can not list directory %s", path)
 	}
@@ -89,9 +92,9 @@ func (disk *DiskImpl) List(path string) ([]string, []string, error) {
 
 	for _, entry := range entries {
 		if entry.IsDir() {
-			files = append(files, entry.Name())
-		} else {
 			dirs = append(dirs, entry.Name())
+		} else {
+			files = append(files, entry.Name())
 		}
 	}
 
