@@ -109,7 +109,7 @@ dst="path://root/usr/bin"
 	}
 
 	if diff := cmp.Diff(actual, expected); diff != "" {
-		fmt.Printf("Mismatch (-actual +expected):\n%s", diff)
+		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 	}
 
 }
@@ -331,4 +331,37 @@ func TestCleanRaw(t *testing.T) {
 	if diff := cmp.Diff(actual, expected); diff != "" {
 		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 	}
+}
+
+func TestValidateRaw(t *testing.T) {
+	raw := Raw{
+		Download: map[string]map[string]RawDownload{
+			"bin": {
+				"all": {
+					Source:      "https://foo.com/bar.txt",
+					Destination: "path://root/etc/foo/bar.txt",
+				},
+			},
+		},
+	}
+
+	downloads, err := raw.validate()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("downloads", func(t *testing.T) {
+		expected := []Download{
+			{
+				Name:        "bin",
+				TargetNames: []string{"all"},
+				Source:      u("https://foo.com/bar.txt"),
+				Destination: u("path://root/etc/foo/bar.txt"),
+			},
+		}
+
+		if diff := cmp.Diff(downloads, expected); diff != "" {
+			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+		}
+	})
 }
