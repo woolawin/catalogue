@@ -355,6 +355,10 @@ func TestValidateRaw(t *testing.T) {
 			{
 				Name:        "bin",
 				TargetNames: []string{"all"},
+				Target: target.Target{
+					Name: "all",
+					All:  true,
+				},
 				Source:      u("https://foo.com/bar.txt"),
 				Destination: u("path://root/etc/foo/bar.txt"),
 			},

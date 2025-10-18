@@ -209,7 +209,9 @@ func cleanList(list *[]string) {
 }
 
 func (raw *Raw) validate() ([]Download, error) {
+	targets := target.BuiltIns()
 	var downloads []Download
+
 	for name, tgts := range raw.Download {
 		err := internal.ValidateName(name)
 		if err != nil {
@@ -221,12 +223,18 @@ func (raw *Raw) validate() ([]Download, error) {
 				return nil, internal.ErrOf(err, "invalid download target %s", name)
 			}
 
+			target, err := target.Build(targets, targetNames)
+			if err != nil {
+				return nil, internal.ErrOf(err, "invalid target %s", tgt)
+			}
+
 			download, err := dl.validate()
 			if err != nil {
 				return nil, internal.ErrOf(err, "invalid download %s", name)
 			}
+
 			download.Name = name
-			download.TargetNames = targetNames
+			download.Target = target
 			downloads = append(downloads, download)
 		}
 	}

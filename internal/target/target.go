@@ -242,7 +242,7 @@ func getArch(value string) (Architecture, bool) {
 	}
 }
 
-func builtIns() []Target {
+func BuiltIns() []Target {
 	return []Target{
 		{
 			Name:         "amd64",
@@ -306,7 +306,29 @@ type Registry struct {
 }
 
 func NewRegistry(tgts []Target) Registry {
-	return Registry{base: append(builtIns(), tgts...)}
+	return Registry{base: append(BuiltIns(), tgts...)}
+}
+
+func Build(from []Target, names []string) (Target, error) {
+	if len(names) == 0 {
+		return Target{}, internal.Err("can not build target without name")
+	}
+	if len(names) == 1 {
+		target, found := find(from, names[0])
+		if !found {
+			return Target{}, internal.Err("can not find target %s", names[0])
+		}
+		return target, nil
+	}
+	var targets []Target
+	for _, name := range names {
+		target, ok := find(targets, name)
+		if !ok {
+			return Target{}, internal.Err("can not find target %s", name)
+		}
+		targets = append(targets, target)
+	}
+	return MergeTargets(targets)
 }
 
 func (reg *Registry) Load(names []string) ([]Target, error) {
@@ -337,6 +359,15 @@ func (reg *Registry) Load(names []string) ([]Target, error) {
 
 func (reg *Registry) Find(name string) (Target, bool) {
 	for _, target := range reg.base {
+		if target.Name == name {
+			return target, true
+		}
+	}
+	return Target{}, false
+}
+
+func find(from []Target, name string) (Target, bool) {
+	for _, target := range from {
 		if target.Name == name {
 			return target, true
 		}

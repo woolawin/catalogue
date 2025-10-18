@@ -4,11 +4,12 @@ import (
 	"net/url"
 
 	"github.com/woolawin/catalogue/internal"
+	"github.com/woolawin/catalogue/internal/target"
 )
 
 type Download struct {
 	Name        string
-	TargetNames []string
+	Target      target.Target
 	Source      *url.URL
 	Destination *url.URL
 }
