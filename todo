@@ -1,5 +1,4 @@
 validate target
-return Index, Regisry, err from index.Parse
 override system value from CLI
 read existing control data
 
