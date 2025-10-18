@@ -103,13 +103,13 @@ func (disk *DiskImpl) ListRec(path string) ([]string, error) {
 		return nil, internal.ErrFileBlocked(path, "read")
 	}
 	var files []string
-	err := filepath.WalkDir(path, func(path string, entry os.DirEntry, err error) error {
+	err := filepath.WalkDir(path, func(entryPath string, entry os.DirEntry, err error) error {
 		if err != nil {
 			return internal.ErrOf(err, "can not list directory %s", path)
 		}
-
+		relative, _ := strings.CutPrefix(entryPath, path+"/")
 		if !entry.IsDir() {
-			files = append(files, entry.Name())
+			files = append(files, relative)
 		}
 		return nil
 	})
@@ -140,7 +140,6 @@ func (disk *DiskImpl) Move(toPath string, fromPath string, files []string, overw
 	if disk.unsafe(toPath) {
 		return internal.ErrFileBlocked(toPath, "written")
 	}
-
 	for _, file := range files {
 		newPath := filepath.Join(toPath, file)
 		if disk.unsafe(newPath) {
