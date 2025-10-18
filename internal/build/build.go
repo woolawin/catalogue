@@ -22,5 +22,16 @@ func Build(dst string, index pkge.Index, system target.System, api ext.API) erro
 	if err != nil {
 		return internal.ErrOf(err, "can not create data.tar.gz")
 	}
+
+	files := []string{
+		api.Disk().Path("debian-binary"),
+		api.Disk().Path("control.tar.gz"),
+		api.Disk().Path("data.tar.gz"),
+	}
+
+	err = api.Disk().ArchiveFiles(dst, files)
+	if err != nil {
+		return internal.ErrOf(err, "can not create .deb file")
+	}
 	return nil
 }

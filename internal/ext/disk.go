@@ -3,6 +3,7 @@ package ext
 import (
 	"archive/tar"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -21,7 +22,8 @@ type Disk interface {
 	List(path string) ([]string, []string, error)
 	ListRec(path string) ([]string, error)
 	CreateTar(path string) error
-	Archive(src, dst string) error
+	ArchiveDir(src, dst string) error
+	ArchiveFiles(path string, files []string) error
 	Move(toPath string, fromPath string, files []string, overwrite bool) error
 }
 
@@ -183,7 +185,7 @@ func (disk *diskImpl) Move(toPath string, fromPath string, files []string, overw
 	return nil
 }
 
-func (disk *diskImpl) Archive(src string, dst string) error {
+func (disk *diskImpl) ArchiveDir(src string, dst string) error {
 	if disk.unsafe(src) {
 		return internal.ErrFileBlocked(src, "read")
 	}
@@ -245,6 +247,79 @@ func (disk *diskImpl) Archive(src string, dst string) error {
 	return nil
 }
 
+func (disk *diskImpl) ArchiveFiles(path string, files []string) error {
+	if disk.unsafe(path) {
+		return internal.ErrFileBlocked(path, "written")
+	}
+
+	archive, err := os.Create(path)
+	if err != nil {
+		return internal.ErrOf(err, "can not create archive '%s'", path)
+	}
+	defer archive.Close()
+
+	for _, file := range files {
+		if disk.unsafe(file) {
+			return internal.ErrFileBlocked(file, "read")
+		}
+		if err := addFile(archive, file); err != nil {
+			return internal.ErrOf(err, "can not add file '%s' to archive '%s'", file, path)
+		}
+	}
+	return nil
+}
+
+func addFile(writer io.Writer, path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return internal.ErrOf(err, "can not open file")
+	}
+	defer file.Close()
+
+	info, err := file.Stat()
+	if err != nil {
+		return internal.ErrOf(err, "can not stat file")
+	}
+
+	name := filepath.Base(path)
+	modTime := info.ModTime().Unix()
+	size := info.Size()
+	mode := info.Mode().Perm()
+
+	// Create header (fixed width fields)
+	// Format: (each field is padded with spaces)
+	// 0-15  : File identifier
+	// 16-27 : File modification timestamp
+	// 28-33 : Owner ID
+	// 34-39 : Group ID
+	// 40-47 : File mode
+	// 48-57 : File size in bytes
+	// 58-59 : Trailer "`\n"
+	header := fmt.Sprintf("%-16s%-12d%-6d%-6d%-8o%-10d`\n",
+		name,
+		modTime,
+		0,    // UID
+		0,    // GID
+		mode, // File mode
+		size, // File size
+	)
+
+	if _, err := writer.Write([]byte(header)); err != nil {
+		return err
+	}
+
+	if _, err := io.Copy(writer, file); err != nil {
+		return internal.ErrOf(err, "can not write bytes to file")
+	}
+
+	if size%2 != 0 {
+		if _, err := writer.Write([]byte("\n")); err != nil {
+			return internal.ErrOf(err, "can not write newline to file")
+		}
+	}
+
+	return nil
+}
 func (disk *diskImpl) unsafe(path string) bool {
 	baseAbs, err := filepath.Abs(disk.base)
 	if err != nil {

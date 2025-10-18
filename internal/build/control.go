@@ -61,7 +61,7 @@ func control(system target.System, index pkge.Index, api ext.API) error {
 		return internal.ErrOf(err, "can not write to file control/control")
 	}
 
-	return api.Disk().Archive(dirPath, tarPath)
+	return api.Disk().ArchiveDir(dirPath, tarPath)
 }
 
 func metadata(metadatas []*pkge.Metadata, system target.System) (pkge.Metadata, error) {

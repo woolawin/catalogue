@@ -57,7 +57,7 @@ func (mock *MockDisk) List(path string) ([]string, []string, error) {
 	return files, dirs, nil
 }
 
-func (mock *MockDisk) Archive(src, dst string) error {
+func (mock *MockDisk) ArchiveDir(src, dst string) error {
 	return nil
 }
 
@@ -80,5 +80,9 @@ func (mock *MockDisk) CreateTar(path string) error {
 }
 
 func (mock *MockDisk) Move(toPath string, fromPath string, files []string, overwrite bool) error {
+	return nil
+}
+
+func (mock *MockDisk) ArchiveFiles(path string, files []string) error {
 	return nil
 }

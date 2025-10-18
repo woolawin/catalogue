@@ -3,6 +3,7 @@ package build
 import (
 	"fmt"
 
+	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/ext"
 	"github.com/woolawin/catalogue/internal/pkge"
 	"github.com/woolawin/catalogue/internal/target"
@@ -33,5 +34,9 @@ func data(system target.System, index pkge.Index, api ext.API) error {
 
 	filesystem(system, index.FileSystems, api)
 	download(system, index.Downloads, api)
+	err = api.Disk().ArchiveDir(dirPath, tarPath)
+	if err != nil {
+		return internal.ErrOf(err, "can not create data.tar.gz")
+	}
 	return nil
 }
