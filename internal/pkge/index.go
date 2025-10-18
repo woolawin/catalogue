@@ -13,7 +13,7 @@ import (
 )
 
 type Raw struct {
-	Meta     map[string]RawMetadata            `toml:"meta"`
+	Meta     map[string]MetadataTOML           `toml:"meta"`
 	Target   map[string]TargetTOML             `toml:"target"`
 	Download map[string]map[string]RawDownload `toml:"download"`
 }

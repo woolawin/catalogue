@@ -28,7 +28,7 @@ architecture='amd64'
 	}
 
 	expected := Raw{
-		Meta: map[string]RawMetadata{
+		Meta: map[string]MetadataTOML{
 			"all": {
 				Name:         "FooBar",
 				Dependencies: []string{"foo", "bar"},
@@ -78,7 +78,7 @@ dst="path://root/usr/bin"
 	}
 
 	expected := Raw{
-		Meta: map[string]RawMetadata{
+		Meta: map[string]MetadataTOML{
 			"all": {
 				Name:         "FooBar",
 				Dependencies: []string{"foo", "bar"},
@@ -125,7 +125,7 @@ func TestConstruct(t *testing.T) {
 				OSReleaseVersionCodeName: "cody cod",
 			},
 		},
-		Meta: map[string]RawMetadata{
+		Meta: map[string]MetadataTOML{
 			"all": {
 				Name:            "foo",
 				Dependencies:    []string{"bar", "baz"},

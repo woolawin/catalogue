@@ -7,7 +7,7 @@ import (
 	"github.com/woolawin/catalogue/internal/target"
 )
 
-type RawMetadata struct {
+type MetadataTOML struct {
 	Name            string   `toml:"name"`
 	Dependencies    []string `toml:"dependencies"`
 	Section         string   `toml:"section"`
@@ -36,11 +36,11 @@ func (metadata *Metadata) GetTarget() target.Target {
 	return metadata.Target
 }
 
-func loadMetadata(raw map[string]RawMetadata, targets []target.Target) ([]*Metadata, error) {
+func loadMetadata(deserialized map[string]MetadataTOML, targets []target.Target) ([]*Metadata, error) {
 
 	var metadatas []*Metadata
 
-	for targetStr, meta := range raw {
+	for targetStr, meta := range deserialized {
 		targetNames, err := internal.ValidateNameList(targetStr)
 		if err != nil {
 			return nil, internal.ErrOf(err, "invalid metadata target %s", targetStr)
