@@ -5,7 +5,6 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"unicode"
 
 	"github.com/woolawin/catalogue/internal"
 )
@@ -118,58 +117,6 @@ scoreTarget:
 	return ranking
 }
 
-func (system System) Rank(targets []Target) []int {
-	if len(targets) == 0 {
-		return nil
-	}
-	scores := make(map[string]int)
-scoreTarget:
-	for _, target := range targets {
-		if target.All {
-			scores[target.Name] = 0
-			continue scoreTarget
-		}
-		score, applicable := score(system, target)
-		if !applicable {
-			continue
-		}
-		scores[target.Name] = score
-	}
-
-	var ranking []int
-	previous := math.MaxInt32
-	for {
-		if len(ranking) == len(scores) {
-			break
-		}
-		high := -1
-	rankTarget:
-		for _, score := range scores {
-			if score > high && score < previous {
-				high = score
-				continue rankTarget
-			}
-		}
-		if high == -1 {
-			break
-		}
-		for target, score := range scores {
-			if score != high {
-				continue
-			}
-		findTarget:
-			for idx := range targets {
-				if targets[idx].Name == target {
-					ranking = append(ranking, idx)
-					break findTarget
-				}
-			}
-		}
-		previous = high
-	}
-	return ranking
-}
-
 func score(system System, target Target) (int, bool) {
 	score := 0
 
@@ -224,7 +171,7 @@ func IsReservedTargetName(value string) bool {
 		value == "arm64"
 }
 
-func MergeTargets(targets []Target) (Target, error) {
+func mergeTargets(targets []Target) (Target, error) {
 	merged := Target{}
 	name := strings.Builder{}
 
@@ -326,31 +273,6 @@ func BuiltIns() []Target {
 	}
 }
 
-func ParseTargetNamesString(value string) ([]string, error) {
-	parts := strings.Split(value, "-")
-
-	var names []string
-	for _, part := range parts {
-		valid, invalid := ValidTargetName(part)
-		if !valid {
-			return nil, internal.Err("invalid target name '%s', charcacter '%s' not valid", part, invalid)
-		}
-		names = append(names, part)
-	}
-	return names, nil
-}
-
-func ValidTargetName(value string) (bool, string) {
-	for _, r := range value {
-		if unicode.IsLower(r) || unicode.IsDigit(r) || string(r) == "_" {
-			continue
-		}
-		return false, string(r)
-
-	}
-	return true, ""
-}
-
 func findOSReleaseValue(lines []string, key string) (string, bool) {
 	prefix := key + "="
 	for _, line := range lines {
@@ -368,14 +290,6 @@ func findOSReleaseValue(lines []string, key string) (string, bool) {
 	return "", false
 }
 
-type Registry struct {
-	base []Target
-}
-
-func NewRegistry(tgts []Target) Registry {
-	return Registry{base: append(BuiltIns(), tgts...)}
-}
-
 func Build(from []Target, names []string) (Target, error) {
 	if len(names) == 0 {
 		return Target{}, internal.Err("can not build target without name")
@@ -389,48 +303,13 @@ func Build(from []Target, names []string) (Target, error) {
 	}
 	var targets []Target
 	for _, name := range names {
-		target, ok := find(targets, name)
+		target, ok := find(from, name)
 		if !ok {
 			return Target{}, internal.Err("can not find target %s", name)
 		}
 		targets = append(targets, target)
 	}
-	return MergeTargets(targets)
-}
-
-func (reg *Registry) Load(names []string) ([]Target, error) {
-	var out []Target
-	for _, name := range names {
-		if name == "all" {
-			out = append(out, Target{Name: "all", All: true})
-			continue
-		}
-		parts := splitTargetNames(name)
-		var targets []Target
-		for _, part := range parts {
-			target, ok := reg.Find(part)
-			if !ok {
-				return nil, internal.Err("target %s is not known", part)
-			}
-			targets = append(targets, target)
-		}
-
-		merged, err := MergeTargets(targets)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, merged)
-	}
-	return out, nil
-}
-
-func (reg *Registry) Find(name string) (Target, bool) {
-	for _, target := range reg.base {
-		if target.Name == name {
-			return target, true
-		}
-	}
-	return Target{}, false
+	return mergeTargets(targets)
 }
 
 func find(from []Target, name string) (Target, bool) {
@@ -440,8 +319,4 @@ func find(from []Target, name string) (Target, bool) {
 		}
 	}
 	return Target{}, false
-}
-
-func splitTargetNames(value string) []string {
-	return strings.Split(value, "-")
 }

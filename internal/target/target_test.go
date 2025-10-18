@@ -57,66 +57,13 @@ func TestRank(t *testing.T) {
 	})
 }
 
-func TestParseValidTargetNames(t *testing.T) {
-	t.Run("single_valid", func(t *testing.T) {
-		actual, err := ParseTargetNamesString("abc")
-		if err != nil {
-			t.Fatal(err)
-		}
-		expected := []string{"abc"}
-		if diff := cmp.Diff(actual, expected); diff != "" {
-			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
-		}
-	})
-
-	t.Run("multi_valid", func(t *testing.T) {
-		actual, err := ParseTargetNamesString("abc-def")
-		if err != nil {
-			t.Fatal(err)
-		}
-		expected := []string{"abc", "def"}
-		if diff := cmp.Diff(actual, expected); diff != "" {
-			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
-		}
-	})
-
-	t.Run("single_valid_number", func(t *testing.T) {
-		actual, err := ParseTargetNamesString("abc123")
-		if err != nil {
-			t.Fatal(err)
-		}
-		expected := []string{"abc123"}
-		if diff := cmp.Diff(actual, expected); diff != "" {
-			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
-		}
-	})
-
-	t.Run("single_valid_underscore", func(t *testing.T) {
-		actual, err := ParseTargetNamesString("abc_123")
-		if err != nil {
-			t.Fatal(err)
-		}
-		expected := []string{"abc_123"}
-		if diff := cmp.Diff(actual, expected); diff != "" {
-			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
-		}
-	})
-
-	t.Run("invalid", func(t *testing.T) {
-		_, err := ParseTargetNamesString("abc%")
-		if err == nil {
-			t.Fatal("expected to FAIL")
-		}
-	})
-}
-
 func TestMergeTargets(t *testing.T) {
 	t.Run("compatible", func(t *testing.T) {
 		a := Target{Name: "a", Architecture: AMD64}
 		b := Target{Name: "b", OSReleaseID: "17"}
 		c := Target{Name: "c", OSReleaseVersionCodeName: "dingo"}
 
-		actual, err := MergeTargets([]Target{a, b, c})
+		actual, err := mergeTargets([]Target{a, b, c})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -137,7 +84,7 @@ func TestMergeTargets(t *testing.T) {
 		b := Target{Name: "b", OSReleaseID: "17"}
 		c := Target{Name: "all", All: true}
 
-		_, err := MergeTargets([]Target{a, b, c})
+		_, err := mergeTargets([]Target{a, b, c})
 		if err == nil {
 			t.Fatal("expected to FAIL")
 		}
@@ -148,7 +95,7 @@ func TestMergeTargets(t *testing.T) {
 		b := Target{Name: "b", OSReleaseID: "17"}
 		c := Target{Name: "c", OSReleaseID: "16"}
 
-		_, err := MergeTargets([]Target{a, b, c})
+		_, err := mergeTargets([]Target{a, b, c})
 		if err == nil {
 			t.Fatal("expected to FAIL")
 		}
@@ -370,25 +317,10 @@ func TestScore(t *testing.T) {
 	})
 }
 
-func TestSplitTargetNames(t *testing.T) {
-	actual := splitTargetNames("foo")
-	expected := []string{"foo"}
+func TestBuild(t *testing.T) {
 
-	if diff := cmp.Diff(actual, expected); diff != "" {
-		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
-	}
-
-	actual = splitTargetNames("foo-bar")
-	expected = []string{"foo", "bar"}
-
-	if diff := cmp.Diff(actual, expected); diff != "" {
-		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
-	}
-}
-
-func TestRegistryLoad(t *testing.T) {
-	reg := Registry{
-		base: []Target{
+	t.Run("just_all", func(t *testing.T) {
+		targets := []Target{
 			{
 				Name: "all",
 				All:  true,
@@ -405,30 +337,49 @@ func TestRegistryLoad(t *testing.T) {
 				Name:        "ubuntu",
 				OSReleaseID: "ubuntu",
 			},
-		},
-	}
+		}
 
-	actual, err := reg.Load([]string{"all", "amd64-ubuntu", "amd64"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	expected := []Target{
-		{
-			Name: "all",
-			All:  true,
-		},
-		{
+		actual, err := Build(targets, []string{"all"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(actual, targets[0]); diff != "" {
+			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+		}
+	})
+
+	t.Run("multi", func(t *testing.T) {
+		targets := []Target{
+			{
+				Name: "all",
+				All:  true,
+			},
+			{
+				Name:         "amd64",
+				Architecture: AMD64,
+			},
+			{
+				Name:         "arm64",
+				Architecture: "arm64",
+			},
+			{
+				Name:        "ubuntu",
+				OSReleaseID: "ubuntu",
+			},
+		}
+
+		actual, err := Build(targets, []string{"amd64", "ubuntu"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		expected := Target{
 			Name:         "amd64-ubuntu",
 			Architecture: AMD64,
 			OSReleaseID:  "ubuntu",
-		},
-		{
-			Name:         "amd64",
-			Architecture: AMD64,
-		},
-	}
+		}
 
-	if diff := cmp.Diff(actual, expected); diff != "" {
-		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
-	}
+		if diff := cmp.Diff(actual, expected); diff != "" {
+			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+		}
+	})
 }

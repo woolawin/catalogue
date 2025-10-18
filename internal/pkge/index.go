@@ -85,9 +85,9 @@ func construct(raw *Raw) (Index, []target.Target, error) {
 		if target.IsReservedTargetName(name) {
 			return Index{}, nil, internal.Err("can not define target with reserved name '%s'", name)
 		}
-		valid, invalid := target.ValidTargetName(name)
-		if !valid {
-			return Index{}, nil, internal.Err("invalid target name, '%s' not valid", invalid)
+		err := internal.ValidateName(name)
+		if err != nil {
+			return Index{}, nil, internal.ErrOf(err, "invalid target name")
 		}
 		tgt := target.Target{
 			Name:                     name,
