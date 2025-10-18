@@ -29,7 +29,7 @@ func TestLoadDownloads(t *testing.T) {
 		},
 	}
 
-	deserialized := map[string]map[string]RawDownload{
+	deserialized := map[string]map[string]DownloadTOML{
 		"bin": {
 			"amd64": {
 				Source:      " https://foo.com/bar-x86-64  ",
