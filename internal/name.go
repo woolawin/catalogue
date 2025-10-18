@@ -6,7 +6,20 @@ import (
 )
 
 func ValidateNameAndTarget(value string) (string, []string, error) {
-	return "", nil, nil
+	idx := strings.Index(value, ".")
+	if idx == -1 {
+		return "", nil, Err("expecting to be pattern '{name}.{target}'")
+	}
+	name := value[:idx]
+	err := ValidateName(name)
+	if err != nil {
+		return "", nil, err
+	}
+	target, err := ValidateNameList(value[idx+1:])
+	if err != nil {
+		return "", nil, err
+	}
+	return name, target, nil
 }
 
 func ValidateName(value string) error {

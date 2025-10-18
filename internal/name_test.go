@@ -60,3 +60,33 @@ func TestValidateNameList(t *testing.T) {
 		}
 	})
 }
+
+func TestValidateNameAndTarget(t *testing.T) {
+	t.Run("single_target", func(t *testing.T) {
+		name, target, err := ValidateNameAndTarget("foo.bar")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if name != "foo" {
+			t.Fatal("expected name TO Be foo")
+		}
+		if diff := cmp.Diff(target, []string{"bar"}); diff != "" {
+			fmt.Printf("Mismatch (-actual +expected):\n%s", diff)
+		}
+	})
+
+	t.Run("multi_target", func(t *testing.T) {
+		name, target, err := ValidateNameAndTarget("foo.bar-baz")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if name != "foo" {
+			t.Fatal("expected name TO Be foo")
+		}
+		if diff := cmp.Diff(target, []string{"bar", "baz"}); diff != "" {
+			fmt.Printf("Mismatch (-actual +expected):\n%s", diff)
+		}
+	})
+}
