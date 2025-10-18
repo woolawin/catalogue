@@ -91,10 +91,6 @@ func Build(path string, system target.System, disk ext.Disk) (Index, error) {
 
 func construct(raw *Raw, system target.System) (Index, error) {
 
-	downloads, err := raw.validate()
-	if err != nil {
-		return Index{}, internal.ErrOf(err, "invalid index.package.json")
-	}
 	var targets []target.Target
 
 	for name, values := range raw.Target {
@@ -116,6 +112,10 @@ func construct(raw *Raw, system target.System) (Index, error) {
 		targets = append(targets, tgt)
 	}
 
+	downloads, err := loadDownloads(raw.Download, targets)
+	if err != nil {
+		return Index{}, internal.ErrOf(err, "invalid index.package.json")
+	}
 	registry := target.NewRegistry(targets)
 	meta, err := mergeMeta(raw, system, registry)
 	if err != nil {
@@ -203,13 +203,6 @@ func (raw *Raw) Clean() {
 		raw.Target[key] = target
 	}
 
-	for name, targets := range raw.Download {
-		for tgt, dl := range targets {
-			dl.clean()
-			targets[tgt] = dl
-		}
-		raw.Download[name] = targets
-	}
 }
 
 func (meta *Meta) clean() {
@@ -245,41 +238,4 @@ func cleanList(list *[]string) {
 		}
 	}
 	*list = cleaned
-}
-
-func (raw *Raw) validate() (map[string][]*Download, error) {
-	targets := target.BuiltIns()
-	downloads := make(map[string][]*Download)
-
-	for name, tgts := range raw.Download {
-		err := internal.ValidateName(name)
-		if err != nil {
-			return nil, internal.ErrOf(err, "invalid download name %s", name)
-		}
-		for tgt, dl := range tgts {
-			targetNames, err := internal.ValidateNameList(tgt)
-			if err != nil {
-				return nil, internal.ErrOf(err, "invalid download target %s", name)
-			}
-
-			target, err := target.Build(targets, targetNames)
-			if err != nil {
-				return nil, internal.ErrOf(err, "invalid target %s", tgt)
-			}
-
-			download, err := dl.validate()
-			if err != nil {
-				return nil, internal.ErrOf(err, "invalid download %s", name)
-			}
-			download.ID = name + "." + tgt
-			download.Name = name
-			download.Target = target
-			_, ok := downloads[name]
-			if !ok {
-				downloads[name] = []*Download{}
-			}
-			downloads[name] = append(downloads[name], &download)
-		}
-	}
-	return downloads, nil
 }
