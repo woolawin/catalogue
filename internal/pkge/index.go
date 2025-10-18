@@ -13,9 +13,9 @@ import (
 )
 
 type Raw struct {
-	Meta     map[string]MetadataTOML           `toml:"meta"`
-	Target   map[string]TargetTOML             `toml:"target"`
-	Download map[string]map[string]RawDownload `toml:"download"`
+	Meta     map[string]MetadataTOML            `toml:"meta"`
+	Target   map[string]TargetTOML              `toml:"target"`
+	Download map[string]map[string]DownloadTOML `toml:"download"`
 }
 
 type Index struct {

@@ -20,14 +20,14 @@ func (dl *Download) GetTarget() target.Target {
 	return dl.Target
 }
 
-type RawDownload struct {
+type DownloadTOML struct {
 	Source      string `toml:"src"`
 	Destination string `toml:"dst"`
 }
 
-func loadDownloads(raw map[string]map[string]RawDownload, targets []target.Target) (map[string][]*Download, error) {
+func loadDownloads(deserialized map[string]map[string]DownloadTOML, targets []target.Target) (map[string][]*Download, error) {
 	var downloads map[string][]*Download
-	for name, tgts := range raw {
+	for name, tgts := range deserialized {
 		err := internal.ValidateName(name)
 		if err != nil {
 			return nil, internal.ErrOf(err, "invalid download name %s", name)
@@ -63,7 +63,7 @@ func loadDownloads(raw map[string]map[string]RawDownload, targets []target.Targe
 	return downloads, nil
 }
 
-func (raw *RawDownload) validate() (Download, error) {
+func (raw *DownloadTOML) validate() (Download, error) {
 	srcValue := strings.TrimSpace(raw.Source)
 	if len(srcValue) == 0 {
 		return Download{}, internal.Err("download must specify a source")

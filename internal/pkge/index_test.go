@@ -98,7 +98,7 @@ dst="path://root/usr/bin"
 				OSReleaseID: "ubuntu",
 			},
 		},
-		Download: map[string]map[string]RawDownload{
+		Download: map[string]map[string]DownloadTOML{
 			"bin": {
 				"all": {
 					Source:      "https://foo.com/bin",

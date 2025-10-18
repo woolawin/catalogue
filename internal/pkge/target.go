@@ -15,9 +15,9 @@ type TargetTOML struct {
 	OSReleaseVersionCodeName string `toml:"os_release_version_code_name"`
 }
 
-func loadTargets(raw map[string]TargetTOML) ([]target.Target, error) {
+func loadTargets(deserialized map[string]TargetTOML) ([]target.Target, error) {
 	targets := target.BuiltIns()
-	for name, values := range raw {
+	for name, values := range deserialized {
 		if target.IsReservedTargetName(name) {
 			return nil, internal.Err("can not define target with reserved name '%s'", name)
 		}

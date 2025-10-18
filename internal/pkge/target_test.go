@@ -8,7 +8,7 @@ import (
 )
 
 func TestLoadTargets(t *testing.T) {
-	raw := map[string]TargetTOML{
+	deserialized := map[string]TargetTOML{
 		"ubuntu": {
 			Architecture: "    ",
 			OSReleaseID:  "  ubuntu  ",
@@ -21,7 +21,7 @@ func TestLoadTargets(t *testing.T) {
 		},
 	}
 
-	actual, err := loadTargets(raw)
+	actual, err := loadTargets(deserialized)
 	if err != nil {
 		t.Fatal(actual)
 	}
