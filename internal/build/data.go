@@ -4,12 +4,10 @@ import (
 	"fmt"
 
 	"github.com/woolawin/catalogue/internal/api"
+	"github.com/woolawin/catalogue/internal/target"
 )
 
-func data(disk api.Disk) error {
-	if true {
-		return nil
-	}
+func data(system target.System, disk api.Disk, registry target.Registry) error {
 	tarPath := disk.Path("data.tar.gz")
 	dirPath := disk.Path("data")
 
@@ -32,10 +30,6 @@ func data(disk api.Disk) error {
 		return fmt.Errorf("data is not a directory")
 	}
 
-	if !exists {
-		disk.CreateTar(tarPath)
-	}
-
-	return disk.Archive(dirPath, tarPath)
-
+	filesystem(system, disk, registry)
+	return nil
 }

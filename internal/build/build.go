@@ -27,7 +27,7 @@ func Build(dst string, system target.System, disk api.Disk) error {
 		return internal.ErrOf(err, "can not create control.tar.gz")
 	}
 
-	err = filesystem(system, disk, index.Registry)
+	err = data(system, disk, index.Registry)
 	if err != nil {
 		return internal.ErrOf(err, "can not create data.tar.gz")
 	}
