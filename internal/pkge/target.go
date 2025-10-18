@@ -7,7 +7,7 @@ import (
 	"github.com/woolawin/catalogue/internal/target"
 )
 
-type RawTarget struct {
+type TargetTOML struct {
 	Architecture             string `toml:"architecture"`
 	OSReleaseID              string `toml:"os_release_id"`
 	OSReleaseVersion         string `toml:"os_release_version"`
@@ -15,7 +15,7 @@ type RawTarget struct {
 	OSReleaseVersionCodeName string `toml:"os_release_version_code_name"`
 }
 
-func loadTargets(raw map[string]RawTarget) ([]target.Target, error) {
+func loadTargets(raw map[string]TargetTOML) ([]target.Target, error) {
 	targets := target.BuiltIns()
 	for name, values := range raw {
 		if target.IsReservedTargetName(name) {

@@ -93,7 +93,7 @@ dst="path://root/usr/bin"
 				Maintainer:   "Jane Doe",
 			},
 		},
-		Target: map[string]RawTarget{
+		Target: map[string]TargetTOML{
 			"ubuntu": {
 				OSReleaseID: "ubuntu",
 			},
@@ -116,7 +116,7 @@ dst="path://root/usr/bin"
 
 func TestConstruct(t *testing.T) {
 	raw := Raw{
-		Target: map[string]RawTarget{
+		Target: map[string]TargetTOML{
 			"ubuntu": {
 				Architecture:             "amd64",
 				OSReleaseID:              "ubuntu",
