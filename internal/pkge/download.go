@@ -25,11 +25,6 @@ type RawDownload struct {
 	Destination string `toml:"dst"`
 }
 
-func (dl *RawDownload) clean() {
-	cleanString(&dl.Source)
-	cleanString(&dl.Destination)
-}
-
 func loadDownloads(raw map[string]map[string]RawDownload, targets []target.Target) (map[string][]*Download, error) {
 	var downloads map[string][]*Download
 	for name, tgts := range raw {
