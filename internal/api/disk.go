@@ -3,7 +3,6 @@ package api
 import (
 	"archive/tar"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -81,8 +80,6 @@ func (disk *DiskImpl) List(path string) ([]string, []string, error) {
 		return nil, nil, internal.ErrFileBlocked(path, "read")
 	}
 	entries, err := os.ReadDir(path)
-	fmt.Println(path)
-	fmt.Println(entries)
 	if err != nil {
 		return nil, nil, internal.ErrOf(err, "can not list directory %s", path)
 	}
