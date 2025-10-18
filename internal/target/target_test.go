@@ -8,15 +8,15 @@ import (
 
 func TestRank(t *testing.T) {
 	t.Run("first", func(t *testing.T) {
-		targets := []Target{
+		targets := []*Target{
 			{Name: "amd64", Architecture: AMD64},
 			{Name: "arm64", Architecture: ARM64},
 		}
 
 		system := System{Architecture: AMD64}
 
-		actual := system.Rank(targets)
-		expected := []int{0}
+		actual := Ranked(system, targets)
+		expected := []*Target{targets[0]}
 
 		if diff := cmp.Diff(actual, expected); diff != "" {
 			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
@@ -24,15 +24,15 @@ func TestRank(t *testing.T) {
 	})
 
 	t.Run("second", func(t *testing.T) {
-		targets := []Target{
+		targets := []*Target{
 			{Name: "amd64", Architecture: AMD64},
 			{Name: "arm64", Architecture: ARM64},
 		}
 
 		system := System{Architecture: ARM64}
 
-		actual := system.Rank(targets)
-		expected := []int{1}
+		actual := Ranked(system, targets)
+		expected := []*Target{targets[1]}
 
 		if diff := cmp.Diff(actual, expected); diff != "" {
 			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
@@ -40,7 +40,7 @@ func TestRank(t *testing.T) {
 	})
 
 	t.Run("all_is_last", func(t *testing.T) {
-		targets := []Target{
+		targets := []*Target{
 			{Name: "all", All: true},
 			{Name: "amd64", Architecture: AMD64},
 			{Name: "arm64", Architecture: ARM64},
@@ -48,14 +48,13 @@ func TestRank(t *testing.T) {
 
 		system := System{Architecture: ARM64}
 
-		actual := system.Rank(targets)
-		expected := []int{2, 0}
+		actual := Ranked(system, targets)
+		expected := []*Target{targets[2], targets[0]}
 
 		if diff := cmp.Diff(actual, expected); diff != "" {
 			t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 		}
 	})
-
 }
 
 func TestParseValidTargetNames(t *testing.T) {

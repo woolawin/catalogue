@@ -27,6 +27,10 @@ type Target struct {
 	OSReleaseVersionCodeName string
 }
 
+func (target *Target) GetTarget() Target {
+	return *target
+}
+
 type System struct {
 	Architecture             Architecture
 	OSReleaseID              string
@@ -49,6 +53,69 @@ func GetSystem() (System, error) {
 	system.OSReleaseVersionID, _ = findOSReleaseValue(osRelease, "VERSION_ID")
 	system.OSReleaseVersionCodeName, _ = findOSReleaseValue(osRelease, "VERSION_CODENAME")
 	return system, nil
+}
+
+type GetTarget interface {
+	GetTarget() Target
+}
+
+func RankedFirst[T GetTarget](system System, targets []T, dud T) (T, bool) {
+	ranked := Ranked(system, targets)
+	if len(ranked) == 0 {
+		return dud, false
+	}
+	return ranked[0], true
+}
+
+func Ranked[T GetTarget](system System, targets []T) []T {
+	if len(targets) == 0 {
+		return nil
+	}
+	scores := make(map[int]int)
+scoreTarget:
+	for idx, elem := range targets {
+		if elem.GetTarget().All {
+			scores[idx] = 0
+			continue scoreTarget
+		}
+		score, applicable := score(system, elem.GetTarget())
+		if !applicable {
+			continue
+		}
+		scores[idx] = score
+	}
+	var ranking []T
+	previous := math.MaxInt32
+	for {
+		if len(ranking) == len(scores) {
+			break
+		}
+		high := -1
+	rankTarget:
+		for _, score := range scores {
+			if score > high && score < previous {
+				high = score
+				continue rankTarget
+			}
+		}
+		if high == -1 {
+			break
+		}
+		for targetIdx, score := range scores {
+			if score != high {
+				continue
+			}
+		findTarget:
+			for idx := range targets {
+				if idx == targetIdx {
+					ranking = append(ranking, targets[targetIdx])
+					break findTarget
+				}
+			}
+		}
+		previous = high
+	}
+	return ranking
 }
 
 func (system System) Rank(targets []Target) []int {

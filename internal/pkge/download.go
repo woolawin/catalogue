@@ -14,6 +14,10 @@ type Download struct {
 	Destination *url.URL
 }
 
+func (dl *Download) GetTarget() target.Target {
+	return dl.Target
+}
+
 type RawDownload struct {
 	Source      string `toml:"src"`
 	Destination string `toml:"dst"`

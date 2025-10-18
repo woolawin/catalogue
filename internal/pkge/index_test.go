@@ -351,15 +351,17 @@ func TestValidateRaw(t *testing.T) {
 	}
 
 	t.Run("downloads", func(t *testing.T) {
-		expected := []Download{
-			{
-				Name: "bin",
-				Target: target.Target{
-					Name: "all",
-					All:  true,
+		expected := map[string][]Download{
+			"bin": {
+				{
+					Name: "bin",
+					Target: target.Target{
+						Name: "all",
+						All:  true,
+					},
+					Source:      u("https://foo.com/bar.txt"),
+					Destination: u("path://root/etc/foo/bar.txt"),
 				},
-				Source:      u("https://foo.com/bar.txt"),
-				Destination: u("path://root/etc/foo/bar.txt"),
 			},
 		}
 

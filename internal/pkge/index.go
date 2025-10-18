@@ -39,7 +39,7 @@ type Index struct {
 	Meta      Meta
 	Targets   []target.Target
 	Registry  target.Registry
-	Downloads []Download
+	Downloads map[string][]*Download
 }
 
 func Parse(src io.Reader, system target.System) (Index, error) {
@@ -208,9 +208,9 @@ func cleanList(list *[]string) {
 	*list = cleaned
 }
 
-func (raw *Raw) validate() ([]Download, error) {
+func (raw *Raw) validate() (map[string][]*Download, error) {
 	targets := target.BuiltIns()
-	var downloads []Download
+	downloads := make(map[string][]*Download)
 
 	for name, tgts := range raw.Download {
 		err := internal.ValidateName(name)
@@ -235,7 +235,11 @@ func (raw *Raw) validate() ([]Download, error) {
 
 			download.Name = name
 			download.Target = target
-			downloads = append(downloads, download)
+			_, ok := downloads[name]
+			if !ok {
+				downloads[name] = []*Download{}
+			}
+			downloads[name] = append(downloads[name], &download)
 		}
 	}
 	return downloads, nil
