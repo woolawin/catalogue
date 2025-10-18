@@ -13,7 +13,7 @@ import (
 )
 
 type IndexTOML struct {
-	Meta     map[string]MetadataTOML            `toml:"meta"`
+	Metadata map[string]MetadataTOML            `toml:"metadata"`
 	Target   map[string]TargetTOML              `toml:"target"`
 	Download map[string]map[string]DownloadTOML `toml:"download"`
 }
@@ -80,7 +80,7 @@ func construct(deserialized *IndexTOML) (Index, error) {
 	if err != nil {
 		return Index{}, internal.ErrOf(err, "invalid index download")
 	}
-	metadatas, err := loadMetadata(deserialized.Meta, targets)
+	metadatas, err := loadMetadata(deserialized.Metadata, targets)
 	if err != nil {
 		return Index{}, internal.ErrOf(err, "invalid index metadata")
 	}

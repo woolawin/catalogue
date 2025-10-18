@@ -10,7 +10,7 @@ import (
 
 func TestBasicDeserialize(t *testing.T) {
 	input := `
-[meta.all]
+[metadata.all]
 name='FooBar'
 dependencies=['foo', 'bar']
 section='utilities'
@@ -27,7 +27,7 @@ architecture='amd64'
 	}
 
 	expected := IndexTOML{
-		Meta: map[string]MetadataTOML{
+		Metadata: map[string]MetadataTOML{
 			"all": {
 				Name:         "FooBar",
 				Dependencies: []string{"foo", "bar"},
@@ -53,7 +53,7 @@ func TestDeserializeFull(t *testing.T) {
 [target.ubuntu]
 os_release_id='ubuntu'
 
-[meta.all]
+[metadata.all]
 name='FooBar'
 dependencies=['foo', 'bar']
 section='utilities'
@@ -62,7 +62,7 @@ homepage='https://foobar.com'
 description='foo bar'
 maintainer='Bob Doe'
 
-[meta.amd64]
+[metadata.amd64]
 architecture='amd64'
 maintainer='Jane Doe'
 
@@ -77,7 +77,7 @@ dst="path://root/usr/bin"
 	}
 
 	expected := IndexTOML{
-		Meta: map[string]MetadataTOML{
+		Metadata: map[string]MetadataTOML{
 			"all": {
 				Name:         "FooBar",
 				Dependencies: []string{"foo", "bar"},

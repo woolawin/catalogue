@@ -2,5 +2,4 @@ override system value from CLI
 read existing control data
 
 =====
-rename meta to metdata in toml
 test download
