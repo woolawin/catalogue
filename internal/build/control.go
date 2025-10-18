@@ -1,10 +1,10 @@
 package build
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
+	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/api"
 	"github.com/woolawin/catalogue/internal/pkge"
 )
@@ -16,34 +16,34 @@ func control(index pkge.Index, disk api.Disk) error {
 
 	exists, asFile, err := disk.FileExists(tarPath)
 	if err != nil {
-		return err
+		return internal.ErrOf(err, "can not check if file control.tar.gz exists")
 	}
 	if exists {
 		return nil
 	}
 	if !asFile {
-		return fmt.Errorf("data.tar.gz is not a file")
+		return internal.Err("data.tar.gz is not a file")
 	}
 
 	exists, asDir, err := disk.DirExists(dirPath)
 	if err != nil {
-		return err
+		return internal.ErrOf(err, "can not check if directory control exists")
 	}
 	if !asDir {
-		return fmt.Errorf("data is not a directory")
+		return internal.Err("control is not a directory")
 	}
 
 	if !exists {
 		err = disk.CreateDir(dirPath)
 		if err != nil {
-			return fmt.Errorf("can not create control directory: %w", err)
+			return internal.ErrOf(err, "can not create control directory")
 		}
 	}
 
 	controlFile := disk.Path("control", "control")
 	file, err := os.OpenFile(controlFile, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
-		return fmt.Errorf("can not open control file: %w", err)
+		return internal.ErrOf(err, "can not open file control/control")
 	}
 	defer file.Close()
 
@@ -52,7 +52,7 @@ func control(index pkge.Index, disk api.Disk) error {
 
 	_, err = file.Write([]byte(data.String()))
 	if err != nil {
-		return fmt.Errorf("failed to write to control file: %w", err)
+		return internal.ErrOf(err, "can not write to file control/control")
 	}
 
 	return disk.Archive(dirPath, tarPath)

@@ -3,12 +3,13 @@ package api
 import (
 	"archive/tar"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/woolawin/catalogue/internal"
 )
 
 type Disk interface {
@@ -36,9 +37,8 @@ func (disk *DiskImpl) Path(parts ...string) string {
 }
 
 func (disk *DiskImpl) FileExists(path string) (bool, bool, error) {
-	err := disk.safe(path)
-	if err != nil {
-		return false, false, err
+	if disk.unsafe(path) {
+		return false, false, internal.ErrFileBlocked(path, "read")
 	}
 	info, err := os.Stat(path)
 	if err != nil {
@@ -51,9 +51,8 @@ func (disk *DiskImpl) FileExists(path string) (bool, bool, error) {
 }
 
 func (disk *DiskImpl) DirExists(path string) (bool, bool, error) {
-	err := disk.safe(path)
-	if err != nil {
-		return false, false, err
+	if disk.unsafe(path) {
+		return false, false, internal.ErrFileBlocked(path, "read")
 	}
 	info, err := os.Stat(path)
 	if err != nil {
@@ -66,21 +65,23 @@ func (disk *DiskImpl) DirExists(path string) (bool, bool, error) {
 }
 
 func (disk *DiskImpl) CreateDir(path string) error {
-	err := disk.safe(path)
-	if err != nil {
-		return err
+	if disk.unsafe(path) {
+		return internal.ErrFileBlocked(path, "created")
 	}
-	return os.Mkdir(path, 0755)
+	err := os.Mkdir(path, 0755)
+	if err != nil {
+		return internal.ErrOf(err, "can not create directory %s", path)
+	}
+	return nil
 }
 
 func (disk *DiskImpl) List(path string) ([]string, []string, error) {
-	err := disk.safe(path)
-	if err != nil {
-		return nil, nil, err
+	if disk.unsafe(path) {
+		return nil, nil, internal.ErrFileBlocked(path, "read")
 	}
 	entries, err := os.ReadDir(path)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read directory contents: %w", err)
+		return nil, nil, internal.ErrOf(err, "can not list directory %s", path)
 	}
 
 	var files []string
@@ -98,14 +99,13 @@ func (disk *DiskImpl) List(path string) ([]string, []string, error) {
 }
 
 func (disk *DiskImpl) ListRec(path string) ([]string, error) {
-	err := disk.safe(path)
-	if err != nil {
-		return nil, err
+	if disk.unsafe(path) {
+		return nil, internal.ErrFileBlocked(path, "read")
 	}
 	var files []string
-	err = filepath.WalkDir(path, func(path string, entry os.DirEntry, err error) error {
+	err := filepath.WalkDir(path, func(path string, entry os.DirEntry, err error) error {
 		if err != nil {
-			return err
+			return internal.ErrOf(err, "can not list directory %s", path)
 		}
 
 		if !entry.IsDir() {
@@ -115,19 +115,18 @@ func (disk *DiskImpl) ListRec(path string) ([]string, error) {
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, internal.ErrOf(err, "can not recusrivly list directory %s", path)
 	}
 	return files, nil
 }
 
 func (disk *DiskImpl) CreateTar(path string) error {
-	err := disk.safe(path)
-	if err != nil {
-		return err
+	if disk.unsafe(path) {
+		return internal.ErrFileBlocked(path, "created")
 	}
 	file, err := os.Create(path)
 	if err != nil {
-		return fmt.Errorf("can not create data.tar.gz: %w", err)
+		return internal.ErrOf(err, "can not create file data.tar.gz")
 	}
 	defer file.Close()
 	gzipWriter := gzip.NewWriter(file)
@@ -138,21 +137,18 @@ func (disk *DiskImpl) CreateTar(path string) error {
 }
 
 func (disk *DiskImpl) Move(toPath string, fromPath string, files []string, overwrite bool) error {
-	err := disk.safe(toPath)
-	if err != nil {
-		return err
+	if disk.unsafe(toPath) {
+		return internal.ErrFileBlocked(toPath, "written")
 	}
 
 	for _, file := range files {
 		newPath := disk.Path(disk.base, toPath, file)
-		err = disk.safe(newPath)
-		if err != nil {
-			return err
+		if disk.unsafe(newPath) {
+			return internal.ErrFileBlocked(toPath, "written")
 		}
 		oldPath := disk.Path(disk.base, fromPath, file)
-		err = disk.safe(oldPath)
-		if err != nil {
-			return err
+		if disk.unsafe(oldPath) {
+			return internal.ErrFileBlocked(oldPath, "read")
 		}
 		_, err := os.Stat(newPath)
 		if err == nil {
@@ -162,7 +158,7 @@ func (disk *DiskImpl) Move(toPath string, fromPath string, files []string, overw
 		}
 		err = os.Rename(oldPath, newPath)
 		if err != nil {
-			return err
+			return internal.ErrOf(err, "can not move file %s to %s", fromPath, toPath)
 		}
 	}
 
@@ -170,18 +166,16 @@ func (disk *DiskImpl) Move(toPath string, fromPath string, files []string, overw
 }
 
 func (disk *DiskImpl) Archive(src string, dst string) error {
-	err := disk.safe(src)
-	if err != nil {
-		return err
+	if disk.unsafe(src) {
+		return internal.ErrFileBlocked(src, "read")
 	}
-	err = disk.safe(dst)
-	if err != nil {
-		return err
+	if disk.unsafe(dst) {
+		return internal.ErrFileBlocked("dst", "written")
 	}
 
 	file, err := os.Create(dst)
 	if err != nil {
-		return nil
+		return internal.ErrOf(err, "can not create file %s", dst)
 	}
 	defer file.Close()
 
@@ -191,24 +185,24 @@ func (disk *DiskImpl) Archive(src string, dst string) error {
 	tarWriter := tar.NewWriter(gzipWriter)
 	defer tarWriter.Close()
 
-	return filepath.Walk(src, func(file string, fi os.FileInfo, err error) error {
+	err = filepath.Walk(src, func(file string, fi os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			return internal.ErrOf(err, "can not list archive file %s", file)
 		}
 
 		header, err := tar.FileInfoHeader(fi, fi.Name())
 		if err != nil {
-			return err
+			return internal.ErrOf(err, "can not read file header %s", file)
 		}
 
 		relPath, err := filepath.Rel(filepath.Dir(src), file)
 		if err != nil {
-			return err
+			return internal.ErrOf(err, "can not determine relative file for %s", file)
 		}
 		header.Name = relPath
 
 		if err := tarWriter.WriteHeader(header); err != nil {
-			return err
+			return internal.ErrOf(err, "can not write header for file %s", file)
 		}
 
 		if !fi.Mode().IsRegular() {
@@ -217,25 +211,31 @@ func (disk *DiskImpl) Archive(src string, dst string) error {
 
 		f, err := os.Open(file)
 		if err != nil {
-			return err
+			return internal.ErrOf(err, "can not open archive file %s", file)
 		}
 		defer f.Close()
 
 		_, err = io.Copy(tarWriter, f)
-		return err
+		if err != nil {
+			return internal.ErrOf(err, "can not write archive file %s", file)
+		}
+		return nil
 	})
+	if err != nil {
+		return internal.ErrOf(err, "can not archive directory %s from %s", dst, src)
+	}
+	return nil
 }
 
-func (disk *DiskImpl) safe(path string) error {
+func (disk *DiskImpl) unsafe(path string) bool {
 	baseAbs, err := filepath.Abs(disk.base)
-	unsafe := fmt.Errorf("file access not allowed: '%s'", path)
 	if err != nil {
-		return unsafe
+		return true
 	}
 
 	pathAbs, err := filepath.Abs(path)
 	if err != nil {
-		return unsafe
+		return true
 	}
 
 	baseAbs = filepath.Clean(baseAbs)
@@ -250,7 +250,7 @@ func (disk *DiskImpl) safe(path string) error {
 	}
 
 	if !strings.HasPrefix(pathAbs, baseAbs) {
-		return unsafe
+		return true
 	}
-	return nil
+	return false
 }

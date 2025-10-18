@@ -1,10 +1,10 @@
 package build
 
 import (
-	"fmt"
 	"strings"
 	"unicode"
 
+	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/api"
 	"github.com/woolawin/catalogue/internal/target"
 )
@@ -13,10 +13,10 @@ func filesystem(system target.System, disk api.Disk, reg target.Registry) error 
 	fsPath := disk.Path("filesystem")
 	exists, asDir, err := disk.DirExists(fsPath)
 	if err != nil {
-		return err
+		return internal.ErrOf(err, "can not check if directory %s exists", fsPath)
 	}
 	if !asDir {
-		return fmt.Errorf("filesystem is not a directory")
+		return internal.Err("filesystem directory %s is not adirectory", fsPath)
 	}
 
 	if !exists {
@@ -25,19 +25,19 @@ func filesystem(system target.System, disk api.Disk, reg target.Registry) error 
 
 	_, dirs, err := disk.List(fsPath)
 	if err != nil {
-		return err
+		return internal.ErrOf(err, "can not list filesystem %s files", fsPath)
 	}
 
 	var filesystems []FileSystem
 	for _, dir := range dirs {
 		ref, err := parseFileSystemRef(dir)
 		if err != nil {
-			return err
+			return internal.ErrOf(err, "invalid filesystem reference %s", dir)
 		}
 
 		files, err := disk.ListRec(disk.Path("filesystem", dir))
 		if err != nil {
-			return fmt.Errorf("failed to list directory %s: %w", dir, err)
+			return internal.ErrOf(err, "can not recusivly list flesystem %s", dir)
 		}
 
 		var filesystem *FileSystem
@@ -59,7 +59,7 @@ func filesystem(system target.System, disk api.Disk, reg target.Registry) error 
 		fs := &filesystems[idx]
 		targets, err := reg.Load(fs.Targets)
 		if err != nil {
-			return err
+			return internal.ErrOf(err, "invalid targets to move filesystem")
 		}
 		for _, idx := range system.Rank(targets) {
 			fromPath := strings.Builder{}
@@ -68,9 +68,10 @@ func filesystem(system target.System, disk api.Disk, reg target.Registry) error 
 			targetName := targets[idx].Name
 			fromPath.WriteString(targetName)
 			files := fs.TargetFiles[targetName]
-			err := disk.Move("data", fromPath.String(), files, false)
+			from := fromPath.String()
+			err := disk.Move("data", from, files, false)
 			if err != nil {
-				return err
+				return internal.ErrOf(err, "failed to move files from filesystem %s", from)
 			}
 		}
 	}
@@ -93,17 +94,17 @@ type FileSystemRef struct {
 func parseFileSystemRef(value string) (FileSystemRef, error) {
 	idx := strings.Index(value, ".")
 	if idx == -1 {
-		return FileSystemRef{}, fmt.Errorf("invalid filesystem reference '%s', missing target", value)
+		return FileSystemRef{}, internal.Err("invalid filesystem reference '%s', missing target", value)
 	}
 	anchor := value[:idx]
 	err := validAnchorName(anchor)
 	if err != nil {
-		return FileSystemRef{}, err
+		return FileSystemRef{}, internal.ErrOf(err, "invalid filesystem anchor")
 	}
 	targetStr := value[idx+1:]
 	targets, err := target.ParseTargetNamesString(targetStr)
 	if err != nil {
-		return FileSystemRef{}, err
+		return FileSystemRef{}, internal.ErrOf(err, "invalid filesystem targets")
 	}
 	return FileSystemRef{Anchor: anchor, Targets: targets, Target: targetStr}, nil
 }
@@ -113,7 +114,7 @@ func validAnchorName(value string) error {
 		if unicode.IsLower(r) || string(r) == "_" {
 			continue
 		}
-		return fmt.Errorf("invalid anchor name '%s', '%s' not valid", value, string(r))
+		return internal.Err("invalid anchor name '%s', '%s' not valid", value, string(r))
 	}
 	return nil
 }

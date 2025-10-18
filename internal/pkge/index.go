@@ -1,11 +1,11 @@
 package pkge
 
 import (
-	"fmt"
 	"io"
 	"strings"
 
 	toml "github.com/pelletier/go-toml/v2"
+	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/target"
 )
 
@@ -43,7 +43,7 @@ type Index struct {
 func Parse(src io.Reader, system target.System) (Index, error) {
 	raw, err := deserialize(src)
 	if err != nil {
-		return Index{}, nil
+		return Index{}, err
 	}
 	return construct(&raw, system)
 }
@@ -54,11 +54,11 @@ func construct(raw *Raw, system target.System) (Index, error) {
 
 	for name, values := range raw.Target {
 		if target.IsReservedTargetName(name) {
-			return Index{}, fmt.Errorf("can not define target with reserved name '%s'", name)
+			return Index{}, internal.Err("can not define target with reserved name '%s'", name)
 		}
 		valid, invalid := target.ValidTargetName(name)
 		if !valid {
-			return Index{}, fmt.Errorf("invalid target name, '%s' not valid", invalid)
+			return Index{}, internal.Err("invalid target name, '%s' not valid", invalid)
 		}
 		tgt := target.Target{
 			Name:                     name,
@@ -74,7 +74,7 @@ func construct(raw *Raw, system target.System) (Index, error) {
 	registry := target.NewRegistry(targets)
 	meta, err := mergeMeta(raw, system, registry)
 	if err != nil {
-		return Index{}, err
+		return Index{}, internal.ErrOf(err, "failed to build package metadata")
 	}
 	return Index{Meta: meta, Registry: registry, Targets: targets}, nil
 }
@@ -87,7 +87,7 @@ func deserialize(src io.Reader) (Raw, error) {
 	raw := Raw{}
 	err := toml.NewDecoder(src).Decode(&raw)
 	if err != nil {
-		return raw, fmt.Errorf("could not read index.toml: %w", err)
+		return raw, internal.ErrOf(err, "can not deserialize index.package.toml")
 	}
 	return raw, nil
 }
@@ -100,7 +100,7 @@ func mergeMeta(pi *Raw, system target.System, registry target.Registry) (Meta, e
 	}
 	targets, err := registry.Load(targetNames)
 	if err != nil {
-		return Meta{}, err
+		return Meta{}, internal.ErrOf(err, "can not find targets for metadata")
 	}
 
 	for _, idx := range system.Rank(targets) {

@@ -7,7 +7,9 @@ import (
 )
 
 func data(disk api.Disk) error {
-
+	if true {
+		return nil
+	}
 	tarPath := disk.Path("data.tar.gz")
 	dirPath := disk.Path("data")
 

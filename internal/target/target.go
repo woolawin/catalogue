@@ -1,12 +1,13 @@
 package target
 
 import (
-	"fmt"
 	"math"
 	"os"
 	"runtime"
 	"strings"
 	"unicode"
+
+	"github.com/woolawin/catalogue/internal"
 )
 
 type Architecture string
@@ -36,14 +37,11 @@ type System struct {
 
 func GetSystem() (System, error) {
 	system := System{}
-	arch, ok := getArch(runtime.GOARCH)
-	if !ok {
-		return System{}, fmt.Errorf("unknown system architecture '%s'", runtime.GOARCH)
-	}
+	arch, _ := getArch(runtime.GOARCH)
 	system.Architecture = arch
 	osReleaseBytes, err := os.ReadFile("/etc/os-release")
 	if err != nil {
-		return System{}, fmt.Errorf("can not read /etc/os-release: %w", err)
+		return System{}, internal.Err("can not read /etc/os-release")
 	}
 	osRelease := strings.Split(string(osReleaseBytes), "\n")
 	system.OSReleaseID, _ = findOSReleaseValue(osRelease, "ID")
@@ -165,7 +163,7 @@ func MergeTargets(targets []Target) (Target, error) {
 
 	for _, target := range targets {
 		if target.All {
-			return Target{}, fmt.Errorf("can not create target from all")
+			return Target{}, internal.Err("the all target can not be combined with other targets")
 		}
 		if name.Len() == 0 {
 			name.WriteString(target.Name)
@@ -212,7 +210,7 @@ func mergeString(a *string, b string, predicate string) error {
 	}
 
 	if *a != b {
-		return fmt.Errorf("incompatible %s, '%s' and '%s'", predicate, *a, b)
+		return internal.Err("incompatible targets '%s' and '%s', '%s' are not the same", *a, b, predicate)
 	}
 
 	return nil
@@ -228,7 +226,7 @@ func mergeArchitecture(a *Architecture, b Architecture) error {
 	}
 
 	if *a != b {
-		return fmt.Errorf("incompatible architecture, '%s' and '%s'", *a, b)
+		return internal.Err("incompatible targets '%s' and '%s', architecture are not the same", *a, b)
 	}
 	return nil
 }
@@ -240,7 +238,7 @@ func getArch(value string) (Architecture, bool) {
 	case "arm64":
 		return ARM64, true
 	default:
-		return "", false
+		return Architecture(value), false
 	}
 }
 
@@ -268,7 +266,7 @@ func ParseTargetNamesString(value string) ([]string, error) {
 	for _, part := range parts {
 		valid, invalid := ValidTargetName(part)
 		if !valid {
-			return nil, fmt.Errorf("invalid target name '%s', '%s' not valid", part, invalid)
+			return nil, internal.Err("invalid target name '%s', charcacter '%s' not valid", part, invalid)
 		}
 		names = append(names, part)
 	}
@@ -323,7 +321,7 @@ func (reg *Registry) Load(names []string) ([]Target, error) {
 		for _, part := range parts {
 			target, ok := reg.Find(part)
 			if !ok {
-				return nil, fmt.Errorf("unkowen target: '%s'", part)
+				return nil, internal.Err("target %s is not known", part)
 			}
 			targets = append(targets, target)
 		}
