@@ -22,8 +22,9 @@ type Meta struct {
 }
 
 type Raw struct {
-	Meta   map[string]Meta      `toml:"meta"`
-	Target map[string]RawTarget `toml:"target"`
+	Meta     map[string]Meta                `toml:"meta"`
+	Target   map[string]RawTarget           `toml:"target"`
+	Download map[string]map[string]Download `toml:"download"`
 }
 
 type RawTarget struct {
@@ -32,6 +33,11 @@ type RawTarget struct {
 	OSReleaseVersion         string `toml:"os_release_version"`
 	OSReleaseVersionID       string `toml:"os_release_version_id"`
 	OSReleaseVersionCodeName string `toml:"os_release_version_code_name"`
+}
+
+type Download struct {
+	Source      string `toml:"src"`
+	Destination string `toml:"dst"`
 }
 
 type Index struct {
@@ -148,18 +154,26 @@ func mergeMeta(pi *Raw, system target.System, registry target.Registry) (Meta, e
 func (raw *Raw) Clean() {
 	for key := range raw.Meta {
 		meta := raw.Meta[key]
-		meta.Clean()
+		meta.clean()
 		raw.Meta[key] = meta
 	}
 
 	for key := range raw.Target {
 		target := raw.Target[key]
-		target.Clean()
+		target.clean()
 		raw.Target[key] = target
+	}
+
+	for name, targets := range raw.Download {
+		for tgt, dl := range targets {
+			dl.clean()
+			targets[tgt] = dl
+		}
+		raw.Download[name] = targets
 	}
 }
 
-func (meta *Meta) Clean() {
+func (meta *Meta) clean() {
 	cleanString(&meta.Name)
 	cleanList(&meta.Dependencies)
 	cleanString(&meta.Section)
@@ -171,12 +185,17 @@ func (meta *Meta) Clean() {
 	cleanList(&meta.Recommendations)
 }
 
-func (target *RawTarget) Clean() {
+func (target *RawTarget) clean() {
 	cleanString(&target.Architecture)
 	cleanString(&target.OSReleaseID)
 	cleanString(&target.OSReleaseVersion)
 	cleanString(&target.OSReleaseVersionID)
 	cleanString(&target.OSReleaseVersionCodeName)
+}
+
+func (dl *Download) clean() {
+	cleanString(&dl.Source)
+	cleanString(&dl.Destination)
 }
 
 func cleanString(value *string) {

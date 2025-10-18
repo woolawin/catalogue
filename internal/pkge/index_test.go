@@ -66,7 +66,11 @@ maintainer='Bob Doe'
 [meta.amd64]
 architecture='amd64'
 maintainer='Jane Doe'
-	`
+
+[download.bin.all]
+src="https://foo.com/bin"
+dst="path://root/usr/bin"
+`
 
 	actual, err := deserialize(strings.NewReader(input))
 	if err != nil {
@@ -92,6 +96,14 @@ maintainer='Jane Doe'
 		Target: map[string]RawTarget{
 			"ubuntu": {
 				OSReleaseID: "ubuntu",
+			},
+		},
+		Download: map[string]map[string]Download{
+			"bin": {
+				"all": {
+					Source:      "https://foo.com/bin",
+					Destination: "path://root/usr/bin",
+				},
 			},
 		},
 	}
@@ -281,6 +293,14 @@ func TestCleanRaw(t *testing.T) {
 				OSReleaseVersionCodeName: "   ",
 			},
 		},
+		Download: map[string]map[string]Download{
+			"bin": {
+				"all": {
+					Source:      "   https://foo.com/bin  ",
+					Destination: "  path://root/usr/bin   ",
+				},
+			},
+		},
 	}
 
 	actual.Clean()
@@ -296,6 +316,14 @@ func TestCleanRaw(t *testing.T) {
 				OSReleaseVersion:         "ver",
 				OSReleaseVersionID:       "ver_id",
 				OSReleaseVersionCodeName: "",
+			},
+		},
+		Download: map[string]map[string]Download{
+			"bin": {
+				"all": {
+					Source:      "https://foo.com/bin",
+					Destination: "path://root/usr/bin",
+				},
 			},
 		},
 	}
