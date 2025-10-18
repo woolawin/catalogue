@@ -14,6 +14,7 @@ import (
 
 type Disk interface {
 	Path(parts ...string) string
+	WriteFile(path string, data io.Reader) error
 	FileExists(path string) (bool, bool, error)
 	DirExists(path string) (bool, bool, error)
 	CreateDir(path string) error
@@ -25,18 +26,35 @@ type Disk interface {
 }
 
 func NewDisk(base string) Disk {
-	return &DiskImpl{base: base}
+	return &diskImpl{base: base}
 }
 
-type DiskImpl struct {
+type diskImpl struct {
 	base string
 }
 
-func (disk *DiskImpl) Path(parts ...string) string {
+func (disk *diskImpl) Path(parts ...string) string {
 	return filepath.Join(slices.Insert(parts, 0, string(disk.base))...)
 }
 
-func (disk *DiskImpl) FileExists(path string) (bool, bool, error) {
+func (disk *diskImpl) WriteFile(path string, data io.Reader) error {
+	if disk.unsafe(path) {
+		return internal.ErrFileBlocked(path, "read")
+	}
+	file, err := os.Create(path)
+	if err != nil {
+		return internal.ErrOf(err, "can not create file %s", path)
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, data)
+	if err != nil {
+		return internal.ErrOf(err, "failed to write to file %s", path)
+	}
+	return nil
+}
+
+func (disk *diskImpl) FileExists(path string) (bool, bool, error) {
 	if disk.unsafe(path) {
 		return false, false, internal.ErrFileBlocked(path, "read")
 	}
@@ -50,7 +68,7 @@ func (disk *DiskImpl) FileExists(path string) (bool, bool, error) {
 	return true, !info.IsDir(), nil
 }
 
-func (disk *DiskImpl) DirExists(path string) (bool, bool, error) {
+func (disk *diskImpl) DirExists(path string) (bool, bool, error) {
 	if disk.unsafe(path) {
 		return false, false, internal.ErrFileBlocked(path, "read")
 	}
@@ -64,7 +82,7 @@ func (disk *DiskImpl) DirExists(path string) (bool, bool, error) {
 	return true, info.IsDir(), nil
 }
 
-func (disk *DiskImpl) CreateDir(path string) error {
+func (disk *diskImpl) CreateDir(path string) error {
 	if disk.unsafe(path) {
 		return internal.ErrFileBlocked(path, "created")
 	}
@@ -75,7 +93,7 @@ func (disk *DiskImpl) CreateDir(path string) error {
 	return nil
 }
 
-func (disk *DiskImpl) List(path string) ([]string, []string, error) {
+func (disk *diskImpl) List(path string) ([]string, []string, error) {
 	if disk.unsafe(path) {
 		return nil, nil, internal.ErrFileBlocked(path, "read")
 	}
@@ -98,7 +116,7 @@ func (disk *DiskImpl) List(path string) ([]string, []string, error) {
 	return files, dirs, nil
 }
 
-func (disk *DiskImpl) ListRec(path string) ([]string, error) {
+func (disk *diskImpl) ListRec(path string) ([]string, error) {
 	if disk.unsafe(path) {
 		return nil, internal.ErrFileBlocked(path, "read")
 	}
@@ -120,7 +138,7 @@ func (disk *DiskImpl) ListRec(path string) ([]string, error) {
 	return files, nil
 }
 
-func (disk *DiskImpl) CreateTar(path string) error {
+func (disk *diskImpl) CreateTar(path string) error {
 	if disk.unsafe(path) {
 		return internal.ErrFileBlocked(path, "created")
 	}
@@ -136,7 +154,7 @@ func (disk *DiskImpl) CreateTar(path string) error {
 	return nil
 }
 
-func (disk *DiskImpl) Move(toPath string, fromPath string, files []string, overwrite bool) error {
+func (disk *diskImpl) Move(toPath string, fromPath string, files []string, overwrite bool) error {
 	if disk.unsafe(toPath) {
 		return internal.ErrFileBlocked(toPath, "written")
 	}
@@ -165,7 +183,7 @@ func (disk *DiskImpl) Move(toPath string, fromPath string, files []string, overw
 	return nil
 }
 
-func (disk *DiskImpl) Archive(src string, dst string) error {
+func (disk *diskImpl) Archive(src string, dst string) error {
 	if disk.unsafe(src) {
 		return internal.ErrFileBlocked(src, "read")
 	}
@@ -227,7 +245,7 @@ func (disk *DiskImpl) Archive(src string, dst string) error {
 	return nil
 }
 
-func (disk *DiskImpl) unsafe(path string) bool {
+func (disk *diskImpl) unsafe(path string) bool {
 	baseAbs, err := filepath.Abs(disk.base)
 	if err != nil {
 		return true
