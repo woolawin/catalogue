@@ -52,6 +52,9 @@ func filesystem(system target.System, disk api.Disk, reg target.Registry) error 
 			filesystem = &filesystems[len(filesystems)-1]
 		}
 		filesystem.Targets = append(filesystem.Targets, ref.Target)
+		if filesystem.TargetFiles == nil {
+			filesystem.TargetFiles = make(map[string][]string)
+		}
 		filesystem.TargetFiles[ref.Target] = files
 	}
 
