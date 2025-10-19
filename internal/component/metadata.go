@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
 type MetadataTOML struct {
@@ -19,7 +18,7 @@ type MetadataTOML struct {
 }
 
 type Metadata struct {
-	Target          target.Target
+	Target          internal.Target
 	Dependencies    []string
 	Section         string
 	Priority        string
@@ -30,11 +29,11 @@ type Metadata struct {
 	Recommendations []string
 }
 
-func (metadata *Metadata) GetTarget() target.Target {
+func (metadata *Metadata) GetTarget() internal.Target {
 	return metadata.Target
 }
 
-func loadMetadata(deserialized map[string]MetadataTOML, targets []target.Target) ([]*Metadata, error) {
+func loadMetadata(deserialized map[string]MetadataTOML, targets []internal.Target) ([]*Metadata, error) {
 
 	var metadatas []*Metadata
 
@@ -43,7 +42,7 @@ func loadMetadata(deserialized map[string]MetadataTOML, targets []target.Target)
 		if err != nil {
 			return nil, internal.ErrOf(err, "invalid metadata target %s", targetStr)
 		}
-		tgt, err := target.Build(targets, targetNames)
+		tgt, err := internal.Build(targets, targetNames)
 		if err != nil {
 			return nil, internal.ErrOf(err, "invalid metadata target %s", targetStr)
 		}

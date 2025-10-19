@@ -4,10 +4,9 @@ import (
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/component"
 	"github.com/woolawin/catalogue/internal/ext"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
-func Build(dst string, config component.Config, system target.System, api ext.API) error {
+func Build(dst string, config component.Config, system internal.System, api ext.API) error {
 	if config.Kind != component.Package {
 		return internal.Err("component '%s' is not a package", config.Name)
 	}

@@ -6,10 +6,9 @@ import (
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/component"
 	"github.com/woolawin/catalogue/internal/ext"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
-func data(system target.System, config component.Config, api ext.API) error {
+func data(system internal.System, config component.Config, api ext.API) error {
 	tarPath := api.Disk().Path("data.tar.gz")
 	dirPath := api.Disk().Path("data")
 

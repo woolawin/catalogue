@@ -9,7 +9,6 @@ import (
 	toml "github.com/pelletier/go-toml/v2"
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/ext"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
 type Kind int
@@ -31,9 +30,9 @@ type ConfigTOML struct {
 type Config struct {
 	Name            string
 	Kind            Kind
-	SupportsTargets []*target.Target
+	SupportsTargets []*internal.Target
 	Metadata        []*Metadata
-	Targets         []target.Target
+	Targets         []internal.Target
 	Downloads       map[string][]*Download
 	FileSystems     map[string][]*FileSystem
 }
@@ -149,8 +148,8 @@ func normalizeList(list []string) []string {
 	return cleaned
 }
 
-func loadSupportsTargets(targets []target.Target, values []string) ([]*target.Target, error) {
-	var supported []*target.Target
+func loadSupportsTargets(targets []internal.Target, values []string) ([]*internal.Target, error) {
+	var supported []*internal.Target
 
 	for _, value := range values {
 		names, err := internal.ValidateNameList(value)
@@ -158,7 +157,7 @@ func loadSupportsTargets(targets []target.Target, values []string) ([]*target.Ta
 			return nil, internal.ErrOf(err, "invalid support target name '%s'", value)
 		}
 
-		tgt, err := target.Build(targets, names)
+		tgt, err := internal.Build(targets, names)
 		if err != nil {
 			return nil, internal.ErrOf(err, "can not build supported target '%s'", value)
 		}

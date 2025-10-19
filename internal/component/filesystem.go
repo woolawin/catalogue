@@ -3,20 +3,19 @@ package component
 import (
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/ext"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
 type FileSystem struct {
 	ID     string
 	Anchor string
-	Target target.Target
+	Target internal.Target
 }
 
-func (fs *FileSystem) GetTarget() target.Target {
+func (fs *FileSystem) GetTarget() internal.Target {
 	return fs.Target
 }
 
-func loadFileSystems(targets []target.Target, disk ext.Disk) (map[string][]*FileSystem, error) {
+func loadFileSystems(targets []internal.Target, disk ext.Disk) (map[string][]*FileSystem, error) {
 	fsPath := disk.Path("filesystem")
 	exists, asDir, err := disk.DirExists(fsPath)
 	if err != nil {
@@ -42,7 +41,7 @@ func loadFileSystems(targets []target.Target, disk ext.Disk) (map[string][]*File
 			return nil, internal.ErrOf(err, "invalid filesystem reference '%s'", dir)
 		}
 
-		tgt, err := target.Build(targets, targetNames)
+		tgt, err := internal.Build(targets, targetNames)
 		if err != nil {
 			return nil, internal.ErrOf(err, "invalid filesystem target %s", dir)
 		}

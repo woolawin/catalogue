@@ -6,19 +6,19 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/woolawin/catalogue/internal/target"
+	"github.com/woolawin/catalogue/internal"
 )
 
 func TestLoadMetadata(t *testing.T) {
 
-	targets := []target.Target{
+	targets := []internal.Target{
 		{
 			Name:         "amd64",
-			Architecture: target.AMD64,
+			Architecture: internal.AMD64,
 		},
 		{
 			Name:         "arm64",
-			Architecture: target.ARM64,
+			Architecture: internal.ARM64,
 		},
 		{
 			Name: "all",
@@ -57,11 +57,11 @@ func TestLoadMetadata(t *testing.T) {
 
 	expected := []*Metadata{
 		{
-			Target:     target.Target{Name: "ubuntu", OSReleaseID: "ubuntu"},
+			Target:     internal.Target{Name: "ubuntu", OSReleaseID: "ubuntu"},
 			Maintainer: "canonical",
 		},
 		{
-			Target:          target.Target{Name: "all", All: true},
+			Target:          internal.Target{Name: "all", All: true},
 			Dependencies:    []string{"foo", "bar"},
 			Section:         "other",
 			Priority:        "normal",
@@ -72,9 +72,9 @@ func TestLoadMetadata(t *testing.T) {
 			Recommendations: []string{"baz"},
 		},
 		{
-			Target: target.Target{
+			Target: internal.Target{
 				Name:         "arm64-ubuntu",
-				Architecture: target.ARM64,
+				Architecture: internal.ARM64,
 				OSReleaseID:  "ubuntu",
 			},
 			Homepage:        "https://arm.com/foo",
@@ -86,6 +86,6 @@ func TestLoadMetadata(t *testing.T) {
 		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 	}
 }
-func sortByTarget(a, b target.GetTarget) int {
+func sortByTarget(a, b internal.GetTarget) int {
 	return strings.Compare(a.GetTarget().Name, b.GetTarget().Name)
 }

@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
 type TargetTOML struct {
@@ -15,19 +14,19 @@ type TargetTOML struct {
 	OSReleaseVersionCodeName string `toml:"os_release_version_code_name"`
 }
 
-func loadTargets(deserialized map[string]TargetTOML) ([]target.Target, error) {
-	targets := target.BuiltIns()
+func loadTargets(deserialized map[string]TargetTOML) ([]internal.Target, error) {
+	targets := internal.BuiltIns()
 	for name, values := range deserialized {
-		if target.IsReservedTargetName(name) {
+		if internal.IsReservedTargetName(name) {
 			return nil, internal.Err("can not define target with reserved name '%s'", name)
 		}
 		err := internal.ValidateName(name)
 		if err != nil {
 			return nil, internal.ErrOf(err, "invalid target name")
 		}
-		tgt := target.Target{
+		tgt := internal.Target{
 			Name:                     strings.TrimSpace(name),
-			Architecture:             target.Architecture(strings.TrimSpace(values.Architecture)),
+			Architecture:             internal.Architecture(strings.TrimSpace(values.Architecture)),
 			OSReleaseID:              strings.TrimSpace(values.OSReleaseID),
 			OSReleaseVersion:         strings.TrimSpace(values.OSReleaseVersion),
 			OSReleaseVersionID:       strings.TrimSpace(values.OSReleaseVersionID),

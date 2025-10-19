@@ -5,19 +5,19 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/ext"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
 func TestLoadFileSystems(t *testing.T) {
-	targets := []target.Target{
+	targets := []internal.Target{
 		{
 			Name:         "amd64",
-			Architecture: target.AMD64,
+			Architecture: internal.AMD64,
 		},
 		{
 			Name:         "arm64",
-			Architecture: target.ARM64,
+			Architecture: internal.ARM64,
 		},
 		{
 			Name: "all",
@@ -48,17 +48,17 @@ func TestLoadFileSystems(t *testing.T) {
 			{
 				ID:     "root.all",
 				Anchor: "root",
-				Target: target.Target{Name: "all", All: true},
+				Target: internal.Target{Name: "all", All: true},
 			},
 			{
 				ID:     "root.amd64",
 				Anchor: "root",
-				Target: target.Target{Name: "amd64", Architecture: target.AMD64},
+				Target: internal.Target{Name: "amd64", Architecture: internal.AMD64},
 			},
 			{
 				ID:     "root.amd64-ubuntu",
 				Anchor: "root",
-				Target: target.Target{Name: "amd64-ubuntu", Architecture: target.AMD64, OSReleaseID: "ubuntu"},
+				Target: internal.Target{Name: "amd64-ubuntu", Architecture: internal.AMD64, OSReleaseID: "ubuntu"},
 			},
 		},
 	}

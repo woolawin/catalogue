@@ -5,18 +5,17 @@ import (
 	"strings"
 
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
 type Download struct {
 	ID          string
 	Name        string
-	Target      target.Target
+	Target      internal.Target
 	Source      *url.URL
 	Destination *url.URL
 }
 
-func (dl *Download) GetTarget() target.Target {
+func (dl *Download) GetTarget() internal.Target {
 	return dl.Target
 }
 
@@ -25,7 +24,7 @@ type DownloadTOML struct {
 	Destination string `toml:"dst"`
 }
 
-func loadDownloads(deserialized map[string]map[string]DownloadTOML, targets []target.Target) (map[string][]*Download, error) {
+func loadDownloads(deserialized map[string]map[string]DownloadTOML, targets []internal.Target) (map[string][]*Download, error) {
 	var downloads map[string][]*Download
 	for name, tgts := range deserialized {
 		err := internal.ValidateName(name)
@@ -38,7 +37,7 @@ func loadDownloads(deserialized map[string]map[string]DownloadTOML, targets []ta
 				return nil, internal.ErrOf(err, "invalid download target %s", name)
 			}
 
-			target, err := target.Build(targets, targetNames)
+			target, err := internal.Build(targets, targetNames)
 			if err != nil {
 				return nil, internal.ErrOf(err, "invalid target %s", tgt)
 			}

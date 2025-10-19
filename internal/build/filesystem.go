@@ -4,12 +4,11 @@ import (
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/component"
 	"github.com/woolawin/catalogue/internal/ext"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
-func filesystem(system target.System, filesystems map[string][]*component.FileSystem, api ext.API) error {
+func filesystem(system internal.System, filesystems map[string][]*component.FileSystem, api ext.API) error {
 	for anchor, targets := range filesystems {
-		for _, filesystem := range target.Ranked(system, targets) {
+		for _, filesystem := range internal.Ranked(system, targets) {
 
 			path := api.Disk().Path("filesystem", filesystem.ID)
 			files, err := api.Disk().ListRec(path)

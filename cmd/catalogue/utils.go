@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/clone"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
 func getProtocolAndRemote(value string) (clone.Protocol, string, error) {
@@ -36,10 +35,10 @@ func getProtocolAndRemote(value string) (clone.Protocol, string, error) {
 	return clone.Git, remote, nil
 }
 
-func overrideSystem(system *target.System, cmd *cobra.Command) {
+func overrideSystem(system *internal.System, cmd *cobra.Command) {
 	architecture, _ := cmd.Flags().GetString("architecture")
 	if len(architecture) != 0 {
-		system.Architecture = target.Architecture(architecture)
+		system.Architecture = internal.Architecture(architecture)
 	}
 
 	osReleaseID, _ := cmd.Flags().GetString("os-release-id")

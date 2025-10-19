@@ -7,10 +7,9 @@ import (
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/component"
 	"github.com/woolawin/catalogue/internal/ext"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
-func control(system target.System, config component.Config, api ext.API) error {
+func control(system internal.System, config component.Config, api ext.API) error {
 
 	tarPath := api.Disk().Path("control.tar.gz")
 	dirPath := api.Disk().Path("control")
@@ -64,9 +63,9 @@ func control(system target.System, config component.Config, api ext.API) error {
 	return api.Disk().ArchiveDir(dirPath, tarPath)
 }
 
-func Metadata(metadatas []*component.Metadata, system target.System) (component.Metadata, error) {
+func Metadata(metadatas []*component.Metadata, system internal.System) (component.Metadata, error) {
 	metadata := component.Metadata{}
-	for _, data := range target.Ranked(system, metadatas) {
+	for _, data := range internal.Ranked(system, metadatas) {
 		if len(metadata.Dependencies) == 0 && len(data.Dependencies) != 0 {
 			metadata.Dependencies = data.Dependencies
 		}

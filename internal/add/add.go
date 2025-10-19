@@ -8,10 +8,9 @@ import (
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/component"
 	"github.com/woolawin/catalogue/internal/ext"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
-func Add(protocol clone.Protocol, remote string, system target.System, api ext.API) error {
+func Add(protocol clone.Protocol, remote string, system internal.System, api ext.API) error {
 	local := api.Host().RandomTmpDir()
 
 	err := clone.Clone(protocol, remote, local, ".catalogue/config.toml", api)
@@ -31,7 +30,7 @@ func Add(protocol clone.Protocol, remote string, system target.System, api ext.A
 		return internal.ErrOf(err, "invalid metadata from '%s'", remote)
 	}
 
-	if len(target.Ranked(system, config.SupportsTargets)) == 0 {
+	if len(internal.Ranked(system, config.SupportsTargets)) == 0 {
 		return internal.Err("component '%s' has no supported target")
 	}
 

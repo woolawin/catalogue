@@ -1,10 +1,8 @@
-package target
+package internal
 
 import (
 	"math"
 	"strings"
-
-	"github.com/woolawin/catalogue/internal"
 )
 
 type Architecture string
@@ -160,7 +158,7 @@ func mergeTargets(targets []Target) (Target, error) {
 
 	for _, target := range targets {
 		if target.All {
-			return Target{}, internal.Err("the all target can not be combined with other targets")
+			return Target{}, Err("the all target can not be combined with other targets")
 		}
 		if name.Len() == 0 {
 			name.WriteString(target.Name)
@@ -207,7 +205,7 @@ func mergeString(a *string, b string, predicate string) error {
 	}
 
 	if *a != b {
-		return internal.Err("incompatible targets '%s' and '%s', '%s' are not the same", *a, b, predicate)
+		return Err("incompatible targets '%s' and '%s', '%s' are not the same", *a, b, predicate)
 	}
 
 	return nil
@@ -223,7 +221,7 @@ func mergeArchitecture(a *Architecture, b Architecture) error {
 	}
 
 	if *a != b {
-		return internal.Err("incompatible targets '%s' and '%s', architecture are not the same", *a, b)
+		return Err("incompatible targets '%s' and '%s', architecture are not the same", *a, b)
 	}
 	return nil
 }
@@ -250,12 +248,12 @@ func BuiltIns() []Target {
 
 func Build(from []Target, names []string) (Target, error) {
 	if len(names) == 0 {
-		return Target{}, internal.Err("can not build target without name")
+		return Target{}, Err("can not build target without name")
 	}
 	if len(names) == 1 {
 		target, found := find(from, names[0])
 		if !found {
-			return Target{}, internal.Err("can not find target %s", names[0])
+			return Target{}, Err("can not find target %s", names[0])
 		}
 		return target, nil
 	}
@@ -263,7 +261,7 @@ func Build(from []Target, names []string) (Target, error) {
 	for _, name := range names {
 		target, ok := find(from, name)
 		if !ok {
-			return Target{}, internal.Err("can not find target %s", name)
+			return Target{}, Err("can not find target %s", name)
 		}
 		targets = append(targets, target)
 	}

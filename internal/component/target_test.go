@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/woolawin/catalogue/internal/target"
+	"github.com/woolawin/catalogue/internal"
 )
 
 func TestLoadTargets(t *testing.T) {
@@ -26,14 +26,14 @@ func TestLoadTargets(t *testing.T) {
 		t.Fatal(actual)
 	}
 
-	expected := []target.Target{
+	expected := []internal.Target{
 		{
 			Name:         "amd64",
-			Architecture: target.AMD64,
+			Architecture: internal.AMD64,
 		},
 		{
 			Name:         "arm64",
-			Architecture: target.ARM64,
+			Architecture: internal.ARM64,
 		},
 		{
 			Name: "all",

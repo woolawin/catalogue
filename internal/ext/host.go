@@ -9,11 +9,10 @@ import (
 	"time"
 
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
 type Host interface {
-	GetSystem() (target.System, error)
+	GetSystem() (internal.System, error)
 	ResolveAnchor(value string) (string, error)
 	GetConfigPath() string
 	GetConfig() (internal.Config, error)
@@ -48,13 +47,13 @@ func (impl *hostImpl) ResolveAnchor(value string) (string, error) {
 	return "", internal.Err("unknown anchor '%s'", value)
 }
 
-func (impl *hostImpl) GetSystem() (target.System, error) {
-	system := target.System{}
+func (impl *hostImpl) GetSystem() (internal.System, error) {
+	system := internal.System{}
 	arch, _ := getArch(runtime.GOARCH)
 	system.Architecture = arch
 	osReleaseBytes, err := os.ReadFile("/etc/os-release")
 	if err != nil {
-		return target.System{}, internal.Err("can not read /etc/os-release")
+		return internal.System{}, internal.Err("can not read /etc/os-release")
 	}
 	osRelease := strings.Split(string(osReleaseBytes), "\n")
 	system.OSReleaseID, _ = findOSReleaseValue(osRelease, "ID")
@@ -119,14 +118,14 @@ func (impl *hostImpl) GetConfig() (internal.Config, error) {
 	return config, nil
 }
 
-func getArch(value string) (target.Architecture, bool) {
+func getArch(value string) (internal.Architecture, bool) {
 	switch value {
 	case "amd64":
-		return target.AMD64, true
+		return internal.AMD64, true
 	case "arm64":
-		return target.ARM64, true
+		return internal.ARM64, true
 	default:
-		return target.Architecture(value), false
+		return internal.Architecture(value), false
 	}
 }
 

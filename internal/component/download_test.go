@@ -6,18 +6,18 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/woolawin/catalogue/internal/target"
+	"github.com/woolawin/catalogue/internal"
 )
 
 func TestLoadDownloads(t *testing.T) {
-	targets := []target.Target{
+	targets := []internal.Target{
 		{
 			Name:         "amd64",
-			Architecture: target.AMD64,
+			Architecture: internal.AMD64,
 		},
 		{
 			Name:         "arm64",
-			Architecture: target.ARM64,
+			Architecture: internal.ARM64,
 		},
 		{
 			Name: "all",
@@ -58,14 +58,14 @@ func TestLoadDownloads(t *testing.T) {
 			{
 				ID:          "bin.amd64",
 				Name:        "bin",
-				Target:      target.Target{Name: "amd64", Architecture: target.AMD64},
+				Target:      internal.Target{Name: "amd64", Architecture: internal.AMD64},
 				Source:      u("https://foo.com/bar-x86-64"),
 				Destination: u("path://root/usr/bin/bar"),
 			},
 			{
 				ID:          "bin.arm64",
 				Name:        "bin",
-				Target:      target.Target{Name: "arm64", Architecture: target.ARM64},
+				Target:      internal.Target{Name: "arm64", Architecture: internal.ARM64},
 				Source:      u("https://foo.com/bar-arm"),
 				Destination: u("path://root/usr/bin/bar"),
 			},
@@ -74,7 +74,7 @@ func TestLoadDownloads(t *testing.T) {
 			{
 				ID:          "logo.amd64-ubuntu",
 				Name:        "logo",
-				Target:      target.Target{Name: "amd64-ubuntu", Architecture: target.AMD64, OSReleaseID: "ubuntu"},
+				Target:      internal.Target{Name: "amd64-ubuntu", Architecture: internal.AMD64, OSReleaseID: "ubuntu"},
 				Source:      u("https://foo.com/logo.svg"),
 				Destination: u("path://root/usr/bin/foo.svg"),
 			},

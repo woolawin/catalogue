@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/component"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
 func TestControlDataString(t *testing.T) {
@@ -40,11 +40,11 @@ Description: meh
 }
 
 func TestMergeMeta(t *testing.T) {
-	system := target.System{Architecture: target.AMD64}
+	system := internal.System{Architecture: internal.AMD64}
 
 	metadatas := []*component.Metadata{
 		{
-			Target:       target.Target{Name: "all", All: true},
+			Target:       internal.Target{Name: "all", All: true},
 			Dependencies: []string{"foo", "bar"},
 			Section:      "utilities",
 			Priority:     "normal",
@@ -53,12 +53,12 @@ func TestMergeMeta(t *testing.T) {
 			Maintainer:   "Bob Doe",
 		},
 		{
-			Target:       target.Target{Name: "amd64", Architecture: target.AMD64},
+			Target:       internal.Target{Name: "amd64", Architecture: internal.AMD64},
 			Architecture: "amd64",
 			Maintainer:   "Jane Doe",
 		},
 		{
-			Target:          target.Target{Name: "arm64", Architecture: target.ARM64},
+			Target:          internal.Target{Name: "arm64", Architecture: internal.ARM64},
 			Recommendations: []string{"happy", "puppy"},
 		},
 	}
