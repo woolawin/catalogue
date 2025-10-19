@@ -1,5 +1,9 @@
 
+add IsBuiltin flag to target
+
 implement components dir
+
+move target package into internal
 
 =====
 test download
