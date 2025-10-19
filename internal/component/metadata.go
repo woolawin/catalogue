@@ -8,7 +8,6 @@ import (
 )
 
 type MetadataTOML struct {
-	Name            string   `toml:"name"`
 	Dependencies    []string `toml:"dependencies"`
 	Section         string   `toml:"section"`
 	Priority        string   `toml:"priority"`
@@ -21,7 +20,6 @@ type MetadataTOML struct {
 
 type Metadata struct {
 	Target          target.Target
-	Name            string
 	Dependencies    []string
 	Section         string
 	Priority        string
@@ -51,7 +49,6 @@ func loadMetadata(deserialized map[string]MetadataTOML, targets []target.Target)
 		}
 		metadata := Metadata{
 			Target:          tgt,
-			Name:            strings.TrimSpace(meta.Name),
 			Dependencies:    normalizeList(meta.Dependencies),
 			Section:         strings.TrimSpace(meta.Section),
 			Priority:        strings.TrimSpace(meta.Priority),

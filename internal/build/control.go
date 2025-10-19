@@ -54,7 +54,7 @@ func control(system target.System, config component.Config, api ext.API) error {
 	if err != nil {
 		return internal.ErrOf(err, "can not generate metadata for control")
 	}
-	data.SetFrom(md)
+	data.SetFrom(config, md)
 
 	_, err = file.Write([]byte(data.String()))
 	if err != nil {
@@ -67,11 +67,6 @@ func control(system target.System, config component.Config, api ext.API) error {
 func Metadata(metadatas []*component.Metadata, system target.System) (component.Metadata, error) {
 	metadata := component.Metadata{}
 	for _, data := range target.Ranked(system, metadatas) {
-
-		if len(metadata.Name) == 0 && len(data.Name) != 0 {
-			metadata.Name = data.Name
-		}
-
 		if len(metadata.Dependencies) == 0 && len(data.Dependencies) != 0 {
 			metadata.Dependencies = data.Dependencies
 		}
@@ -120,9 +115,9 @@ type ControlData struct {
 	Description  string
 }
 
-func (data *ControlData) SetFrom(metadata component.Metadata) {
+func (data *ControlData) SetFrom(config component.Config, metadata component.Metadata) {
 	if len(data.Package) == 0 {
-		data.Package = metadata.Name
+		data.Package = config.Name
 	}
 
 	if len(data.Depends) == 0 {

@@ -12,13 +12,24 @@ import (
 	"github.com/woolawin/catalogue/internal/target"
 )
 
+type Kind int
+
+const (
+	Package Kind = iota
+	Repository
+)
+
 type ConfigTOML struct {
+	Name     string                             `toml:"name"`
+	Kind     string                             `toml:"kind"`
 	Metadata map[string]MetadataTOML            `toml:"metadata"`
 	Target   map[string]TargetTOML              `toml:"target"`
 	Download map[string]map[string]DownloadTOML `toml:"download"`
 }
 
 type Config struct {
+	Name        string
+	Kind        Kind
 	Metadata    []*Metadata
 	Targets     []target.Target
 	Downloads   map[string][]*Download
@@ -70,6 +81,23 @@ func Build(path string, disk ext.Disk) (Config, error) {
 }
 
 func load(deserialized *ConfigTOML) (Config, error) {
+
+	name := strings.TrimSpace(deserialized.Name)
+	if len(name) == 0 {
+		return Config{}, internal.Err("missing property name")
+	}
+	var kind Kind
+	switch strings.TrimSpace(deserialized.Kind) {
+	case "":
+		return Config{}, internal.Err("missing property kind")
+	case "package":
+		kind = Package
+	case "repository":
+		kind = Repository
+	default:
+		return Config{}, internal.Err("unknown kind '%s'", deserialized.Kind)
+	}
+
 	targets, err := loadTargets(deserialized.Target)
 	if err != nil {
 		return Config{}, internal.ErrOf(err, "invalid target")
@@ -84,6 +112,8 @@ func load(deserialized *ConfigTOML) (Config, error) {
 		return Config{}, internal.ErrOf(err, "invalid config metadata")
 	}
 	config := Config{
+		Name:      name,
+		Kind:      kind,
 		Targets:   targets,
 		Metadata:  metadatas,
 		Downloads: downloads,

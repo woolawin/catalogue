@@ -32,7 +32,6 @@ func TestLoadMetadata(t *testing.T) {
 
 	deserialized := map[string]MetadataTOML{
 		"all": {
-			Name:            " foobar  ",
 			Dependencies:    []string{"foo ", " bar "},
 			Section:         "  other ",
 			Priority:        "  normal  ",
@@ -63,7 +62,6 @@ func TestLoadMetadata(t *testing.T) {
 		},
 		{
 			Target:          target.Target{Name: "all", All: true},
-			Name:            "foobar",
 			Dependencies:    []string{"foo", "bar"},
 			Section:         "other",
 			Priority:        "normal",

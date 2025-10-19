@@ -24,14 +24,12 @@ func Add(protocol clone.Protocol, remote string, system target.System, api ext.A
 		return internal.ErrOf(err, "invalid component config")
 	}
 
-	metadata, err := build.Metadata(config.Metadata, system)
+	_, err = build.Metadata(config.Metadata, system)
 	if err != nil {
 		return internal.ErrOf(err, "invalid metadata from '%s'", remote)
 	}
 
-	if len(metadata.Name) == 0 {
-		return internal.Err("component is not supported for this device")
-	}
+	// @TODO implement supports_targets
 
 	return nil
 }

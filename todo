@@ -1,6 +1,16 @@
-override system value from CLI in build
+add name, type, supported to component.Config
 
 implement components dir
 
 =====
 test download
+
+
+----
+components structure
+
+/etc/catalogue/components
+/etc/catalogue/components/packages/
+/etc/catalogue/components/packages/foo/config.toml
+/etc/catalogue/components/packages/foo/status.toml
+/etc/catalogue/components/repositories/bar/config.toml

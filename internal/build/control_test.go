@@ -45,7 +45,6 @@ func TestMergeMeta(t *testing.T) {
 	metadatas := []*component.Metadata{
 		{
 			Target:       target.Target{Name: "all", All: true},
-			Name:         "FooBar",
 			Dependencies: []string{"foo", "bar"},
 			Section:      "utilities",
 			Priority:     "normal",
@@ -69,7 +68,6 @@ func TestMergeMeta(t *testing.T) {
 		t.Fatal(err)
 	}
 	expected := component.Metadata{
-		Name:         "FooBar",
 		Dependencies: []string{"foo", "bar"},
 		Section:      "utilities",
 		Priority:     "normal",

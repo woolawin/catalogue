@@ -10,8 +10,10 @@ import (
 
 func TestBasicDeserialize(t *testing.T) {
 	input := `
+name='  foobar '
+kind='  package  '
+
 [metadata.all]
-name='FooBar'
 dependencies=['foo', 'bar']
 section='utilities'
 priority='normal'
@@ -27,9 +29,10 @@ architecture='amd64'
 	}
 
 	expected := ConfigTOML{
+		Name: "  foobar ",
+		Kind: "  package  ",
 		Metadata: map[string]MetadataTOML{
 			"all": {
-				Name:         "FooBar",
 				Dependencies: []string{"foo", "bar"},
 				Section:      "utilities",
 				Priority:     "normal",
@@ -49,12 +52,13 @@ architecture='amd64'
 
 func TestDeserializeFull(t *testing.T) {
 	input := `
+name='foobar'
+kind='package'
 
 [target.ubuntu]
 os_release_id='ubuntu'
 
 [metadata.all]
-name='FooBar'
 dependencies=['foo', 'bar']
 section='utilities'
 priority='normal'
@@ -77,9 +81,10 @@ dst="path://root/usr/bin"
 	}
 
 	expected := ConfigTOML{
+		Name: "foobar",
+		Kind: "package",
 		Metadata: map[string]MetadataTOML{
 			"all": {
-				Name:         "FooBar",
 				Dependencies: []string{"foo", "bar"},
 				Section:      "utilities",
 				Priority:     "normal",
