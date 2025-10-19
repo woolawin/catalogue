@@ -99,7 +99,9 @@ func runClone(cmd *cobra.Command, args []string) {
 	local, _ := cmd.Flags().GetString("local")
 	path, _ := cmd.Flags().GetString("path")
 
-	err := clone.Clone(remote, local, path)
+	api := ext.NewAPI("/")
+
+	err := clone.Clone(remote, local, path, api)
 	if err != nil {
 		fmt.Println("ERRPOR")
 		fmt.Println(err.Error())

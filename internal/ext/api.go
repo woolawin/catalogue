@@ -1,15 +1,10 @@
 package ext
 
-import "net/url"
-
 type API interface {
 	Disk() Disk
 	Host() Host
 	Http() HTTP
-}
-
-type CloneDriver interface {
-	Fetch(from *url.URL) ([]byte, error)
+	Git() Git
 }
 
 func NewAPI(base string) API {
@@ -17,6 +12,7 @@ func NewAPI(base string) API {
 		disk: NewDisk(base),
 		host: NewHost(),
 		http: NewHTTP(),
+		git:  NewGit(),
 	}
 }
 
@@ -24,6 +20,7 @@ type apiImpl struct {
 	disk Disk
 	host Host
 	http HTTP
+	git  Git
 }
 
 func (impl *apiImpl) Disk() Disk {
@@ -36,4 +33,8 @@ func (impl *apiImpl) Host() Host {
 
 func (impl *apiImpl) Http() HTTP {
 	return impl.http
+}
+
+func (impl *apiImpl) Git() Git {
+	return impl.git
 }
