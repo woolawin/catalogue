@@ -1,5 +1,4 @@
 override system value from CLI in build
-move getProtocolAndRemote() to main
 support home anchor
 
 implement components dir

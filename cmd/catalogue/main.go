@@ -60,8 +60,16 @@ func runAdd(cmd *cobra.Command, args []string) {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
+
+	protocol, remote, err := getProtocolAndRemote(args[0])
+	if err != nil {
+		fmt.Println("ERROR")
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 	api := ext.NewAPI("/")
-	err = add.Add(args[0], system, api)
+
+	err = add.Add(protocol, remote, system, api)
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())
