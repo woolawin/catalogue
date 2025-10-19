@@ -99,11 +99,22 @@ func runClone(cmd *cobra.Command, args []string) {
 	local, _ := cmd.Flags().GetString("local")
 	path, _ := cmd.Flags().GetString("path")
 
+	var protocol clone.Protocol
+	git, _ := cmd.Flags().GetBool("git")
+	if git {
+		protocol = clone.Git
+	}
+
+	if protocol == 0 {
+		fmt.Println("must set --git")
+		os.Exit(0)
+	}
+
 	api := ext.NewAPI("/")
 
-	err := clone.Clone(remote, local, path, api)
+	err := clone.Clone(protocol, remote, local, path, api)
 	if err != nil {
-		fmt.Println("ERRPOR")
+		fmt.Println("ERROR")
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
@@ -150,6 +161,7 @@ func args() *cobra.Command {
 	clone.Flags().String("remote", "", "The remote source to clone from")
 	clone.Flags().String("local", "", "The local destination to clone to")
 	clone.Flags().String("path", "", "The path to clone files from the remote")
+	clone.Flags().Bool("git", false, "Clone via git")
 	clone.MarkFlagRequired("remote")
 	clone.MarkFlagRequired("local")
 	clone.MarkFlagRequired("path")

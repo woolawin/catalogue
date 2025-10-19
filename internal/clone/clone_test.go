@@ -1,6 +1,8 @@
 package clone
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestIsInPath(t *testing.T) {
 	t.Run("is_in", func(t *testing.T) {

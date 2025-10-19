@@ -2,7 +2,6 @@ package clone
 
 import (
 	"io"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,30 +12,36 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func Clone(remote string, local string, path string, api ext.API) error {
+type Protocol int
 
-	remoteURL, err := url.Parse(remote)
+const (
+	Git Protocol = iota + 1
+)
+
+func Clone(protocol Protocol, remote string, local string, path string, api ext.API) error {
+	exists, _, err := api.Disk().DirExists(local)
 	if err != nil {
-		return internal.ErrOf(err, "invalid remote '%s'", remote)
+		return internal.ErrOf(err, "can not check if local already exists")
 	}
-
-	if remoteURL.Scheme == "git" {
-		return gitClone(remoteURL, local, path, api)
+	if exists {
+		return internal.Err("local already exists")
 	}
-
-	return internal.ErrOf(err, "invalid remote '%s'", remote)
-
+	switch protocol {
+	case Git:
+		return gitClone(remote, local, path, api)
+	}
+	return internal.Err("unsupported protocol")
 }
 
-func gitClone(remote *url.URL, local string, path string, api ext.API) error {
+func gitClone(remote string, local string, path string, api ext.API) error {
 	opts := &git.CloneOptions{
-		URL:        remote.String(),
+		URL:        remote,
 		Depth:      1,
 		NoCheckout: true,
 	}
 	repo, err := api.Git().Clone(local, opts)
 	if err != nil {
-		return internal.ErrOf(err, "failed to clone '%s'", remote.String())
+		return internal.ErrOf(err, "failed to clone '%s'", remote)
 	}
 
 	ref, err := repo.Head()
