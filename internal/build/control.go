@@ -50,7 +50,7 @@ func control(system target.System, config component.Config, api ext.API) error {
 
 	data := ControlData{}
 
-	md, err := metadata(config.Metadata, system)
+	md, err := Metadata(config.Metadata, system)
 	if err != nil {
 		return internal.ErrOf(err, "can not generate metadata for control")
 	}
@@ -64,7 +64,7 @@ func control(system target.System, config component.Config, api ext.API) error {
 	return api.Disk().ArchiveDir(dirPath, tarPath)
 }
 
-func metadata(metadatas []*component.Metadata, system target.System) (component.Metadata, error) {
+func Metadata(metadatas []*component.Metadata, system target.System) (component.Metadata, error) {
 	metadata := component.Metadata{}
 	for _, data := range target.Ranked(system, metadatas) {
 

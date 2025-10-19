@@ -64,7 +64,7 @@ func TestMergeMeta(t *testing.T) {
 		},
 	}
 
-	actual, err := metadata(metadatas, system)
+	actual, err := Metadata(metadatas, system)
 	if err != nil {
 		t.Fatal(err)
 	}

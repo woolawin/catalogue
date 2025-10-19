@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/woolawin/catalogue/internal"
+	"github.com/woolawin/catalogue/internal/add"
 	"github.com/woolawin/catalogue/internal/build"
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/component"
@@ -55,7 +55,19 @@ func runSystem(cmd *cobra.Command, args []string) {
 }
 
 func runAdd(cmd *cobra.Command, args []string) {
-	internal.Add(args[0])
+	system, err := target.GetSystem()
+	if err != nil {
+		fmt.Println("ERROR")
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+	api := ext.NewAPI("/")
+	err = add.Add(args[0], system, api)
+	if err != nil {
+		fmt.Println("ERROR")
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 }
 
 func runBuild(cmd *cobra.Command, args []string) {
