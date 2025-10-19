@@ -20,7 +20,7 @@ func Add(protocol clone.Protocol, remote string, system internal.System, api ext
 
 	buildApi := ext.NewAPI(local)
 	configPath := api.Disk().Path(local, ".catalogue", "config.toml")
-	config, err := component.Build(configPath, buildApi.Disk())
+	config, err := component.Build(string(configPath), buildApi.Disk())
 	if err != nil {
 		return internal.ErrOf(err, "invalid component config")
 	}

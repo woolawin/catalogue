@@ -12,81 +12,81 @@ type MockDisk struct {
 	Files []string
 }
 
-func (mock *MockDisk) Path(parts ...string) string {
-	return filepath.Join(parts...)
+func (mock *MockDisk) Path(parts ...string) DiskPath {
+	return DiskPath(filepath.Join(parts...))
 }
 
-func (mock *MockDisk) FileExists(path string) (bool, bool, error) {
-	if slices.Contains(mock.Files, path) {
+func (mock *MockDisk) FileExists(path DiskPath) (bool, bool, error) {
+	if slices.Contains(mock.Files, string(path)) {
 		return true, true, nil
 	}
 	return false, false, nil
 }
 
-func (mock *MockDisk) DirExists(path string) (bool, bool, error) {
-	if slices.Contains(mock.Dirs, path) {
+func (mock *MockDisk) DirExists(path DiskPath) (bool, bool, error) {
+	if slices.Contains(mock.Dirs, string(path)) {
 		return true, true, nil
 	}
 	return false, false, nil
 }
 
-func (mock *MockDisk) List(path string) ([]string, []string, error) {
-	var files []string
-	var dirs []string
+func (mock *MockDisk) List(path DiskPath) ([]DiskPath, []DiskPath, error) {
+	var files []DiskPath
+	var dirs []DiskPath
 
 	for _, file := range mock.Files {
-		if file == path {
+		if file == string(path) {
 			continue
 		}
-		if strings.HasPrefix(file, path) {
-			relative, _ := strings.CutPrefix(file, path+"/")
-			files = append(files, relative)
+		if strings.HasPrefix(file, string(path)) {
+			relative, _ := strings.CutPrefix(file, string(path)+"/")
+			files = append(files, DiskPath(relative))
 		}
 	}
 
 	for _, dir := range mock.Dirs {
-		if dir == path {
+		if dir == string(path) {
 			continue
 		}
-		if strings.HasPrefix(dir, path) {
-			relative, _ := strings.CutPrefix(dir, path+"/")
-			dirs = append(dirs, relative)
+		if strings.HasPrefix(dir, string(path)) {
+			relative, _ := strings.CutPrefix(dir, string(path)+"/")
+			dirs = append(dirs, DiskPath(relative))
 		}
 	}
 
 	return files, dirs, nil
 }
 
-func (mock *MockDisk) ArchiveDir(src, dst string) error {
+func (mock *MockDisk) ArchiveDir(src, dst DiskPath) error {
 	return nil
 }
 
-func (mock *MockDisk) WriteFile(path string, data io.Reader) error {
+func (mock *MockDisk) WriteFile(path DiskPath, data io.Reader) error {
 	return nil
 }
 
-func (mock *MockDisk) CreateDir(path string) error {
-	mock.Dirs = append(mock.Dirs, path)
+func (mock *MockDisk) CreateDir(path DiskPath) error {
+	mock.Dirs = append(mock.Dirs, string(path))
 	return nil
 }
 
-func (mock *MockDisk) ListRec(path string) ([]string, error) {
+func (mock *MockDisk) ListRec(path DiskPath) ([]DiskPath, error) {
 	return nil, nil
 }
 
-func (mock *MockDisk) CreateTar(path string) error {
-	mock.Files = append(mock.Files, path)
+func (mock *MockDisk) CreateTar(path DiskPath) error {
+	mock.Files = append(mock.Files, string(path))
 	return nil
 }
 
-func (mock *MockDisk) Move(toPath string, fromPath string, files []string, overwrite bool) error {
+func (mock *MockDisk) Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool) error {
 	return nil
 }
 
-func (mock *MockDisk) ArchiveFiles(path string, files []string) error {
+func (mock *MockDisk) ArchiveFiles(path DiskPath, files []DiskPath) error {
 	return nil
 }
 
-func (mock *MockDisk) ReadFile(path string) ([]byte, error) {
+func (mock *MockDisk) ReadFile(path DiskPath) ([]byte, error) {
 	return nil, nil
 }

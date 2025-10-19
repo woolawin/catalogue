@@ -1,7 +1,6 @@
 package build
 
 import (
-	"os"
 	"strings"
 
 	"github.com/woolawin/catalogue/internal"
@@ -40,13 +39,6 @@ func control(system internal.System, config component.Config, api ext.API) error
 		}
 	}
 
-	controlFile := api.Disk().Path("control", "control")
-	file, err := os.OpenFile(controlFile, os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		return internal.ErrOf(err, "can not open file control/control")
-	}
-	defer file.Close()
-
 	data := ControlData{}
 
 	md, err := Metadata(config.Metadata, system)
@@ -55,7 +47,8 @@ func control(system internal.System, config component.Config, api ext.API) error
 	}
 	data.SetFrom(config, md)
 
-	_, err = file.Write([]byte(data.String()))
+	controlFile := api.Disk().Path("control", "control")
+	err = api.Disk().WriteFile(controlFile, strings.NewReader(data.String()))
 	if err != nil {
 		return internal.ErrOf(err, "can not write to file control/control")
 	}

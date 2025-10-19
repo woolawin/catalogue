@@ -36,7 +36,7 @@ func loadFileSystems(targets []internal.Target, disk ext.Disk) (map[string][]*Fi
 
 	filesystems := make(map[string][]*FileSystem)
 	for _, dir := range dirs {
-		anchor, targetNames, err := internal.ValidateNameAndTarget(dir)
+		anchor, targetNames, err := internal.ValidateNameAndTarget(string(dir))
 		if err != nil {
 			return nil, internal.ErrOf(err, "invalid filesystem reference '%s'", dir)
 		}
@@ -46,7 +46,7 @@ func loadFileSystems(targets []internal.Target, disk ext.Disk) (map[string][]*Fi
 			return nil, internal.ErrOf(err, "invalid filesystem target %s", dir)
 		}
 		filesystem := FileSystem{
-			ID:     dir,
+			ID:     string(dir),
 			Anchor: anchor,
 			Target: tgt,
 		}

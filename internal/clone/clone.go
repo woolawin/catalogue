@@ -19,7 +19,8 @@ const (
 )
 
 func Clone(protocol Protocol, remote string, local string, path string, api ext.API) error {
-	exists, _, err := api.Disk().DirExists(local)
+	localPath := api.Disk().Path(local)
+	exists, _, err := api.Disk().DirExists(localPath)
 	if err != nil {
 		return internal.ErrOf(err, "can not check if local already exists")
 	}

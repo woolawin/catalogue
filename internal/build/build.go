@@ -25,13 +25,14 @@ func Build(dst string, config component.Config, system internal.System, api ext.
 		return internal.ErrOf(err, "can not create data.tar.gz")
 	}
 
-	files := []string{
+	files := []ext.DiskPath{
 		api.Disk().Path("debian-binary"),
 		api.Disk().Path("control.tar.gz"),
 		api.Disk().Path("data.tar.gz"),
 	}
 
-	err = ext.NewDisk("/").ArchiveFiles(dst, files)
+	// replace this with cleaner solution
+	err = ext.NewDisk("/").ArchiveFiles(ext.DiskPath(dst), files)
 	if err != nil {
 		return internal.ErrOf(err, "can not create .deb file")
 	}

@@ -13,19 +13,21 @@ import (
 	"github.com/woolawin/catalogue/internal"
 )
 
+type DiskPath string
+
 type Disk interface {
-	Path(parts ...string) string
-	ReadFile(path string) ([]byte, error)
-	WriteFile(path string, data io.Reader) error
-	FileExists(path string) (bool, bool, error)
-	DirExists(path string) (bool, bool, error)
-	CreateDir(path string) error
-	List(path string) ([]string, []string, error)
-	ListRec(path string) ([]string, error)
-	CreateTar(path string) error
-	ArchiveDir(src, dst string) error
-	ArchiveFiles(path string, files []string) error
-	Move(toPath string, fromPath string, files []string, overwrite bool) error
+	Path(parts ...string) DiskPath
+	ReadFile(path DiskPath) ([]byte, error)
+	WriteFile(path DiskPath, data io.Reader) error
+	FileExists(path DiskPath) (bool, bool, error)
+	DirExists(path DiskPath) (bool, bool, error)
+	CreateDir(path DiskPath) error
+	List(path DiskPath) ([]DiskPath, []DiskPath, error)
+	ListRec(path DiskPath) ([]DiskPath, error)
+	CreateTar(path DiskPath) error
+	ArchiveDir(src, dst DiskPath) error
+	ArchiveFiles(path DiskPath, files []DiskPath) error
+	Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool) error
 }
 
 func NewDisk(base string) Disk {
@@ -36,15 +38,15 @@ type diskImpl struct {
 	base string
 }
 
-func (disk *diskImpl) Path(parts ...string) string {
-	return filepath.Join(slices.Insert(parts, 0, string(disk.base))...)
+func (disk *diskImpl) Path(parts ...string) DiskPath {
+	return DiskPath(filepath.Join(slices.Insert(parts, 0, string(disk.base))...))
 }
 
-func (disk *diskImpl) ReadFile(path string) ([]byte, error) {
+func (disk *diskImpl) ReadFile(path DiskPath) ([]byte, error) {
 	if disk.unsafe(path) {
-		return nil, internal.ErrFileBlocked(path, "read")
+		return nil, internal.ErrFileBlocked(string(path), "read")
 	}
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(string(path))
 	if err != nil {
 		return nil, internal.ErrOf(err, "can not read file '%s'", path)
 	}
@@ -52,11 +54,11 @@ func (disk *diskImpl) ReadFile(path string) ([]byte, error) {
 	return data, nil
 }
 
-func (disk *diskImpl) WriteFile(path string, data io.Reader) error {
+func (disk *diskImpl) WriteFile(path DiskPath, data io.Reader) error {
 	if disk.unsafe(path) {
-		return internal.ErrFileBlocked(path, "read")
+		return internal.ErrFileBlocked(string(path), "read")
 	}
-	file, err := os.Create(path)
+	file, err := os.Create(string(path))
 	if err != nil {
 		return internal.ErrOf(err, "can not create file %s", path)
 	}
@@ -69,11 +71,11 @@ func (disk *diskImpl) WriteFile(path string, data io.Reader) error {
 	return nil
 }
 
-func (disk *diskImpl) FileExists(path string) (bool, bool, error) {
+func (disk *diskImpl) FileExists(path DiskPath) (bool, bool, error) {
 	if disk.unsafe(path) {
-		return false, false, internal.ErrFileBlocked(path, "read")
+		return false, false, internal.ErrFileBlocked(string(path), "read")
 	}
-	info, err := os.Stat(path)
+	info, err := os.Stat(string(path))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, true, nil
@@ -83,11 +85,11 @@ func (disk *diskImpl) FileExists(path string) (bool, bool, error) {
 	return true, !info.IsDir(), nil
 }
 
-func (disk *diskImpl) DirExists(path string) (bool, bool, error) {
+func (disk *diskImpl) DirExists(path DiskPath) (bool, bool, error) {
 	if disk.unsafe(path) {
-		return false, false, internal.ErrFileBlocked(path, "read")
+		return false, false, internal.ErrFileBlocked(string(path), "read")
 	}
-	info, err := os.Stat(path)
+	info, err := os.Stat(string(path))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, true, nil
@@ -97,52 +99,52 @@ func (disk *diskImpl) DirExists(path string) (bool, bool, error) {
 	return true, info.IsDir(), nil
 }
 
-func (disk *diskImpl) CreateDir(path string) error {
+func (disk *diskImpl) CreateDir(path DiskPath) error {
 	if disk.unsafe(path) {
-		return internal.ErrFileBlocked(path, "created")
+		return internal.ErrFileBlocked(string(path), "created")
 	}
-	err := os.Mkdir(path, 0755)
+	err := os.Mkdir(string(path), 0755)
 	if err != nil {
 		return internal.ErrOf(err, "can not create directory %s", path)
 	}
 	return nil
 }
 
-func (disk *diskImpl) List(path string) ([]string, []string, error) {
+func (disk *diskImpl) List(path DiskPath) ([]DiskPath, []DiskPath, error) {
 	if disk.unsafe(path) {
-		return nil, nil, internal.ErrFileBlocked(path, "read")
+		return nil, nil, internal.ErrFileBlocked(string(path), "read")
 	}
-	entries, err := os.ReadDir(path)
+	entries, err := os.ReadDir(string(path))
 	if err != nil {
 		return nil, nil, internal.ErrOf(err, "can not list directory %s", path)
 	}
 
-	var files []string
-	var dirs []string
+	var files []DiskPath
+	var dirs []DiskPath
 
 	for _, entry := range entries {
 		if entry.IsDir() {
-			dirs = append(dirs, entry.Name())
+			dirs = append(dirs, DiskPath(entry.Name()))
 		} else {
-			files = append(files, entry.Name())
+			files = append(files, DiskPath(entry.Name()))
 		}
 	}
 
 	return files, dirs, nil
 }
 
-func (disk *diskImpl) ListRec(path string) ([]string, error) {
+func (disk *diskImpl) ListRec(path DiskPath) ([]DiskPath, error) {
 	if disk.unsafe(path) {
-		return nil, internal.ErrFileBlocked(path, "read")
+		return nil, internal.ErrFileBlocked(string(path), "read")
 	}
-	var files []string
-	err := filepath.WalkDir(path, func(entryPath string, entry os.DirEntry, err error) error {
+	var files []DiskPath
+	err := filepath.WalkDir(string(path), func(entryPath string, entry os.DirEntry, err error) error {
 		if err != nil {
 			return internal.ErrOf(err, "can not list directory %s", path)
 		}
-		relative, _ := strings.CutPrefix(entryPath, path+"/")
+		relative, _ := strings.CutPrefix(entryPath, string(path)+"/")
 		if !entry.IsDir() {
-			files = append(files, relative)
+			files = append(files, DiskPath(relative))
 		}
 		return nil
 	})
@@ -153,11 +155,11 @@ func (disk *diskImpl) ListRec(path string) ([]string, error) {
 	return files, nil
 }
 
-func (disk *diskImpl) CreateTar(path string) error {
+func (disk *diskImpl) CreateTar(path DiskPath) error {
 	if disk.unsafe(path) {
-		return internal.ErrFileBlocked(path, "created")
+		return internal.ErrFileBlocked(string(path), "created")
 	}
-	file, err := os.Create(path)
+	file, err := os.Create(string(path))
 	if err != nil {
 		return internal.ErrOf(err, "can not create file data.tar.gz")
 	}
@@ -169,17 +171,17 @@ func (disk *diskImpl) CreateTar(path string) error {
 	return nil
 }
 
-func (disk *diskImpl) Move(toPath string, fromPath string, files []string, overwrite bool) error {
+func (disk *diskImpl) Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool) error {
 	if disk.unsafe(toPath) {
-		return internal.ErrFileBlocked(toPath, "written")
+		return internal.ErrFileBlocked(string(toPath), "written")
 	}
 	for _, file := range files {
-		newPath := filepath.Join(toPath, file)
-		if disk.unsafe(newPath) {
-			return internal.ErrFileBlocked(toPath, "written")
+		newPath := filepath.Join(string(toPath), string(file))
+		if disk.unsafe(DiskPath(newPath)) {
+			return internal.ErrFileBlocked(string(toPath), "written")
 		}
-		oldPath := filepath.Join(fromPath, file)
-		if disk.unsafe(oldPath) {
+		oldPath := filepath.Join(string(fromPath), string(file))
+		if disk.unsafe(DiskPath(oldPath)) {
 			return internal.ErrFileBlocked(oldPath, "read")
 		}
 		_, err := os.Stat(newPath)
@@ -198,15 +200,15 @@ func (disk *diskImpl) Move(toPath string, fromPath string, files []string, overw
 	return nil
 }
 
-func (disk *diskImpl) ArchiveDir(src string, dst string) error {
+func (disk *diskImpl) ArchiveDir(src DiskPath, dst DiskPath) error {
 	if disk.unsafe(src) {
-		return internal.ErrFileBlocked(src, "read")
+		return internal.ErrFileBlocked(string(src), "read")
 	}
 	if disk.unsafe(dst) {
 		return internal.ErrFileBlocked("dst", "written")
 	}
 
-	file, err := os.Create(dst)
+	file, err := os.Create(string(dst))
 	if err != nil {
 		return internal.ErrOf(err, "can not create file %s", dst)
 	}
@@ -218,7 +220,7 @@ func (disk *diskImpl) ArchiveDir(src string, dst string) error {
 	tarWriter := tar.NewWriter(gzipWriter)
 	defer tarWriter.Close()
 
-	err = filepath.Walk(src, func(file string, fi os.FileInfo, err error) error {
+	err = filepath.Walk(string(src), func(file string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return internal.ErrOf(err, "can not list archive file %s", file)
 		}
@@ -228,7 +230,7 @@ func (disk *diskImpl) ArchiveDir(src string, dst string) error {
 			return internal.ErrOf(err, "can not read file header %s", file)
 		}
 
-		relPath, err := filepath.Rel(filepath.Dir(src), file)
+		relPath, err := filepath.Rel(filepath.Dir(string(src)), file)
 		if err != nil {
 			return internal.ErrOf(err, "can not determine relative file for %s", file)
 		}
@@ -260,12 +262,12 @@ func (disk *diskImpl) ArchiveDir(src string, dst string) error {
 	return nil
 }
 
-func (disk *diskImpl) ArchiveFiles(path string, files []string) error {
+func (disk *diskImpl) ArchiveFiles(path DiskPath, files []DiskPath) error {
 	if disk.unsafe(path) {
-		return internal.ErrFileBlocked(path, "written")
+		return internal.ErrFileBlocked(string(path), "written")
 	}
 
-	archive, err := os.Create(path)
+	archive, err := os.Create(string(path))
 	if err != nil {
 		return internal.ErrOf(err, "can not create archive '%s'", path)
 	}
@@ -273,7 +275,7 @@ func (disk *diskImpl) ArchiveFiles(path string, files []string) error {
 
 	for _, file := range files {
 		if disk.unsafe(file) {
-			return internal.ErrFileBlocked(file, "read")
+			return internal.ErrFileBlocked(string(file), "read")
 		}
 		if err := addFile(archive, file); err != nil {
 			return internal.ErrOf(err, "can not add file '%s' to archive '%s'", file, path)
@@ -282,8 +284,8 @@ func (disk *diskImpl) ArchiveFiles(path string, files []string) error {
 	return nil
 }
 
-func addFile(writer io.Writer, path string) error {
-	file, err := os.Open(path)
+func addFile(writer io.Writer, path DiskPath) error {
+	file, err := os.Open(string(path))
 	if err != nil {
 		return internal.ErrOf(err, "can not open file")
 	}
@@ -294,7 +296,7 @@ func addFile(writer io.Writer, path string) error {
 		return internal.ErrOf(err, "can not stat file")
 	}
 
-	name := filepath.Base(path)
+	name := filepath.Base(string(path))
 	modTime := info.ModTime().Unix()
 	size := info.Size()
 	mode := info.Mode().Perm()
@@ -333,13 +335,13 @@ func addFile(writer io.Writer, path string) error {
 
 	return nil
 }
-func (disk *diskImpl) unsafe(path string) bool {
+func (disk *diskImpl) unsafe(path DiskPath) bool {
 	baseAbs, err := filepath.Abs(disk.base)
 	if err != nil {
 		return true
 	}
 
-	pathAbs, err := filepath.Abs(path)
+	pathAbs, err := filepath.Abs(string(path))
 	if err != nil {
 		return true
 	}
