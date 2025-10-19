@@ -83,7 +83,7 @@ func (mock *MockDisk) Move(toPath DiskPath, fromPath DiskPath, files []DiskPath,
 	return nil
 }
 
-func (mock *MockDisk) ArchiveFiles(path DiskPath, files []DiskPath) error {
+func (mock *MockDisk) CreateDeb(path string, files map[string]DiskPath) error {
 	return nil
 }
 

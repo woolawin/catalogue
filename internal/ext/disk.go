@@ -3,13 +3,14 @@ package ext
 import (
 	"archive/tar"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
+	"github.com/blakesmith/ar"
 	"github.com/woolawin/catalogue/internal"
 )
 
@@ -26,7 +27,7 @@ type Disk interface {
 	ListRec(path DiskPath) ([]DiskPath, error)
 	CreateTar(path DiskPath) error
 	ArchiveDir(src, dst DiskPath) error
-	ArchiveFiles(path DiskPath, files []DiskPath) error
+	CreateDeb(path string, files map[string]DiskPath) error
 	Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool) error
 }
 
@@ -262,79 +263,59 @@ func (disk *diskImpl) ArchiveDir(src DiskPath, dst DiskPath) error {
 	return nil
 }
 
-func (disk *diskImpl) ArchiveFiles(path DiskPath, files []DiskPath) error {
-	if disk.unsafe(path) {
-		return internal.ErrFileBlocked(string(path), "written")
-	}
-
-	archive, err := os.Create(string(path))
+func (impl *diskImpl) CreateDeb(path string, input map[string]DiskPath) error {
+	out, err := os.Create(path)
 	if err != nil {
-		return internal.ErrOf(err, "can not create archive '%s'", path)
+		return internal.ErrOf(err, "can not create .deb file", path)
 	}
-	defer archive.Close()
+	defer out.Close()
 
-	for _, file := range files {
-		if disk.unsafe(file) {
-			return internal.ErrFileBlocked(string(file), "read")
+	arWriter := ar.NewWriter(out)
+	if err := arWriter.WriteGlobalHeader(); err != nil {
+		return internal.ErrOf(err, "failed to write ar header")
+	}
+
+	for name, path := range input {
+		if impl.unsafe(path) {
+			return internal.ErrFileBlocked(string(path), "copied")
 		}
-		if err := addFile(archive, file); err != nil {
-			return internal.ErrOf(err, "can not add file '%s' to archive '%s'", file, path)
-		}
-	}
-	return nil
-}
-
-func addFile(writer io.Writer, path DiskPath) error {
-	file, err := os.Open(string(path))
-	if err != nil {
-		return internal.ErrOf(err, "can not open file")
-	}
-	defer file.Close()
-
-	info, err := file.Stat()
-	if err != nil {
-		return internal.ErrOf(err, "can not stat file")
-	}
-
-	name := filepath.Base(string(path))
-	modTime := info.ModTime().Unix()
-	size := info.Size()
-	mode := info.Mode().Perm()
-
-	// Create header (fixed width fields)
-	// Format: (each field is padded with spaces)
-	// 0-15  : File identifier
-	// 16-27 : File modification timestamp
-	// 28-33 : Owner ID
-	// 34-39 : Group ID
-	// 40-47 : File mode
-	// 48-57 : File size in bytes
-	// 58-59 : Trailer "`\n"
-	header := fmt.Sprintf("%-16s%-12d%-6d%-6d%-8o%-10d`\n",
-		name,
-		modTime,
-		0,    // UID
-		0,    // GID
-		mode, // File mode
-		size, // File size
-	)
-
-	if _, err := writer.Write([]byte(header)); err != nil {
-		return err
-	}
-
-	if _, err := io.Copy(writer, file); err != nil {
-		return internal.ErrOf(err, "can not write bytes to file")
-	}
-
-	if size%2 != 0 {
-		if _, err := writer.Write([]byte("\n")); err != nil {
-			return internal.ErrOf(err, "can not write newline to file")
+		err := addFileToAr(arWriter, name, string(path), 0644)
+		if err != nil {
+			return internal.ErrOf(err, "can not add file '%s' to .deb", name)
 		}
 	}
 
 	return nil
 }
+
+func addFileToAr(writer *ar.Writer, name string, filePath string, mode int64) error {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return internal.ErrOf(err, "can not read file '%s'", filePath)
+	}
+
+	header := &ar.Header{
+		Name:    name,
+		ModTime: time.Now().UTC(),
+		Uid:     0,
+		Gid:     0,
+		Mode:    mode,
+		Size:    int64(len(data)),
+	}
+
+	err = writer.WriteHeader(header)
+	if err != nil {
+		return internal.ErrOf(err, "can not write header for file '%s'", name)
+	}
+
+	_, err = writer.Write(data)
+	if err != nil {
+		return internal.ErrOf(err, "can not write file '%s'", name)
+	}
+
+	return nil
+}
+
 func (disk *diskImpl) unsafe(path DiskPath) bool {
 	baseAbs, err := filepath.Abs(disk.base)
 	if err != nil {
