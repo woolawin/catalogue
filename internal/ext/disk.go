@@ -3,6 +3,7 @@ package ext
 import (
 	"archive/tar"
 	"compress/gzip"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -45,7 +46,7 @@ func (disk *diskImpl) Path(parts ...string) DiskPath {
 
 func (disk *diskImpl) ReadFile(path DiskPath) ([]byte, error) {
 	if disk.unsafe(path) {
-		return nil, internal.ErrFileBlocked(string(path), "read")
+		return nil, errFileBlocked(path, "read")
 	}
 	data, err := os.ReadFile(string(path))
 	if err != nil {
@@ -57,7 +58,7 @@ func (disk *diskImpl) ReadFile(path DiskPath) ([]byte, error) {
 
 func (disk *diskImpl) WriteFile(path DiskPath, data io.Reader) error {
 	if disk.unsafe(path) {
-		return internal.ErrFileBlocked(string(path), "read")
+		return errFileBlocked(path, "read")
 	}
 	file, err := os.Create(string(path))
 	if err != nil {
@@ -74,7 +75,7 @@ func (disk *diskImpl) WriteFile(path DiskPath, data io.Reader) error {
 
 func (disk *diskImpl) FileExists(path DiskPath) (bool, bool, error) {
 	if disk.unsafe(path) {
-		return false, false, internal.ErrFileBlocked(string(path), "read")
+		return false, false, errFileBlocked(path, "read")
 	}
 	info, err := os.Stat(string(path))
 	if err != nil {
@@ -88,7 +89,7 @@ func (disk *diskImpl) FileExists(path DiskPath) (bool, bool, error) {
 
 func (disk *diskImpl) DirExists(path DiskPath) (bool, bool, error) {
 	if disk.unsafe(path) {
-		return false, false, internal.ErrFileBlocked(string(path), "read")
+		return false, false, errFileBlocked(path, "read")
 	}
 	info, err := os.Stat(string(path))
 	if err != nil {
@@ -102,7 +103,7 @@ func (disk *diskImpl) DirExists(path DiskPath) (bool, bool, error) {
 
 func (disk *diskImpl) CreateDir(path DiskPath) error {
 	if disk.unsafe(path) {
-		return internal.ErrFileBlocked(string(path), "created")
+		return errFileBlocked(path, "created")
 	}
 	err := os.Mkdir(string(path), 0755)
 	if err != nil {
@@ -113,7 +114,7 @@ func (disk *diskImpl) CreateDir(path DiskPath) error {
 
 func (disk *diskImpl) List(path DiskPath) ([]DiskPath, []DiskPath, error) {
 	if disk.unsafe(path) {
-		return nil, nil, internal.ErrFileBlocked(string(path), "read")
+		return nil, nil, errFileBlocked(path, "read")
 	}
 	entries, err := os.ReadDir(string(path))
 	if err != nil {
@@ -136,7 +137,7 @@ func (disk *diskImpl) List(path DiskPath) ([]DiskPath, []DiskPath, error) {
 
 func (disk *diskImpl) ListRec(path DiskPath) ([]DiskPath, error) {
 	if disk.unsafe(path) {
-		return nil, internal.ErrFileBlocked(string(path), "read")
+		return nil, errFileBlocked(path, "read")
 	}
 	var files []DiskPath
 	err := filepath.WalkDir(string(path), func(entryPath string, entry os.DirEntry, err error) error {
@@ -158,7 +159,7 @@ func (disk *diskImpl) ListRec(path DiskPath) ([]DiskPath, error) {
 
 func (disk *diskImpl) CreateTar(path DiskPath) error {
 	if disk.unsafe(path) {
-		return internal.ErrFileBlocked(string(path), "created")
+		return errFileBlocked(path, "created")
 	}
 	file, err := os.Create(string(path))
 	if err != nil {
@@ -174,16 +175,16 @@ func (disk *diskImpl) CreateTar(path DiskPath) error {
 
 func (disk *diskImpl) Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool) error {
 	if disk.unsafe(toPath) {
-		return internal.ErrFileBlocked(string(toPath), "written")
+		return errFileBlocked(toPath, "written")
 	}
 	for _, file := range files {
 		newPath := filepath.Join(string(toPath), string(file))
 		if disk.unsafe(DiskPath(newPath)) {
-			return internal.ErrFileBlocked(string(toPath), "written")
+			return errFileBlocked(toPath, "written")
 		}
 		oldPath := filepath.Join(string(fromPath), string(file))
 		if disk.unsafe(DiskPath(oldPath)) {
-			return internal.ErrFileBlocked(oldPath, "read")
+			return errFileBlocked(DiskPath(oldPath), "read")
 		}
 		_, err := os.Stat(newPath)
 		if err == nil {
@@ -203,10 +204,10 @@ func (disk *diskImpl) Move(toPath DiskPath, fromPath DiskPath, files []DiskPath,
 
 func (disk *diskImpl) ArchiveDir(src DiskPath, dst DiskPath) error {
 	if disk.unsafe(src) {
-		return internal.ErrFileBlocked(string(src), "read")
+		return errFileBlocked(src, "read")
 	}
 	if disk.unsafe(dst) {
-		return internal.ErrFileBlocked("dst", "written")
+		return errFileBlocked(DiskPath(dst), "written")
 	}
 
 	file, err := os.Create(string(dst))
@@ -277,7 +278,7 @@ func (impl *diskImpl) CreateDeb(path string, input map[string]DiskPath) error {
 
 	for name, path := range input {
 		if impl.unsafe(path) {
-			return internal.ErrFileBlocked(string(path), "copied")
+			return errFileBlocked(path, "copied")
 		}
 		err := addFileToAr(arWriter, name, string(path), 0644)
 		if err != nil {
@@ -342,4 +343,8 @@ func (disk *diskImpl) unsafe(path DiskPath) bool {
 		return true
 	}
 	return false
+}
+
+func errFileBlocked(path DiskPath, action string) *internal.CLErr {
+	return &internal.CLErr{Message: fmt.Sprintf("file '%s' is not permitted to be %s", path, action)}
 }

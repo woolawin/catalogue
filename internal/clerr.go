@@ -6,35 +6,35 @@ import (
 )
 
 type CLErr struct {
-	message string
-	parent  *CLErr
+	Message string
+	Parent  *CLErr
 }
 
 func ErrOf(err error, format string, args ...any) *CLErr {
-	return &CLErr{message: fmt.Sprintf(format, args...), parent: ErrCause(err)}
+	return &CLErr{Message: fmt.Sprintf(format, args...), Parent: ErrCause(err)}
 }
 
 func ErrCause(err error) *CLErr {
-	return &CLErr{message: err.Error()}
+	return &CLErr{Message: err.Error()}
 }
 
 func ErrFileBlocked(path string, action string) *CLErr {
-	return &CLErr{message: fmt.Sprintf("file '%s' is not permitted to be %s", path, action)}
+	return &CLErr{Message: fmt.Sprintf("file '%s' is not permitted to be %s", path, action)}
 }
 
 func Err(format string, args ...any) *CLErr {
-	return &CLErr{message: fmt.Sprintf(format, args...)}
+	return &CLErr{Message: fmt.Sprintf(format, args...)}
 }
 
 func (err *CLErr) Error() string {
 	builder := strings.Builder{}
-	builder.WriteString(err.message)
-	var parent *CLErr = err.parent
+	builder.WriteString(err.Message)
+	var parent *CLErr = err.Parent
 	for parent != nil {
 		builder.WriteString("\n")
 		builder.WriteString("↳ ")
-		builder.WriteString(parent.message)
-		parent = parent.parent
+		builder.WriteString(parent.Message)
+		parent = parent.Parent
 	}
 	return builder.String()
 }
