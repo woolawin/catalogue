@@ -1,9 +1,15 @@
 package ext
 
+import "net/url"
+
 type API interface {
 	Disk() Disk
 	Host() Host
 	Http() HTTP
+}
+
+type CloneDriver interface {
+	Fetch(from *url.URL) ([]byte, error)
 }
 
 func NewAPI(base string) API {

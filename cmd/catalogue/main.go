@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/build"
+	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/component"
 	"github.com/woolawin/catalogue/internal/ext"
 	"github.com/woolawin/catalogue/internal/target"
@@ -65,16 +66,8 @@ func runBuild(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 		return
 	}
-	src, err := cmd.Flags().GetString("src")
-	if err != nil {
-		fmt.Println("BAD COMMAND: --src flag missing")
-		os.Exit(1)
-	}
-	dst, err := cmd.Flags().GetString("dst")
-	if err != nil {
-		fmt.Println("BAD COMMAND: --dst flag missing")
-		os.Exit(1)
-	}
+	src, _ := cmd.Flags().GetString("src")
+	dst, _ := cmd.Flags().GetString("dst")
 
 	srcAbs, err := filepath.Abs(src)
 	if err != nil {
@@ -101,6 +94,19 @@ func runBuild(cmd *cobra.Command, args []string) {
 	}
 }
 
+func runClone(cmd *cobra.Command, args []string) {
+	remote, _ := cmd.Flags().GetString("remote")
+	local, _ := cmd.Flags().GetString("local")
+	path, _ := cmd.Flags().GetString("path")
+
+	err := clone.Clone(remote, local, path)
+	if err != nil {
+		fmt.Println("ERRPOR")
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
+
 func args() *cobra.Command {
 	var add = &cobra.Command{
 		Use:   "add",
@@ -117,7 +123,8 @@ func args() *cobra.Command {
 	}
 	build.Flags().String("src", "", "Source directory to build from")
 	build.Flags().String("dst", "", "Destination of the package archive")
-
+	build.MarkFlagRequired("src")
+	build.MarkFlagRequired("dst")
 	var printSystem = &cobra.Command{
 		Use:   "system",
 		Short: "Print system values used for targets",
@@ -132,6 +139,19 @@ func args() *cobra.Command {
 		Run:   runVersion,
 	}
 
+	var clone = &cobra.Command{
+		Use:   "clone",
+		Short: "Clone files from a remote source",
+		Long:  "",
+		Run:   runClone,
+	}
+	clone.Flags().String("remote", "", "The remote source to clone from")
+	clone.Flags().String("local", "", "The local destination to clone to")
+	clone.Flags().String("path", "", "The path to clone files from the remote")
+	clone.MarkFlagRequired("remote")
+	clone.MarkFlagRequired("local")
+	clone.MarkFlagRequired("path")
+
 	var root = &cobra.Command{
 		Use:   "catalogue",
 		Short: "The missing piece to APT. An APT Repository Middleware",
@@ -141,5 +161,6 @@ func args() *cobra.Command {
 	root.AddCommand(build)
 	root.AddCommand(printSystem)
 	root.AddCommand(version)
+	root.AddCommand(clone)
 	return root
 }
