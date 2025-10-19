@@ -77,7 +77,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 
 	api := ext.NewAPI(srcAbs)
 
-	config, err := component.Build("catalogue.toml", api.Disk())
+	config, err := component.Build("config.toml", api.Disk())
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())

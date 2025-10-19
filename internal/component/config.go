@@ -95,7 +95,7 @@ func deserialize(src io.Reader) (ConfigTOML, error) {
 	deserialized := ConfigTOML{}
 	err := toml.NewDecoder(src).Decode(&deserialized)
 	if err != nil {
-		return ConfigTOML{}, internal.ErrOf(err, "can not deserialize catalogue.toml")
+		return ConfigTOML{}, internal.ErrOf(err, "can not deserialize config")
 	}
 	return deserialized, nil
 }
