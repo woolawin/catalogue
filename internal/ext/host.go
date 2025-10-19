@@ -1,6 +1,7 @@
 package ext
 
 import (
+	"bytes"
 	"math/rand"
 	"os"
 	"runtime"
@@ -14,6 +15,8 @@ import (
 type Host interface {
 	GetSystem() (target.System, error)
 	ResolveAnchor(value string) (string, error)
+	GetConfigPath() string
+	GetConfig() (internal.Config, error)
 	RandomTmpDir() string
 }
 
@@ -22,13 +25,24 @@ func NewHost() Host {
 }
 
 type hostImpl struct {
+	config *internal.Config
 }
 
 func (impl *hostImpl) ResolveAnchor(value string) (string, error) {
-	if value != "root" {
-		return "", internal.Err("unknown anchor '%s'", value)
+	if value == "root" {
+		return "/", nil
 	}
-	return "/", nil
+	if value == "home" {
+		config, err := impl.GetConfig()
+		if err != nil {
+			return "", err
+		}
+		if len(config.DefaultUser) == 0 {
+			return "", internal.Err("no default user specified in '%s' for home anchor", impl.GetConfigPath())
+		}
+		return "/usr/home/" + config.DefaultUser, nil
+	}
+	return "", internal.Err("unknown anchor '%s'", value)
 }
 
 func (impl *hostImpl) GetSystem() (target.System, error) {
@@ -45,6 +59,41 @@ func (impl *hostImpl) GetSystem() (target.System, error) {
 	system.OSReleaseVersionID, _ = findOSReleaseValue(osRelease, "VERSION_ID")
 	system.OSReleaseVersionCodeName, _ = findOSReleaseValue(osRelease, "VERSION_CODENAME")
 	return system, nil
+}
+
+func (impl *hostImpl) GetConfigPath() string {
+	return "/etc/catalogue/config.toml"
+}
+
+func (impl *hostImpl) GetConfig() (internal.Config, error) {
+	if impl.config != nil {
+		return *impl.config, nil
+	}
+
+	info, err := os.Stat(impl.GetConfigPath())
+	if err != nil {
+		if os.IsNotExist(err) {
+			return internal.Config{}, nil
+		}
+		return internal.Config{}, internal.ErrOf(err, "can not read config file")
+	}
+
+	if info.IsDir() {
+		return internal.Config{}, internal.ErrOf(err, "config file is a directory")
+	}
+
+	data, err := os.ReadFile(impl.GetConfigPath())
+	if err != nil {
+		return internal.Config{}, internal.ErrOf(err, "can not read confile file")
+	}
+
+	config, err := internal.ParseConfig(bytes.NewReader(data))
+	if err != nil {
+		return internal.Config{}, err
+	}
+
+	impl.config = &config
+	return config, nil
 }
 
 func getArch(value string) (target.Architecture, bool) {
