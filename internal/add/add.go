@@ -29,7 +29,9 @@ func Add(protocol clone.Protocol, remote string, system target.System, api ext.A
 		return internal.ErrOf(err, "invalid metadata from '%s'", remote)
 	}
 
-	// @TODO implement supports_targets
+	if len(target.Ranked(system, config.SupportsTargets)) == 0 {
+		return internal.Err("component '%s' has no supported target")
+	}
 
 	return nil
 }
