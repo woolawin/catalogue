@@ -2,8 +2,6 @@ package target
 
 import (
 	"math"
-	"os"
-	"runtime"
 	"strings"
 
 	"github.com/woolawin/catalogue/internal"
@@ -36,22 +34,6 @@ type System struct {
 	OSReleaseVersion         string
 	OSReleaseVersionID       string
 	OSReleaseVersionCodeName string
-}
-
-func GetSystem() (System, error) {
-	system := System{}
-	arch, _ := getArch(runtime.GOARCH)
-	system.Architecture = arch
-	osReleaseBytes, err := os.ReadFile("/etc/os-release")
-	if err != nil {
-		return System{}, internal.Err("can not read /etc/os-release")
-	}
-	osRelease := strings.Split(string(osReleaseBytes), "\n")
-	system.OSReleaseID, _ = findOSReleaseValue(osRelease, "ID")
-	system.OSReleaseVersion, _ = findOSReleaseValue(osRelease, "VERSION")
-	system.OSReleaseVersionID, _ = findOSReleaseValue(osRelease, "VERSION_ID")
-	system.OSReleaseVersionCodeName, _ = findOSReleaseValue(osRelease, "VERSION_CODENAME")
-	return system, nil
 }
 
 type GetTarget interface {
@@ -245,17 +227,6 @@ func mergeArchitecture(a *Architecture, b Architecture) error {
 	return nil
 }
 
-func getArch(value string) (Architecture, bool) {
-	switch value {
-	case "amd64":
-		return AMD64, true
-	case "arm64":
-		return ARM64, true
-	default:
-		return Architecture(value), false
-	}
-}
-
 func BuiltIns() []Target {
 	return []Target{
 		{
@@ -271,23 +242,6 @@ func BuiltIns() []Target {
 			All:  true,
 		},
 	}
-}
-
-func findOSReleaseValue(lines []string, key string) (string, bool) {
-	prefix := key + "="
-	for _, line := range lines {
-		if !strings.HasPrefix(line, prefix) {
-			continue
-		}
-		value := line[len(prefix):]
-		value = strings.TrimPrefix(value, "\"")
-		value = strings.TrimSuffix(value, "\"")
-		if len(value) == 0 {
-			continue
-		}
-		return value, true
-	}
-	return "", false
 }
 
 func Build(from []Target, names []string) (Target, error) {

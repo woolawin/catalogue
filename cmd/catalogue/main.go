@@ -13,7 +13,6 @@ import (
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/component"
 	"github.com/woolawin/catalogue/internal/ext"
-	"github.com/woolawin/catalogue/internal/target"
 )
 
 //go:embed version.txt
@@ -32,7 +31,7 @@ func runVersion(cmd *cobra.Command, args []string) {
 }
 
 func runSystem(cmd *cobra.Command, args []string) {
-	system, err := target.GetSystem()
+	system, err := ext.NewHost().GetSystem()
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())
@@ -55,7 +54,7 @@ func runSystem(cmd *cobra.Command, args []string) {
 }
 
 func runAdd(cmd *cobra.Command, args []string) {
-	system, err := target.GetSystem()
+	system, err := ext.NewHost().GetSystem()
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())
@@ -71,7 +70,7 @@ func runAdd(cmd *cobra.Command, args []string) {
 }
 
 func runBuild(cmd *cobra.Command, args []string) {
-	system, err := target.GetSystem()
+	system, err := ext.NewHost().GetSystem()
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())
