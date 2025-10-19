@@ -30,6 +30,11 @@ func runVersion(cmd *cobra.Command, args []string) {
 	fmt.Print(strings.TrimSpace(Version))
 }
 
+func runConfig(cmd *cobra.Command, args []string) {
+	config, _ := ext.NewHost().GetConfig()
+	fmt.Println("DefaultUser: ", config.DefaultUser)
+}
+
 func runSystem(cmd *cobra.Command, args []string) {
 	system, err := ext.NewHost().GetSystem()
 	if err != nil {
@@ -194,6 +199,13 @@ func args() *cobra.Command {
 	clone.MarkFlagRequired("local")
 	clone.MarkFlagRequired("path")
 
+	config := &cobra.Command{
+		Use:   "config",
+		Short: "Print catalogue configuration",
+		Long:  "",
+		Run:   runConfig,
+	}
+
 	var root = &cobra.Command{
 		Use:   "catalogue",
 		Short: "The missing piece to APT. An APT Repository Middleware",
@@ -204,5 +216,6 @@ func args() *cobra.Command {
 	root.AddCommand(printSystem)
 	root.AddCommand(version)
 	root.AddCommand(clone)
+	root.AddCommand(config)
 	return root
 }
