@@ -19,6 +19,9 @@ func Serialize(config Config, writer io.Writer) error {
 	}
 
 	for _, supported := range config.SupportsTargets {
+		if supported.BuiltIn {
+			continue
+		}
 		tml.SupportsTargets = append(tml.SupportsTargets, supported.Name)
 	}
 

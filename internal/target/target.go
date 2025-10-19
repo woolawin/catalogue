@@ -17,6 +17,7 @@ const (
 type Target struct {
 	Name                     string
 	All                      bool
+	BuiltIn                  bool
 	Architecture             Architecture
 	OSReleaseID              string
 	OSReleaseVersion         string
@@ -232,14 +233,17 @@ func BuiltIns() []Target {
 		{
 			Name:         "amd64",
 			Architecture: AMD64,
+			BuiltIn:      true,
 		},
 		{
 			Name:         "arm64",
 			Architecture: ARM64,
+			BuiltIn:      true,
 		},
 		{
-			Name: "all",
-			All:  true,
+			Name:    "all",
+			All:     true,
+			BuiltIn: true,
 		},
 	}
 }
