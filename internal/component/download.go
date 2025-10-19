@@ -37,7 +37,7 @@ func loadDownloads(deserialized map[string]map[string]DownloadTOML, targets []in
 				return nil, internal.ErrOf(err, "invalid download target %s", name)
 			}
 
-			target, err := internal.Build(targets, targetNames)
+			target, err := internal.BuildTarget(targets, targetNames)
 			if err != nil {
 				return nil, internal.ErrOf(err, "invalid target %s", tgt)
 			}

@@ -15,7 +15,7 @@ type TargetTOML struct {
 }
 
 func loadTargets(deserialized map[string]TargetTOML) ([]internal.Target, error) {
-	targets := internal.BuiltIns()
+	targets := internal.BuiltInTargets()
 	for name, values := range deserialized {
 		if internal.IsReservedTargetName(name) {
 			return nil, internal.Err("can not define target with reserved name '%s'", name)

@@ -226,7 +226,7 @@ func mergeArchitecture(a *Architecture, b Architecture) error {
 	return nil
 }
 
-func BuiltIns() []Target {
+func BuiltInTargets() []Target {
 	return []Target{
 		{
 			Name:         "amd64",
@@ -246,7 +246,7 @@ func BuiltIns() []Target {
 	}
 }
 
-func Build(from []Target, names []string) (Target, error) {
+func BuildTarget(from []Target, names []string) (Target, error) {
 	if len(names) == 0 {
 		return Target{}, Err("can not build target without name")
 	}

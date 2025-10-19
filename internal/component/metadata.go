@@ -42,7 +42,7 @@ func loadMetadata(deserialized map[string]MetadataTOML, targets []internal.Targe
 		if err != nil {
 			return nil, internal.ErrOf(err, "invalid metadata target %s", targetStr)
 		}
-		tgt, err := internal.Build(targets, targetNames)
+		tgt, err := internal.BuildTarget(targets, targetNames)
 		if err != nil {
 			return nil, internal.ErrOf(err, "invalid metadata target %s", targetStr)
 		}

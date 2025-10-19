@@ -262,7 +262,7 @@ func TestScore(t *testing.T) {
 	})
 }
 
-func TestBuild(t *testing.T) {
+func TestBuildTarget(t *testing.T) {
 
 	t.Run("just_all", func(t *testing.T) {
 		targets := []Target{
@@ -284,7 +284,7 @@ func TestBuild(t *testing.T) {
 			},
 		}
 
-		actual, err := Build(targets, []string{"all"})
+		actual, err := BuildTarget(targets, []string{"all"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -313,7 +313,7 @@ func TestBuild(t *testing.T) {
 			},
 		}
 
-		actual, err := Build(targets, []string{"amd64", "ubuntu"})
+		actual, err := BuildTarget(targets, []string{"amd64", "ubuntu"})
 		if err != nil {
 			t.Fatal(err)
 		}

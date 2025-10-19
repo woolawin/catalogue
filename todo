@@ -1,9 +1,7 @@
 
-rename internal.Build to BuildTarget
 
 implement components dir
 
-move target package into internal
 
 =====
 test download

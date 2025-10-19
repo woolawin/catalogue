@@ -157,7 +157,7 @@ func loadSupportsTargets(targets []internal.Target, values []string) ([]*interna
 			return nil, internal.ErrOf(err, "invalid support target name '%s'", value)
 		}
 
-		tgt, err := internal.Build(targets, names)
+		tgt, err := internal.BuildTarget(targets, names)
 		if err != nil {
 			return nil, internal.ErrOf(err, "can not build supported target '%s'", value)
 		}
