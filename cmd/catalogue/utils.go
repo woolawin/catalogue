@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spf13/cobra"
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/clone"
+	"github.com/woolawin/catalogue/internal/target"
 )
 
 func getProtocolAndRemote(value string) (clone.Protocol, string, error) {
@@ -32,4 +34,32 @@ func getProtocolAndRemote(value string) (clone.Protocol, string, error) {
 	remote := fmt.Sprintf("https://github.com/%s/%s.git", owner, repo)
 
 	return clone.Git, remote, nil
+}
+
+func overrideSystem(system *target.System, cmd *cobra.Command) {
+	architecture, _ := cmd.Flags().GetString("architecture")
+	if len(architecture) != 0 {
+		system.Architecture = target.Architecture(architecture)
+	}
+
+	osReleaseID, _ := cmd.Flags().GetString("os-release-id")
+	if len(osReleaseID) != 0 {
+		system.OSReleaseID = osReleaseID
+	}
+
+	osReleaseVersion, _ := cmd.Flags().GetString("os-release-version")
+	if len(osReleaseVersion) != 0 {
+		system.OSReleaseVersion = osReleaseVersion
+	}
+
+	osReleaseVersionID, _ := cmd.Flags().GetString("os-release-version-id")
+	if len(osReleaseVersionID) != 0 {
+		system.OSReleaseVersionID = osReleaseVersionID
+	}
+
+	osReleaseVersionCodeName, _ := cmd.Flags().GetString("os-release-version-code-name")
+	if len(osReleaseVersionCodeName) != 0 {
+		system.OSReleaseVersionCodeName = osReleaseVersionCodeName
+	}
+
 }

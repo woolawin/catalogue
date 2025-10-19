@@ -88,6 +88,8 @@ func runBuild(cmd *cobra.Command, args []string) {
 	src, _ := cmd.Flags().GetString("src")
 	dst, _ := cmd.Flags().GetString("dst")
 
+	overrideSystem(&system, cmd)
+
 	srcAbs, err := filepath.Abs(src)
 	if err != nil {
 		fmt.Println("BAD COMMAND: source is not a valid path")
@@ -157,6 +159,11 @@ func args() *cobra.Command {
 	}
 	build.Flags().String("src", "", "Source directory to build from")
 	build.Flags().String("dst", "", "Destination of the package archive")
+	build.Flags().String("architecture", "", "Architecture of package to build for")
+	build.Flags().String("os-release-id", "", "OS Release ID of package to build for")
+	build.Flags().String("os-release-version", "", "OS Release version of package to build for")
+	build.Flags().String("os-release-version-id", "", "OS Release version ID of package to build for")
+	build.Flags().String("os-release-version-code-name", "", "OS Release version code name of package to build for")
 	build.MarkFlagRequired("src")
 	build.MarkFlagRequired("dst")
 	var printSystem = &cobra.Command{
