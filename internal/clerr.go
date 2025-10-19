@@ -18,10 +18,6 @@ func ErrCause(err error) *CLErr {
 	return &CLErr{Message: err.Error()}
 }
 
-func ErrFileBlocked(path string, action string) *CLErr {
-	return &CLErr{Message: fmt.Sprintf("file '%s' is not permitted to be %s", path, action)}
-}
-
 func Err(format string, args ...any) *CLErr {
 	return &CLErr{Message: fmt.Sprintf(format, args...)}
 }
