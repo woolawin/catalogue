@@ -100,13 +100,15 @@ func runClone(cmd *cobra.Command, args []string) {
 	path, _ := cmd.Flags().GetString("path")
 
 	var protocol clone.Protocol
+	protocolCount := 0
 	git, _ := cmd.Flags().GetBool("git")
 	if git {
+		protocolCount++
 		protocol = clone.Git
 	}
 
-	if protocol == 0 {
-		fmt.Println("must set --git")
+	if protocolCount != 1 {
+		fmt.Println("ERROR: must specify --git")
 		os.Exit(0)
 	}
 
