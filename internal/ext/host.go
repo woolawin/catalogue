@@ -40,7 +40,7 @@ func (impl *hostImpl) ResolveAnchor(value string) (string, error) {
 		if len(config.DefaultUser) == 0 {
 			return "", internal.Err("no default user specified in '%s' for home anchor", impl.GetConfigPath())
 		}
-		return "/usr/home/" + config.DefaultUser, nil
+		return "/home/" + config.DefaultUser, nil
 	}
 	return "", internal.Err("unknown anchor '%s'", value)
 }
