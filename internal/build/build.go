@@ -31,7 +31,7 @@ func Build(dst string, config component.Config, system internal.System, api ext.
 		api.Disk().Path("data.tar.gz"),
 	}
 
-	err = api.Disk().ArchiveFiles(dst, files)
+	err = ext.NewDisk("/").ArchiveFiles(dst, files)
 	if err != nil {
 		return internal.ErrOf(err, "can not create .deb file")
 	}

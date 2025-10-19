@@ -15,6 +15,7 @@ import (
 
 type Disk interface {
 	Path(parts ...string) string
+	ReadFile(path string) ([]byte, error)
 	WriteFile(path string, data io.Reader) error
 	FileExists(path string) (bool, bool, error)
 	DirExists(path string) (bool, bool, error)
@@ -37,6 +38,18 @@ type diskImpl struct {
 
 func (disk *diskImpl) Path(parts ...string) string {
 	return filepath.Join(slices.Insert(parts, 0, string(disk.base))...)
+}
+
+func (disk *diskImpl) ReadFile(path string) ([]byte, error) {
+	if disk.unsafe(path) {
+		return nil, internal.ErrFileBlocked(path, "read")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, internal.ErrOf(err, "can not read file '%s'", path)
+	}
+
+	return data, nil
 }
 
 func (disk *diskImpl) WriteFile(path string, data io.Reader) error {

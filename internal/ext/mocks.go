@@ -86,3 +86,7 @@ func (mock *MockDisk) Move(toPath string, fromPath string, files []string, overw
 func (mock *MockDisk) ArchiveFiles(path string, files []string) error {
 	return nil
 }
+
+func (mock *MockDisk) ReadFile(path string) ([]byte, error) {
+	return nil, nil
+}

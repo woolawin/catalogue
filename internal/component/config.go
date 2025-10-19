@@ -3,7 +3,6 @@ package component
 import (
 	"bytes"
 	"io"
-	"os"
 	"strings"
 
 	toml "github.com/pelletier/go-toml/v2"
@@ -46,7 +45,8 @@ func Parse(src io.Reader) (Config, error) {
 }
 
 func Build(path string, disk ext.Disk) (Config, error) {
-	exists, asFile, err := disk.FileExists(path)
+	filePath := disk.Path(path)
+	exists, asFile, err := disk.FileExists(filePath)
 	if err != nil {
 		return Config{}, internal.ErrOf(err, "can not read '%s'", path)
 	}
@@ -59,7 +59,7 @@ func Build(path string, disk ext.Disk) (Config, error) {
 		return Config{}, nil
 	}
 
-	data, err := os.ReadFile(path)
+	data, err := disk.ReadFile(filePath)
 	if err != nil {
 		return Config{}, internal.ErrOf(err, "can not read '%s'", path)
 	}

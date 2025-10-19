@@ -101,8 +101,13 @@ func runBuild(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	api := ext.NewAPI(srcAbs)
+	dstAbs, err := filepath.Abs(dst)
+	if err != nil {
+		fmt.Println("BAD COMMAND: destination is not a valid path")
+		os.Exit(1)
+	}
 
+	api := ext.NewAPI(srcAbs)
 	config, err := component.Build("config.toml", api.Disk())
 	if err != nil {
 		fmt.Println("ERROR")
@@ -110,7 +115,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	err = build.Build(dst, config, system, api)
+	err = build.Build(dstAbs, config, system, api)
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())
