@@ -17,23 +17,47 @@ const (
 	Repository
 )
 
+type VersioningType int
+
+const (
+	GitSemanticTag VersioningType = iota
+	GitLatestCommit
+)
+
+const (
+	GitSemanticTagValue  = "git/semantic_tag"
+	GitLatestCommitValue = "git/latest_commit"
+)
+
 type ConfigTOML struct {
 	Name            string                             `toml:"name"`
 	Kind            string                             `toml:"kind"`
+	Versioing       VersioningTOML                     `toml:"versioning"`
 	SupportsTargets []string                           `toml:"supports_targets"`
 	Metadata        map[string]MetadataTOML            `toml:"metadata"`
 	Target          map[string]TargetTOML              `toml:"target"`
 	Download        map[string]map[string]DownloadTOML `toml:"download"`
 }
 
+type VersioningTOML struct {
+	Type   string `toml:"type"`
+	Branch string `toml:"branch"`
+}
+
 type Config struct {
 	Name            string
 	Kind            Kind
+	Versioning      Versioning
 	SupportsTargets []*internal.Target
 	Metadata        []*Metadata
 	Targets         []internal.Target
 	Downloads       map[string][]*Download
 	FileSystems     map[string][]*FileSystem
+}
+
+type Versioning struct {
+	Type   VersioningType
+	Branch string
 }
 
 func Parse(src io.Reader) (Config, error) {
@@ -99,6 +123,11 @@ func load(deserialized *ConfigTOML) (Config, error) {
 		return Config{}, internal.Err("unknown kind '%s'", deserialized.Kind)
 	}
 
+	versioning, err := loadVersioning(deserialized.Versioing)
+	if err != nil {
+		return Config{}, internal.ErrOf(err, "invalid versioning")
+	}
+
 	targets, err := loadTargets(deserialized.Target)
 	if err != nil {
 		return Config{}, internal.ErrOf(err, "invalid target")
@@ -120,6 +149,7 @@ func load(deserialized *ConfigTOML) (Config, error) {
 	config := Config{
 		Name:            name,
 		Kind:            kind,
+		Versioning:      versioning,
 		SupportsTargets: supportedTargets,
 		Targets:         targets,
 		Metadata:        metadatas,
@@ -166,4 +196,32 @@ func loadSupportsTargets(targets []internal.Target, values []string) ([]*interna
 	}
 
 	return supported, nil
+}
+
+func loadVersioning(config VersioningTOML) (Versioning, error) {
+	cleaned := strings.TrimSpace(config.Type)
+	if len(cleaned) == 0 {
+		return Versioning{}, internal.Err("missing versioning type")
+	}
+	var versioningType VersioningType
+	switch cleaned {
+	case GitSemanticTagValue:
+		versioningType = GitSemanticTag
+	case GitLatestCommitValue:
+		versioningType = GitLatestCommit
+	default:
+		return Versioning{}, internal.Err("unknown versioning type '%s'", cleaned)
+	}
+
+	versioning := Versioning{Type: versioningType}
+
+	if versioning.Type == GitLatestCommit {
+		branch := strings.TrimSpace(config.Branch)
+		if len(branch) == 0 {
+			return Versioning{}, internal.Err("branch must be specified if versioning type is 'git/latest_commit'")
+		}
+		versioning.Branch = branch
+	}
+
+	return versioning, nil
 }

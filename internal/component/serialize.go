@@ -25,6 +25,15 @@ func Serialize(config Config, writer io.Writer) error {
 		tml.SupportsTargets = append(tml.SupportsTargets, supported.Name)
 	}
 
+	switch config.Versioning.Type {
+	case GitLatestCommit:
+		tml.Versioing.Type = "git/latest_commit"
+	case GitSemanticTag:
+		tml.Versioing.Type = "git/semantic_tag"
+	}
+
+	tml.Versioing.Branch = config.Versioning.Branch
+
 	for _, tgt := range config.Targets {
 		if tml.Target == nil {
 			tml.Target = make(map[string]TargetTOML)
