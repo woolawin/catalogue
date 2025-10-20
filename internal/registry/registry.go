@@ -59,7 +59,7 @@ func (registry *Registry) AddPackage(config component.Config) error {
 		return internal.ErrOf(err, "failed tocheck if package '%s' already exists", config.Name)
 	}
 	if exists {
-		return internal.Err("package '%s' alreadt exists", config.Name)
+		return internal.Err("package '%s' already exists", config.Name)
 	}
 
 	var buffer bytes.Buffer
@@ -70,9 +70,15 @@ func (registry *Registry) AddPackage(config component.Config) error {
 
 	path := registry.packagePath(config.Name, "config.toml")
 
+	parent := filepath.Dir(path)
+	err = os.MkdirAll(parent, 0644)
+	if err != nil {
+		return internal.ErrOf(err, "can not create component directory '%s'", parent)
+	}
+
 	file, err := os.Create(path)
 	if err != nil {
-		return internal.ErrOf(err, "can not component file '%s'", path)
+		return internal.ErrOf(err, "can not create component file '%s'", path)
 	}
 	defer file.Close()
 

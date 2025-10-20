@@ -19,9 +19,6 @@ func Serialize(config Config, writer io.Writer) error {
 	}
 
 	for _, supported := range config.SupportedTargets {
-		if supported.BuiltIn {
-			continue
-		}
 		tml.SupportedTargets = append(tml.SupportedTargets, supported.Name)
 	}
 
@@ -35,6 +32,9 @@ func Serialize(config Config, writer io.Writer) error {
 	tml.Versioing.Branch = config.Versioning.Branch
 
 	for _, tgt := range config.Targets {
+		if tgt.BuiltIn {
+			continue
+		}
 		if tml.Target == nil {
 			tml.Target = make(map[string]TargetTOML)
 		}

@@ -2,7 +2,6 @@ package add
 
 import (
 	"bytes"
-	"fmt"
 	"path/filepath"
 
 	"github.com/woolawin/catalogue/internal"
@@ -39,9 +38,6 @@ func Add(protocol clone.Protocol, remote string, system internal.System, api ext
 		return internal.ErrOf(err, "invalid metadata from '%s'", remote)
 	}
 
-	for _, s := range config.SupportedTargets {
-		fmt.Println(s.Name)
-	}
 	if len(internal.Ranked(system, config.SupportedTargets)) == 0 {
 		return internal.Err("component '%s' has no supported target", config.Name)
 	}
