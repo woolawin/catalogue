@@ -34,7 +34,7 @@ func Add(protocol clone.Protocol, remote string, system internal.System, api ext
 		return internal.Err("component '%s' has no supported target")
 	}
 
-	if config.Kind == component.Package {
+	if config.Type == component.Package {
 		return addPackage(config, api)
 	}
 

@@ -11,11 +11,11 @@ func Serialize(config Config, writer io.Writer) error {
 	tml := ConfigTOML{}
 	tml.Name = config.Name
 
-	switch config.Kind {
+	switch config.Type {
 	case Package:
-		tml.Kind = "package"
+		tml.Type = "package"
 	case Repository:
-		tml.Kind = "repository"
+		tml.Type = "repository"
 	}
 
 	for _, supported := range config.SupportedTargets {

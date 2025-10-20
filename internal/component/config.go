@@ -10,10 +10,10 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-type Kind int
+type Type int
 
 const (
-	Package Kind = iota
+	Package Type = iota
 	Repository
 )
 
@@ -31,7 +31,7 @@ const (
 
 type ConfigTOML struct {
 	Name             string                             `toml:"name"`
-	Kind             string                             `toml:"kind"`
+	Type             string                             `toml:"type"`
 	Versioing        VersioningTOML                     `toml:"versioning"`
 	SupportedTargets []string                           `toml:"supported_targets"`
 	Metadata         map[string]MetadataTOML            `toml:"metadata"`
@@ -46,7 +46,7 @@ type VersioningTOML struct {
 
 type Config struct {
 	Name             string
-	Kind             Kind
+	Type             Type
 	Versioning       Versioning
 	SupportedTargets []*internal.Target
 	Metadata         []*Metadata
@@ -111,16 +111,16 @@ func load(deserialized *ConfigTOML) (Config, error) {
 	if len(name) == 0 {
 		return Config{}, internal.Err("missing property name")
 	}
-	var kind Kind
-	switch strings.TrimSpace(deserialized.Kind) {
+	var ctype Type
+	switch strings.TrimSpace(deserialized.Type) {
 	case "":
 		return Config{}, internal.Err("missing property kind")
 	case "package":
-		kind = Package
+		ctype = Package
 	case "repository":
-		kind = Repository
+		ctype = Repository
 	default:
-		return Config{}, internal.Err("unknown kind '%s'", deserialized.Kind)
+		return Config{}, internal.Err("unknown type '%s'", deserialized.Type)
 	}
 
 	versioning, err := loadVersioning(deserialized.Versioing)
@@ -148,7 +148,7 @@ func load(deserialized *ConfigTOML) (Config, error) {
 	}
 	config := Config{
 		Name:             name,
-		Kind:             kind,
+		Type:             ctype,
 		Versioning:       versioning,
 		SupportedTargets: supportedTargets,
 		Targets:          targets,

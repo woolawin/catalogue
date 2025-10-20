@@ -7,7 +7,7 @@ import (
 )
 
 func Build(dst string, config component.Config, system internal.System, api ext.API) error {
-	if config.Kind != component.Package {
+	if config.Type != component.Package {
 		return internal.Err("component '%s' is not a package", config.Name)
 	}
 	err := debianBinary(api)
