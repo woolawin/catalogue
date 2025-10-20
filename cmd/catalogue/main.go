@@ -13,6 +13,7 @@ import (
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/component"
 	"github.com/woolawin/catalogue/internal/ext"
+	"github.com/woolawin/catalogue/internal/registry"
 )
 
 //go:embed version.txt
@@ -73,8 +74,9 @@ func runAdd(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	api := ext.NewAPI("/")
+	reg := registry.NewRegistry()
 
-	err = add.Add(protocol, remote, system, api)
+	err = add.Add(protocol, remote, system, api, reg)
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())

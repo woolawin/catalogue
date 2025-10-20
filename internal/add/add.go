@@ -1,16 +1,15 @@
 package add
 
 import (
-	"bytes"
-
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/build"
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/component"
 	"github.com/woolawin/catalogue/internal/ext"
+	reg "github.com/woolawin/catalogue/internal/registry"
 )
 
-func Add(protocol clone.Protocol, remote string, system internal.System, api ext.API) error {
+func Add(protocol clone.Protocol, remote string, system internal.System, api ext.API, registry reg.Registry) error {
 	local := api.Host().RandomTmpDir()
 
 	err := clone.Clone(protocol, remote, local, ".catalogue/config.toml", api)
@@ -35,31 +34,8 @@ func Add(protocol clone.Protocol, remote string, system internal.System, api ext
 	}
 
 	if config.Type == component.Package {
-		return addPackage(config, api)
+		return registry.AddPackage(config)
 	}
 
 	return internal.Err("only packages can be added right now")
-}
-
-func addPackage(config component.Config, api ext.API) error {
-	exists, err := api.Host().HasPackage(config.Name)
-	if err != nil {
-		return internal.ErrOf(err, "failed tocheck if package '%s' already exists", config.Name)
-	}
-	if exists {
-		return internal.Err("package '%s' alreadt exists", config.Name)
-	}
-
-	disk := api.Host().PackageDisk(config.Name)
-
-	var buffer bytes.Buffer
-	err = component.Serialize(config, &buffer)
-	if err != nil {
-		return internal.ErrOf(err, "can not serialize config")
-	}
-	err = disk.WriteFile("config.toml", &buffer)
-	if err != nil {
-		return internal.ErrOf(err, "can not write package config")
-	}
-	return nil
 }

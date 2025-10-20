@@ -17,9 +17,6 @@ type Host interface {
 	GetConfigPath() string
 	GetConfig() (internal.Config, error)
 	RandomTmpDir() string
-
-	HasPackage(name string) (bool, error)
-	PackageDisk(name string) Disk
 }
 
 func NewHost() Host {
@@ -65,26 +62,6 @@ func (impl *hostImpl) GetSystem() (internal.System, error) {
 
 func (impl *hostImpl) GetConfigPath() string {
 	return "/etc/catalogue/config.toml"
-}
-
-func (impl *hostImpl) packagePath(name string) string {
-	return "/etc/catalogue/components/" + name
-}
-
-func (impl *hostImpl) HasPackage(name string) (bool, error) {
-	path := impl.packagePath(name)
-	_, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
-		return false, internal.ErrOf(err, "can not check if package '%s' exists", name)
-	}
-	return true, nil
-}
-
-func (impl *hostImpl) PackageDisk(name string) Disk {
-	return NewDisk(impl.packagePath(name))
 }
 
 func (impl *hostImpl) GetConfig() (internal.Config, error) {
