@@ -54,6 +54,7 @@ func TestDeserializeFull(t *testing.T) {
 	input := `
 name='foobar'
 kind='package'
+supported_targets=['foo', 'bar']
 
 [target.ubuntu]
 os_release_id='ubuntu'
@@ -81,8 +82,9 @@ dst="path://root/usr/bin"
 	}
 
 	expected := ConfigTOML{
-		Name: "foobar",
-		Kind: "package",
+		Name:             "foobar",
+		Kind:             "package",
+		SupportedTargets: []string{"foo", "bar"},
 		Metadata: map[string]MetadataTOML{
 			"all": {
 				Dependencies: []string{"foo", "bar"},

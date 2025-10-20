@@ -30,13 +30,13 @@ const (
 )
 
 type ConfigTOML struct {
-	Name            string                             `toml:"name"`
-	Kind            string                             `toml:"kind"`
-	Versioing       VersioningTOML                     `toml:"versioning"`
-	SupportsTargets []string                           `toml:"supports_targets"`
-	Metadata        map[string]MetadataTOML            `toml:"metadata"`
-	Target          map[string]TargetTOML              `toml:"target"`
-	Download        map[string]map[string]DownloadTOML `toml:"download"`
+	Name             string                             `toml:"name"`
+	Kind             string                             `toml:"kind"`
+	Versioing        VersioningTOML                     `toml:"versioning"`
+	SupportedTargets []string                           `toml:"supported_targets"`
+	Metadata         map[string]MetadataTOML            `toml:"metadata"`
+	Target           map[string]TargetTOML              `toml:"target"`
+	Download         map[string]map[string]DownloadTOML `toml:"download"`
 }
 
 type VersioningTOML struct {
@@ -45,14 +45,14 @@ type VersioningTOML struct {
 }
 
 type Config struct {
-	Name            string
-	Kind            Kind
-	Versioning      Versioning
-	SupportsTargets []*internal.Target
-	Metadata        []*Metadata
-	Targets         []internal.Target
-	Downloads       map[string][]*Download
-	FileSystems     map[string][]*FileSystem
+	Name             string
+	Kind             Kind
+	Versioning       Versioning
+	SupportedTargets []*internal.Target
+	Metadata         []*Metadata
+	Targets          []internal.Target
+	Downloads        map[string][]*Download
+	FileSystems      map[string][]*FileSystem
 }
 
 type Versioning struct {
@@ -133,7 +133,7 @@ func load(deserialized *ConfigTOML) (Config, error) {
 		return Config{}, internal.ErrOf(err, "invalid target")
 	}
 
-	supportedTargets, err := loadSupportsTargets(targets, deserialized.SupportsTargets)
+	supportedTargets, err := loadSupportedTargets(targets, deserialized.SupportedTargets)
 	if err != nil {
 		return Config{}, internal.ErrOf(err, "invalid supports targets")
 	}
@@ -147,13 +147,13 @@ func load(deserialized *ConfigTOML) (Config, error) {
 		return Config{}, internal.ErrOf(err, "invalid config metadata")
 	}
 	config := Config{
-		Name:            name,
-		Kind:            kind,
-		Versioning:      versioning,
-		SupportsTargets: supportedTargets,
-		Targets:         targets,
-		Metadata:        metadatas,
-		Downloads:       downloads,
+		Name:             name,
+		Kind:             kind,
+		Versioning:       versioning,
+		SupportedTargets: supportedTargets,
+		Targets:          targets,
+		Metadata:         metadatas,
+		Downloads:        downloads,
 	}
 	return config, nil
 }
@@ -178,7 +178,7 @@ func normalizeList(list []string) []string {
 	return cleaned
 }
 
-func loadSupportsTargets(targets []internal.Target, values []string) ([]*internal.Target, error) {
+func loadSupportedTargets(targets []internal.Target, values []string) ([]*internal.Target, error) {
 	var supported []*internal.Target
 
 	for _, value := range values {

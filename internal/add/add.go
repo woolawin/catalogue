@@ -30,7 +30,7 @@ func Add(protocol clone.Protocol, remote string, system internal.System, api ext
 		return internal.ErrOf(err, "invalid metadata from '%s'", remote)
 	}
 
-	if len(internal.Ranked(system, config.SupportsTargets)) == 0 {
+	if len(internal.Ranked(system, config.SupportedTargets)) == 0 {
 		return internal.Err("component '%s' has no supported target")
 	}
 

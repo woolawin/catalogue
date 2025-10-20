@@ -18,18 +18,18 @@ func Serialize(config Config, writer io.Writer) error {
 		tml.Kind = "repository"
 	}
 
-	for _, supported := range config.SupportsTargets {
+	for _, supported := range config.SupportedTargets {
 		if supported.BuiltIn {
 			continue
 		}
-		tml.SupportsTargets = append(tml.SupportsTargets, supported.Name)
+		tml.SupportedTargets = append(tml.SupportedTargets, supported.Name)
 	}
 
 	switch config.Versioning.Type {
 	case GitLatestCommit:
-		tml.Versioing.Type = "git/latest_commit"
+		tml.Versioing.Type = GitLatestCommitValue
 	case GitSemanticTag:
-		tml.Versioing.Type = "git/semantic_tag"
+		tml.Versioing.Type = GitSemanticTagValue
 	}
 
 	tml.Versioing.Branch = config.Versioning.Branch
