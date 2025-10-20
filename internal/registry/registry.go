@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"path/filepath"
+	"slices"
 
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/component"
@@ -14,6 +16,41 @@ type Registry struct {
 
 func NewRegistry() Registry {
 	return Registry{}
+}
+
+const base = "/etc/catalogue/components"
+const packagesBase = base + "/packages"
+
+func (registry *Registry) ListPackages() ([]string, error) {
+	entries, err := os.ReadDir(packagesBase)
+	if err != nil {
+		return nil, internal.ErrOf(err, "can not list directory '%s'", packagesBase)
+	}
+
+	var dirs []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			dirs = append(dirs, entry.Name())
+		}
+	}
+
+	return dirs, nil
+}
+
+func (registry *Registry) GetPackageConfig(name string) (component.Config, bool, error) {
+	path := registry.packagePath(name, "config.toml")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return component.Config{}, false, nil
+		}
+		return component.Config{}, false, internal.ErrOf(err, "can not read file '%s'", path)
+	}
+	config, err := component.Parse(bytes.NewReader(data))
+	if err != nil {
+		return component.Config{}, false, internal.ErrOf(err, "can not parse package config")
+	}
+	return config, true, nil
 }
 
 func (registry *Registry) AddPackage(config component.Config) error {
@@ -31,7 +68,7 @@ func (registry *Registry) AddPackage(config component.Config) error {
 		return internal.ErrOf(err, "can not serialize config")
 	}
 
-	path := registry.packagePath(config.Name)
+	path := registry.packagePath(config.Name, "config.toml")
 
 	file, err := os.Create(path)
 	if err != nil {
@@ -59,6 +96,6 @@ func (registry *Registry) HasPackage(name string) (bool, error) {
 	return true, nil
 }
 
-func (registry *Registry) packagePath(name string) string {
-	return "/etc/catalogue/components/packages/" + name
+func (registry *Registry) packagePath(parts ...string) string {
+	return filepath.Join(slices.Insert(parts, 0, string(packagesBase))...)
 }
