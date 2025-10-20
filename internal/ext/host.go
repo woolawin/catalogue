@@ -17,6 +17,7 @@ type Host interface {
 	GetConfigPath() string
 	GetConfig() (internal.Config, error)
 	RandomTmpDir() string
+	ReadTmpFile(path string) ([]byte, error)
 }
 
 func NewHost() Host {
@@ -134,4 +135,13 @@ func (impl *hostImpl) RandomTmpDir() string {
 	randomDir := strings.Builder{}
 	randomDir.Write(b)
 	return "/tmp/catalogue/" + randomDir.String()
+}
+
+func (impl *hostImpl) ReadTmpFile(path string) ([]byte, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, internal.ErrOf(err, "can not read file '%s'", path)
+	}
+
+	return data, nil
 }

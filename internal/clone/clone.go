@@ -92,9 +92,8 @@ func gitClone(remote string, local string, path string, api ext.API) error {
 }
 
 func isInPath(path string, object string) bool {
-	relative, err := filepath.Rel(path, object)
-	if err != nil {
-		return false
+	if path == object {
+		return true
 	}
-	return !strings.HasPrefix(relative, "..") || relative == "."
+	return strings.HasPrefix(object, path)
 }

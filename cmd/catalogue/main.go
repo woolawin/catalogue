@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	_ "embed"
 	"fmt"
 	"os"
@@ -109,8 +110,16 @@ func runBuild(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+	configPath := filepath.Join(srcAbs, "config.toml")
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		fmt.Println("ERROR")
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
 	api := ext.NewAPI(srcAbs)
-	config, err := component.Build("config.toml", api.Disk())
+	config, err := component.ParseWithFileSystems(bytes.NewReader(data), api.Disk())
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())

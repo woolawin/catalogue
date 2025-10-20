@@ -1,7 +1,6 @@
 package component
 
 import (
-	"bytes"
 	"io"
 	"strings"
 
@@ -68,27 +67,8 @@ func Parse(src io.Reader) (Config, error) {
 	return load(&deserialized)
 }
 
-func Build(path string, disk ext.Disk) (Config, error) {
-	filePath := disk.Path(path)
-	exists, asFile, err := disk.FileExists(filePath)
-	if err != nil {
-		return Config{}, internal.ErrOf(err, "can not read '%s'", path)
-	}
-
-	if !asFile {
-		return Config{}, internal.Err("'%s' is not a file", path)
-	}
-
-	if !exists {
-		return Config{}, nil
-	}
-
-	data, err := disk.ReadFile(filePath)
-	if err != nil {
-		return Config{}, internal.ErrOf(err, "can not read '%s'", path)
-	}
-
-	deserialized, err := deserialize(bytes.NewReader(data))
+func ParseWithFileSystems(src io.Reader, disk ext.Disk) (Config, error) {
+	deserialized, err := deserialize(src)
 	if err != nil {
 		return Config{}, err
 	}

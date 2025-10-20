@@ -1,6 +1,10 @@
 package add
 
 import (
+	"bytes"
+	"fmt"
+	"path/filepath"
+
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/build"
 	"github.com/woolawin/catalogue/internal/clone"
@@ -18,8 +22,14 @@ func Add(protocol clone.Protocol, remote string, system internal.System, api ext
 	}
 
 	buildApi := ext.NewAPI(local)
-	configPath := api.Disk().Path(local, ".catalogue", "config.toml")
-	config, err := component.Build(string(configPath), buildApi.Disk())
+
+	configPath := filepath.Join(local, ".catalogue", "config.toml")
+	configData, err := api.Host().ReadTmpFile(configPath)
+	if err != nil {
+		return internal.ErrOf(err, "can not read config file")
+	}
+
+	config, err := component.ParseWithFileSystems(bytes.NewReader(configData), buildApi.Disk())
 	if err != nil {
 		return internal.ErrOf(err, "invalid component config")
 	}
@@ -29,8 +39,11 @@ func Add(protocol clone.Protocol, remote string, system internal.System, api ext
 		return internal.ErrOf(err, "invalid metadata from '%s'", remote)
 	}
 
+	for _, s := range config.SupportedTargets {
+		fmt.Println(s.Name)
+	}
 	if len(internal.Ranked(system, config.SupportedTargets)) == 0 {
-		return internal.Err("component '%s' has no supported target")
+		return internal.Err("component '%s' has no supported target", config.Name)
 	}
 
 	if config.Type == component.Package {
