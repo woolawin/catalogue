@@ -1,12 +1,14 @@
 package build
 
 import (
+	"io"
+
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/component"
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func Build(dst string, config component.Config, system internal.System, api ext.API) error {
+func Build(dst io.Writer, config component.Config, system internal.System, api ext.API) error {
 	if config.Type != component.Package {
 		return internal.Err("component '%s' is not a package", config.Name)
 	}
@@ -25,13 +27,13 @@ func Build(dst string, config component.Config, system internal.System, api ext.
 		return internal.ErrOf(err, "can not create data.tar.gz")
 	}
 
-	files := map[string]ext.DiskPath{
-		"debian-binary":  api.Disk().Path("debian-binary"),
-		"control.tar.gz": api.Disk().Path("control.tar.gz"),
-		"data.tar.gz":    api.Disk().Path("data.tar.gz"),
+	files := map[string]string{
+		"debian-binary":  string(api.Disk().Path("debian-binary")),
+		"control.tar.gz": string(api.Disk().Path("control.tar.gz")),
+		"data.tar.gz":    string(api.Disk().Path("data.tar.gz")),
 	}
 
-	err = api.Disk().CreateDeb(dst, files)
+	err = internal.CreateAR(files, dst)
 	if err != nil {
 		return internal.ErrOf(err, "can not create .deb file")
 	}

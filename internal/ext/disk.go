@@ -9,9 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"time"
 
-	"github.com/blakesmith/ar"
 	"github.com/woolawin/catalogue/internal"
 )
 
@@ -28,7 +26,6 @@ type Disk interface {
 	ListRec(path DiskPath) ([]DiskPath, error)
 	CreateTar(path DiskPath) error
 	ArchiveDir(src, dst DiskPath) error
-	CreateDeb(path string, files map[string]DiskPath) error
 	Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool) error
 }
 
@@ -261,59 +258,6 @@ func (disk *diskImpl) ArchiveDir(src DiskPath, dst DiskPath) error {
 	if err != nil {
 		return internal.ErrOf(err, "can not archive directory %s from %s", dst, src)
 	}
-	return nil
-}
-
-func (impl *diskImpl) CreateDeb(path string, input map[string]DiskPath) error {
-	out, err := os.Create(path)
-	if err != nil {
-		return internal.ErrOf(err, "can not create .deb file", path)
-	}
-	defer out.Close()
-
-	arWriter := ar.NewWriter(out)
-	if err := arWriter.WriteGlobalHeader(); err != nil {
-		return internal.ErrOf(err, "failed to write ar header")
-	}
-
-	for name, path := range input {
-		if impl.unsafe(path) {
-			return errFileBlocked(path, "copied")
-		}
-		err := addFileToAr(arWriter, name, string(path), 0644)
-		if err != nil {
-			return internal.ErrOf(err, "can not add file '%s' to .deb", name)
-		}
-	}
-
-	return nil
-}
-
-func addFileToAr(writer *ar.Writer, name string, filePath string, mode int64) error {
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return internal.ErrOf(err, "can not read file '%s'", filePath)
-	}
-
-	header := &ar.Header{
-		Name:    name,
-		ModTime: time.Now().UTC(),
-		Uid:     0,
-		Gid:     0,
-		Mode:    mode,
-		Size:    int64(len(data)),
-	}
-
-	err = writer.WriteHeader(header)
-	if err != nil {
-		return internal.ErrOf(err, "can not write header for file '%s'", name)
-	}
-
-	_, err = writer.Write(data)
-	if err != nil {
-		return internal.ErrOf(err, "can not write file '%s'", name)
-	}
-
 	return nil
 }
 

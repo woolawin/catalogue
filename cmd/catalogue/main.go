@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/add"
 	"github.com/woolawin/catalogue/internal/build"
 	"github.com/woolawin/catalogue/internal/clone"
@@ -126,7 +127,16 @@ func runBuild(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	err = build.Build(dstAbs, config, system, api)
+	dstFile, err := os.Create(dstAbs)
+	if err != nil {
+		fmt.Println("ERROR")
+		fmt.Println(internal.ErrOf(err, "can not create .deb file '%s'", dstAbs))
+		os.Exit(1)
+		return
+	}
+	defer dstFile.Close()
+
+	err = build.Build(dstFile, config, system, api)
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -86,6 +88,7 @@ func (server *HTTPServer) Pool(writer http.ResponseWriter, request *http.Request
 
 	dot := strings.Index(file, ".")
 	if dot == -1 {
+		slog.Error("faile did not contain dot", "file", file)
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -93,16 +96,31 @@ func (server *HTTPServer) Pool(writer http.ResponseWriter, request *http.Request
 	packageName := file[:dot]
 	config, found, err := server.registry.GetPackageConfig(packageName)
 	if err != nil {
+		slog.Error("could not get config file for package", "package", packageName, "error", err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if !found {
+		slog.Error("could not find package", "package", packageName)
 		writer.WriteHeader(http.StatusNotFound)
 		return
 	}
 
 	api := ext.NewAPI("/")
 	system, err := api.Host().GetSystem()
-	err = build.Build("", config, system, api)
+
+	buffer := bytes.NewBuffer([]byte{})
+	err = build.Build(buffer, config, system, api)
+	if err != nil {
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	_, err = io.Copy(writer, buffer)
+	if err != nil {
+		slog.Error("could not write file to response", "package", packageName, "error", err)
+		writer.WriteHeader(http.StatusInternalServerError)
+	}
 }
