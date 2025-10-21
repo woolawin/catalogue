@@ -120,7 +120,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 	}
 
 	api := ext.NewAPI(srcAbs)
-	config, err := component.ParseWithFileSystems(bytes.NewReader(data), api.Disk())
+	config, err := component.ParseWithFileSystems(bytes.NewReader(data), api.Disk)
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())

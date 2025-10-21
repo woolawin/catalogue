@@ -18,9 +18,9 @@ const (
 	Git Protocol = iota + 1
 )
 
-func Clone(protocol Protocol, remote string, local string, path string, api ext.API) error {
-	localPath := api.Disk().Path(local)
-	exists, _, err := api.Disk().DirExists(localPath)
+func Clone(protocol Protocol, remote string, local string, path string, api *ext.API) error {
+	localPath := api.Disk.Path(local)
+	exists, _, err := api.Disk.DirExists(localPath)
 	if err != nil {
 		return internal.ErrOf(err, "can not check if local already exists")
 	}
@@ -34,13 +34,13 @@ func Clone(protocol Protocol, remote string, local string, path string, api ext.
 	return internal.Err("unsupported protocol")
 }
 
-func gitClone(remote string, local string, path string, api ext.API) error {
+func gitClone(remote string, local string, path string, api *ext.API) error {
 	opts := &git.CloneOptions{
 		URL:        remote,
 		Depth:      1,
 		NoCheckout: true,
 	}
-	repo, err := api.Git().Clone(local, opts)
+	repo, err := api.Git.Clone(local, opts)
 	if err != nil {
 		return internal.ErrOf(err, "failed to clone '%s'", remote)
 	}

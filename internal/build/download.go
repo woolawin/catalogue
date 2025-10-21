@@ -8,7 +8,7 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func download(system internal.System, downloads map[string][]*component.Download, api ext.API) error {
+func download(system internal.System, downloads map[string][]*component.Download, api *ext.API) error {
 	if len(downloads) == 0 {
 		return nil
 	}
@@ -18,18 +18,18 @@ func download(system internal.System, downloads map[string][]*component.Download
 			continue
 		}
 		dst := tgt.Destination
-		anchorPath, err := api.Host().ResolveAnchor(dst.Host)
+		anchorPath, err := api.Host.ResolveAnchor(dst.Host)
 		if err != nil {
 			return internal.ErrOf(err, "failed download %s", tgt.ID)
 		}
 
-		dstPath := api.Disk().Path("data", anchorPath, dst.Path)
-		data, err := api.Http().Fetch(tgt.Source)
+		dstPath := api.Disk.Path("data", anchorPath, dst.Path)
+		data, err := api.Http.Fetch(tgt.Source)
 		if err != nil {
 			return internal.ErrOf(err, "failed to download %s", tgt.ID)
 		}
 
-		err = api.Disk().WriteFile(dstPath, bytes.NewReader(data))
+		err = api.Disk.WriteFile(dstPath, bytes.NewReader(data))
 		if err != nil {
 			return internal.ErrOf(err, "can not download file %s", dst.String())
 		}

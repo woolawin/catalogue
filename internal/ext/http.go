@@ -8,19 +8,15 @@ import (
 	"github.com/woolawin/catalogue/internal"
 )
 
-type HTTP interface {
-	Fetch(url *url.URL) ([]byte, error)
+func NewHTTP() *HTTP {
+	return &HTTP{client: http.Client{}}
 }
 
-func NewHTTP() HTTP {
-	return &httpImpl{client: http.Client{}}
-}
-
-type httpImpl struct {
+type HTTP struct {
 	client http.Client
 }
 
-func (impl *httpImpl) Fetch(url *url.URL) ([]byte, error) {
+func (impl *HTTP) Fetch(url *url.URL) ([]byte, error) {
 	request, err := http.NewRequest("GET", url.String(), nil)
 	if err != nil {
 		return nil, internal.ErrOf(err, "failed to fetch '%s'", url.String())

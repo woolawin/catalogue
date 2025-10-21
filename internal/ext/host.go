@@ -11,41 +11,32 @@ import (
 	"github.com/woolawin/catalogue/internal"
 )
 
-type Host interface {
-	GetSystem() (internal.System, error)
-	ResolveAnchor(value string) (string, error)
-	GetConfigPath() string
-	GetConfig() (internal.Config, error)
-	RandomTmpDir() string
-	ReadTmpFile(path string) ([]byte, error)
+func NewHost() *Host {
+	return &Host{}
 }
 
-func NewHost() Host {
-	return &hostImpl{}
-}
-
-type hostImpl struct {
+type Host struct {
 	config *internal.Config
 }
 
-func (impl *hostImpl) ResolveAnchor(value string) (string, error) {
+func (host *Host) ResolveAnchor(value string) (string, error) {
 	if value == "root" {
 		return "/", nil
 	}
 	if value == "home" {
-		config, err := impl.GetConfig()
+		config, err := host.GetConfig()
 		if err != nil {
 			return "", err
 		}
 		if len(config.DefaultUser) == 0 {
-			return "", internal.Err("no default user specified in '%s' for home anchor", impl.GetConfigPath())
+			return "", internal.Err("no default user specified in '%s' for home anchor", host.GetConfigPath())
 		}
 		return "/home/" + config.DefaultUser, nil
 	}
 	return "", internal.Err("unknown anchor '%s'", value)
 }
 
-func (impl *hostImpl) GetSystem() (internal.System, error) {
+func (host *Host) GetSystem() (internal.System, error) {
 	system := internal.System{}
 	arch, _ := getArch(runtime.GOARCH)
 	system.Architecture = arch
@@ -61,16 +52,16 @@ func (impl *hostImpl) GetSystem() (internal.System, error) {
 	return system, nil
 }
 
-func (impl *hostImpl) GetConfigPath() string {
+func (host *Host) GetConfigPath() string {
 	return "/etc/catalogue/config.toml"
 }
 
-func (impl *hostImpl) GetConfig() (internal.Config, error) {
-	if impl.config != nil {
-		return *impl.config, nil
+func (host *Host) GetConfig() (internal.Config, error) {
+	if host.config != nil {
+		return *host.config, nil
 	}
 
-	info, err := os.Stat(impl.GetConfigPath())
+	info, err := os.Stat(host.GetConfigPath())
 	if err != nil {
 		if os.IsNotExist(err) {
 			return internal.Config{}, nil
@@ -82,7 +73,7 @@ func (impl *hostImpl) GetConfig() (internal.Config, error) {
 		return internal.Config{}, internal.ErrOf(err, "config file is a directory")
 	}
 
-	data, err := os.ReadFile(impl.GetConfigPath())
+	data, err := os.ReadFile(host.GetConfigPath())
 	if err != nil {
 		return internal.Config{}, internal.ErrOf(err, "can not read confile file")
 	}
@@ -92,7 +83,7 @@ func (impl *hostImpl) GetConfig() (internal.Config, error) {
 		return internal.Config{}, err
 	}
 
-	impl.config = &config
+	host.config = &config
 	return config, nil
 }
 
@@ -126,7 +117,7 @@ func findOSReleaseValue(lines []string, key string) (string, bool) {
 
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-func (impl *hostImpl) RandomTmpDir() string {
+func (host *Host) RandomTmpDir() string {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	b := make([]byte, 24)
 	for i := range b {
@@ -137,7 +128,7 @@ func (impl *hostImpl) RandomTmpDir() string {
 	return "/tmp/catalogue/" + randomDir.String()
 }
 
-func (impl *hostImpl) ReadTmpFile(path string) ([]byte, error) {
+func (host *Host) ReadTmpFile(path string) ([]byte, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, internal.ErrOf(err, "can not read file '%s'", path)

@@ -8,12 +8,12 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func control(system internal.System, config component.Config, api ext.API) error {
+func control(system internal.System, config component.Config, api *ext.API) error {
 
-	tarPath := api.Disk().Path("control.tar.gz")
-	dirPath := api.Disk().Path("control")
+	tarPath := api.Disk.Path("control.tar.gz")
+	dirPath := api.Disk.Path("control")
 
-	exists, asFile, err := api.Disk().FileExists(tarPath)
+	exists, asFile, err := api.Disk.FileExists(tarPath)
 	if err != nil {
 		return internal.ErrOf(err, "can not check if file control.tar.gz exists")
 	}
@@ -24,7 +24,7 @@ func control(system internal.System, config component.Config, api ext.API) error
 		return internal.Err("data.tar.gz is not a file")
 	}
 
-	exists, asDir, err := api.Disk().DirExists(dirPath)
+	exists, asDir, err := api.Disk.DirExists(dirPath)
 	if err != nil {
 		return internal.ErrOf(err, "can not check if directory control exists")
 	}
@@ -33,7 +33,7 @@ func control(system internal.System, config component.Config, api ext.API) error
 	}
 
 	if !exists {
-		err = api.Disk().CreateDir(dirPath)
+		err = api.Disk.CreateDir(dirPath)
 		if err != nil {
 			return internal.ErrOf(err, "can not create control directory")
 		}
@@ -47,13 +47,13 @@ func control(system internal.System, config component.Config, api ext.API) error
 	}
 	data.SetFrom(config, md)
 
-	controlFile := api.Disk().Path("control", "control")
-	err = api.Disk().WriteFile(controlFile, strings.NewReader(data.String()))
+	controlFile := api.Disk.Path("control", "control")
+	err = api.Disk.WriteFile(controlFile, strings.NewReader(data.String()))
 	if err != nil {
 		return internal.ErrOf(err, "can not write to file control/control")
 	}
 
-	return api.Disk().ArchiveDir(dirPath, tarPath)
+	return api.Disk.ArchiveDir(dirPath, tarPath)
 }
 
 func Metadata(metadatas []*component.Metadata, system internal.System) (component.Metadata, error) {

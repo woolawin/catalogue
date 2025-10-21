@@ -12,8 +12,8 @@ import (
 	reg "github.com/woolawin/catalogue/internal/registry"
 )
 
-func Add(protocol clone.Protocol, remote string, system internal.System, api ext.API, registry reg.Registry) error {
-	local := api.Host().RandomTmpDir()
+func Add(protocol clone.Protocol, remote string, system internal.System, api *ext.API, registry reg.Registry) error {
+	local := api.Host.RandomTmpDir()
 
 	err := clone.Clone(protocol, remote, local, ".catalogue/config.toml", api)
 	if err != nil {
@@ -23,12 +23,12 @@ func Add(protocol clone.Protocol, remote string, system internal.System, api ext
 	buildApi := ext.NewAPI(local)
 
 	configPath := filepath.Join(local, ".catalogue", "config.toml")
-	configData, err := api.Host().ReadTmpFile(configPath)
+	configData, err := api.Host.ReadTmpFile(configPath)
 	if err != nil {
 		return internal.ErrOf(err, "can not read config file")
 	}
 
-	config, err := component.ParseWithFileSystems(bytes.NewReader(configData), buildApi.Disk())
+	config, err := component.ParseWithFileSystems(bytes.NewReader(configData), buildApi.Disk)
 	if err != nil {
 		return internal.ErrOf(err, "invalid component config")
 	}

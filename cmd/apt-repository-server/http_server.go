@@ -108,7 +108,7 @@ func (server *HTTPServer) Pool(writer http.ResponseWriter, request *http.Request
 	}
 
 	api := ext.NewAPI("/")
-	system, err := api.Host().GetSystem()
+	system, err := api.Host.GetSystem()
 
 	buffer := bytes.NewBuffer([]byte{})
 	err = build.Build(buffer, config, system, api)

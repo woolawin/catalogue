@@ -8,7 +8,7 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func Build(dst io.Writer, config component.Config, system internal.System, api ext.API) error {
+func Build(dst io.Writer, config component.Config, system internal.System, api *ext.API) error {
 	if config.Type != component.Package {
 		return internal.Err("component '%s' is not a package", config.Name)
 	}
@@ -28,9 +28,9 @@ func Build(dst io.Writer, config component.Config, system internal.System, api e
 	}
 
 	files := map[string]string{
-		"debian-binary":  string(api.Disk().Path("debian-binary")),
-		"control.tar.gz": string(api.Disk().Path("control.tar.gz")),
-		"data.tar.gz":    string(api.Disk().Path("data.tar.gz")),
+		"debian-binary":  string(api.Disk.Path("debian-binary")),
+		"control.tar.gz": string(api.Disk.Path("control.tar.gz")),
+		"data.tar.gz":    string(api.Disk.Path("data.tar.gz")),
 	}
 
 	err = internal.CreateAR(files, dst)
