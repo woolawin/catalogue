@@ -2,20 +2,26 @@ package component
 
 import "net/url"
 
-type RecordSource struct {
-	Type int
+type OriginType int
+
+const (
+	Git OriginType = iota
+)
+
+type Origin struct {
+	Type OriginType
 	URL  *url.URL
 }
 
 type Record struct {
-	Source RecordSource
+	Origin Origin
 }
 
-type RecordSourceTOML struct {
+type OriginTOML struct {
 	Type string `toml:"type"`
 	URL  string `toml:"url"`
 }
 
 type RecordTOML struct {
-	Source RecordSourceTOML `toml:"src"`
+	Origin OriginTOML `toml:"origin"`
 }
