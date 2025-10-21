@@ -1,7 +1,6 @@
 
 allow to add non github git components
-implement components dir
-
+rename component package to config
 
 =====
 test download
