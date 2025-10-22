@@ -23,13 +23,15 @@ type Server struct {
 	system   internal.System
 	api      *ext.API
 	registry reg.Registry
+
+	listener net.Listener
 }
 
 func NewServer(system internal.System, api *ext.API, registry reg.Registry) *Server {
 	return &Server{system: system, api: api, registry: registry}
 }
 
-func (server *Server) start() error {
+func (server *Server) Start() error {
 	err := os.RemoveAll(path)
 	if err != nil {
 		return internal.ErrOf(err, "can not clean up old socket '%s'", path)
@@ -39,16 +41,27 @@ func (server *Server) start() error {
 	if err != nil {
 		return internal.ErrOf(err, "can not listen to socket '%s'", path)
 	}
-	defer listener.Close()
+	server.listener = listener
 
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			slog.Error("failed to accept connection", "error", err)
-			continue
+	go func() {
+		for {
+			conn, err := server.listener.Accept()
+			if err != nil {
+				slog.Error("failed to accept connection", "error", err)
+				continue
+			}
+			go server.handle(conn)
 		}
-		go server.handle(conn)
+	}()
+
+	return nil
+}
+
+func (server *Server) Shutdown() {
+	if server.listener == nil {
+		return
 	}
+	server.listener.Close()
 }
 
 func (server *Server) handle(conn net.Conn) {

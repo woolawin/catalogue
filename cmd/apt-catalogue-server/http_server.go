@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -16,6 +18,7 @@ import (
 
 type HTTPServer struct {
 	registry reg.Registry
+	server   *http.Server
 }
 
 func NewHTTPServer(registry reg.Registry) *HTTPServer {
@@ -30,7 +33,31 @@ func (server *HTTPServer) start() error {
 
 	router.Get("/dists/{distro}/Release", server.Release)
 	router.Get("/pool/{file}", server.Pool)
+
+	server.server = &http.Server{
+		Addr:    "localhost:3465",
+		Handler: router,
+	}
+
+	go func() {
+		err := server.server.ListenAndServe()
+		if !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("failed to start server", "error", err)
+		}
+		slog.Info("stopping http server")
+	}()
+
 	return nil
+}
+
+func (server *HTTPServer) Shutdown(ctx context.Context) {
+	if server.server == nil {
+		return
+	}
+	err := server.server.Shutdown(ctx)
+	if err != nil {
+		slog.Error("error shutting down server", "error", err)
+	}
 }
 
 func (server *HTTPServer) Release(writer http.ResponseWriter, request *http.Request) {
