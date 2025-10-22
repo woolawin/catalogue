@@ -13,7 +13,7 @@ import (
 	"github.com/woolawin/catalogue/internal/add"
 	"github.com/woolawin/catalogue/internal/build"
 	"github.com/woolawin/catalogue/internal/clone"
-	"github.com/woolawin/catalogue/internal/component"
+	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
 	"github.com/woolawin/catalogue/internal/registry"
 )
@@ -120,7 +120,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 	}
 
 	api := ext.NewAPI(srcAbs)
-	config, err := component.ParseWithFileSystems(bytes.NewReader(data), api.Disk)
+	component, err := config.ParseWithFileSystems(bytes.NewReader(data), api.Disk)
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())
@@ -136,7 +136,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 	}
 	defer dstFile.Close()
 
-	err = build.Build(dstFile, config, system, api)
+	err = build.Build(dstFile, component, system, api)
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())

@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/component"
+	"github.com/woolawin/catalogue/internal/config"
 )
 
 func TestControlDataString(t *testing.T) {
@@ -42,7 +42,7 @@ Description: meh
 func TestMergeMeta(t *testing.T) {
 	system := internal.System{Architecture: internal.AMD64}
 
-	metadatas := []*component.Metadata{
+	metadatas := []*config.Metadata{
 		{
 			Target:       internal.Target{Name: "all", All: true},
 			Dependencies: []string{"foo", "bar"},
@@ -67,7 +67,7 @@ func TestMergeMeta(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := component.Metadata{
+	expected := config.Metadata{
 		Dependencies: []string{"foo", "bar"},
 		Section:      "utilities",
 		Priority:     "normal",

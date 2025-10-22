@@ -8,7 +8,7 @@ import (
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/build"
 	"github.com/woolawin/catalogue/internal/clone"
-	"github.com/woolawin/catalogue/internal/component"
+	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
 	reg "github.com/woolawin/catalogue/internal/registry"
 )
@@ -35,31 +35,31 @@ func Add(protocol clone.Protocol, remote string, system internal.System, api *ex
 		return internal.ErrOf(err, "can not read config file")
 	}
 
-	config, err := component.ParseWithFileSystems(bytes.NewReader(configData), buildApi.Disk)
+	component, err := config.ParseWithFileSystems(bytes.NewReader(configData), buildApi.Disk)
 	if err != nil {
 		return internal.ErrOf(err, "invalid component config")
 	}
 
-	_, err = build.Metadata(config.Metadata, system)
+	_, err = build.Metadata(component.Metadata, system)
 	if err != nil {
 		return internal.ErrOf(err, "invalid metadata from '%s'", remote)
 	}
 
-	if len(internal.Ranked(system, config.SupportedTargets)) == 0 {
-		return internal.Err("component '%s' has no supported target", config.Name)
+	if len(internal.Ranked(system, component.SupportedTargets)) == 0 {
+		return internal.Err("component '%s' has no supported target", component.Name)
 	}
 
 	record := newRecord(protocol, remoteURL)
 
-	if config.Type == component.Package {
-		return registry.AddPackage(config, record)
+	if component.Type == config.Package {
+		return registry.AddPackage(component, record)
 	}
 
 	return internal.Err("only packages can be added right now")
 }
 
-func newRecord(protocol clone.Protocol, remote *url.URL) component.Record {
-	return component.Record{
-		Origin: component.Origin{Type: component.Git, URL: remote},
+func newRecord(protocol clone.Protocol, remote *url.URL) config.Record {
+	return config.Record{
+		Origin: config.Origin{Type: config.Git, URL: remote},
 	}
 }

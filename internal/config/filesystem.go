@@ -1,4 +1,4 @@
-package component
+package config
 
 import (
 	"github.com/woolawin/catalogue/internal"

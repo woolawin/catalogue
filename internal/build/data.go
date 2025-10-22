@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/component"
+	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func data(system internal.System, config component.Config, api *ext.API) error {
+func data(system internal.System, component config.Config, api *ext.API) error {
 	tarPath := api.Disk.Path("data.tar.gz")
 	dirPath := api.Disk.Path("data")
 
@@ -31,8 +31,8 @@ func data(system internal.System, config component.Config, api *ext.API) error {
 		return fmt.Errorf("data is not a directory")
 	}
 
-	filesystem(system, config.FileSystems, api)
-	download(system, config.Downloads, api)
+	filesystem(system, component.FileSystems, api)
+	download(system, component.Downloads, api)
 	err = api.Disk.ArchiveDir(dirPath, tarPath)
 	if err != nil {
 		return internal.ErrOf(err, "can not create data.tar.gz")

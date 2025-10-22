@@ -4,16 +4,16 @@ import (
 	"bytes"
 
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/component"
+	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func download(system internal.System, downloads map[string][]*component.Download, api *ext.API) error {
+func download(system internal.System, downloads map[string][]*config.Download, api *ext.API) error {
 	if len(downloads) == 0 {
 		return nil
 	}
 	for _, download := range downloads {
-		tgt, matched := internal.RankedFirst(system, download, &component.Download{})
+		tgt, matched := internal.RankedFirst(system, download, &config.Download{})
 		if !matched {
 			continue
 		}

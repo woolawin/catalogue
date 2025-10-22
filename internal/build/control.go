@@ -4,11 +4,11 @@ import (
 	"strings"
 
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/component"
+	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func control(system internal.System, config component.Config, api *ext.API) error {
+func control(system internal.System, component config.Config, api *ext.API) error {
 
 	tarPath := api.Disk.Path("control.tar.gz")
 	dirPath := api.Disk.Path("control")
@@ -41,11 +41,11 @@ func control(system internal.System, config component.Config, api *ext.API) erro
 
 	data := ControlData{}
 
-	md, err := Metadata(config.Metadata, system)
+	md, err := Metadata(component.Metadata, system)
 	if err != nil {
 		return internal.ErrOf(err, "can not generate metadata for control")
 	}
-	data.SetFrom(config, md)
+	data.SetFrom(component, md)
 
 	controlFile := api.Disk.Path("control", "control")
 	err = api.Disk.WriteFile(controlFile, strings.NewReader(data.String()))
@@ -56,8 +56,8 @@ func control(system internal.System, config component.Config, api *ext.API) erro
 	return api.Disk.ArchiveDir(dirPath, tarPath)
 }
 
-func Metadata(metadatas []*component.Metadata, system internal.System) (component.Metadata, error) {
-	metadata := component.Metadata{}
+func Metadata(metadatas []*config.Metadata, system internal.System) (config.Metadata, error) {
+	metadata := config.Metadata{}
 	for _, data := range internal.Ranked(system, metadatas) {
 		if len(metadata.Dependencies) == 0 && len(data.Dependencies) != 0 {
 			metadata.Dependencies = data.Dependencies
@@ -107,9 +107,9 @@ type ControlData struct {
 	Description  string
 }
 
-func (data *ControlData) SetFrom(config component.Config, metadata component.Metadata) {
+func (data *ControlData) SetFrom(component config.Config, metadata config.Metadata) {
 	if len(data.Package) == 0 {
-		data.Package = config.Name
+		data.Package = component.Name
 	}
 
 	if len(data.Depends) == 0 {

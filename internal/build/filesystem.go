@@ -2,11 +2,11 @@ package build
 
 import (
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/component"
+	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func filesystem(system internal.System, filesystems map[string][]*component.FileSystem, api *ext.API) error {
+func filesystem(system internal.System, filesystems map[string][]*config.FileSystem, api *ext.API) error {
 	for anchor, targets := range filesystems {
 		for _, filesystem := range internal.Ranked(system, targets) {
 

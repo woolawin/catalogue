@@ -3,7 +3,7 @@ package registry
 import (
 	"net"
 
-	"github.com/woolawin/catalogue/internal/component"
+	"github.com/woolawin/catalogue/internal/config"
 )
 
 type SocketRegistry struct {
@@ -28,14 +28,14 @@ func (registry *SocketRegistry) HasPackage(name string) (bool, error) {
 	return false, nil
 }
 
-func (registry *SocketRegistry) AddPackage(config component.Config, record component.Record) error {
+func (registry *SocketRegistry) AddPackage(config config.Config, record config.Record) error {
 	_, _ = registry.open()
 	return nil
 }
 
-func (registry *SocketRegistry) GetPackageConfig(name string) (component.Config, bool, error) {
+func (registry *SocketRegistry) GetPackageConfig(name string) (config.Config, bool, error) {
 	_, _ = registry.open()
-	return component.Config{}, false, nil
+	return config.Config{}, false, nil
 }
 
 func (registry *SocketRegistry) ListPackages() ([]string, error) {

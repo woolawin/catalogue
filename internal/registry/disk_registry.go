@@ -8,7 +8,7 @@ import (
 	"slices"
 
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/component"
+	"github.com/woolawin/catalogue/internal/config"
 )
 
 type DiskRegistry struct {
@@ -37,37 +37,37 @@ func (registry *DiskRegistry) ListPackages() ([]string, error) {
 	return dirs, nil
 }
 
-func (registry *DiskRegistry) GetPackageConfig(name string) (component.Config, bool, error) {
+func (registry *DiskRegistry) GetPackageConfig(name string) (config.Config, bool, error) {
 	path := registry.packagePath(name, "config.toml")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return component.Config{}, false, nil
+			return config.Config{}, false, nil
 		}
-		return component.Config{}, false, internal.ErrOf(err, "can not read file '%s'", path)
+		return config.Config{}, false, internal.ErrOf(err, "can not read file '%s'", path)
 	}
-	config, err := component.Parse(bytes.NewReader(data))
+	component, err := config.Parse(bytes.NewReader(data))
 	if err != nil {
-		return component.Config{}, false, internal.ErrOf(err, "can not parse package config")
+		return config.Config{}, false, internal.ErrOf(err, "can not parse package config")
 	}
-	return config, true, nil
+	return component, true, nil
 }
 
-func (registry *DiskRegistry) AddPackage(config component.Config, record component.Record) error {
-	exists, err := registry.HasPackage(config.Name)
+func (registry *DiskRegistry) AddPackage(component config.Config, record config.Record) error {
+	exists, err := registry.HasPackage(component.Name)
 	if err != nil {
-		return internal.ErrOf(err, "failed tocheck if package '%s' already exists", config.Name)
+		return internal.ErrOf(err, "failed tocheck if package '%s' already exists", component.Name)
 	}
 	if exists {
-		return internal.Err("package '%s' already exists", config.Name)
+		return internal.Err("package '%s' already exists", component.Name)
 	}
 
-	err = registry.writeConfig(config)
+	err = registry.writeConfig(component)
 	if err != nil {
 		return err
 	}
 
-	err = registry.writeRecord(config.Name, record)
+	err = registry.writeRecord(component.Name, record)
 	if err != nil {
 		return err
 	}
@@ -75,8 +75,8 @@ func (registry *DiskRegistry) AddPackage(config component.Config, record compone
 	return nil
 }
 
-func (registry *DiskRegistry) writeConfig(config component.Config) error {
-	path := registry.packagePath(config.Name, "config.toml")
+func (registry *DiskRegistry) writeConfig(component config.Config) error {
+	path := registry.packagePath(component.Name, "config.toml")
 
 	parent := filepath.Dir(path)
 	err := os.MkdirAll(parent, 0644)
@@ -91,7 +91,7 @@ func (registry *DiskRegistry) writeConfig(config component.Config) error {
 	defer file.Close()
 
 	var buffer bytes.Buffer
-	err = component.Serialize(config, &buffer)
+	err = config.Serialize(component, &buffer)
 	if err != nil {
 		return internal.ErrOf(err, "can not serialize config")
 	}
@@ -104,7 +104,7 @@ func (registry *DiskRegistry) writeConfig(config component.Config) error {
 	return nil
 }
 
-func (registry *DiskRegistry) writeRecord(packageName string, record component.Record) error {
+func (registry *DiskRegistry) writeRecord(packageName string, record config.Record) error {
 	path := registry.packagePath(packageName, "record.toml")
 
 	parent := filepath.Dir(path)
@@ -120,7 +120,7 @@ func (registry *DiskRegistry) writeRecord(packageName string, record component.R
 	defer file.Close()
 
 	var buffer bytes.Buffer
-	err = component.SerializeRecord(&buffer, record)
+	err = config.SerializeRecord(&buffer, record)
 	if err != nil {
 		return internal.ErrOf(err, "can not serialize record file")
 	}
