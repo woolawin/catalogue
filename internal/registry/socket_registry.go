@@ -28,7 +28,7 @@ func (registry *SocketRegistry) HasPackage(name string) (bool, error) {
 	return false, nil
 }
 
-func (registry *SocketRegistry) AddPackage(config component.Config) error {
+func (registry *SocketRegistry) AddPackage(config component.Config, record component.Record) error {
 	_, _ = registry.open()
 	return nil
 }

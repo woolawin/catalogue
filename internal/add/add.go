@@ -2,6 +2,7 @@ package add
 
 import (
 	"bytes"
+	"net/url"
 	"path/filepath"
 
 	"github.com/woolawin/catalogue/internal"
@@ -13,9 +14,15 @@ import (
 )
 
 func Add(protocol clone.Protocol, remote string, system internal.System, api *ext.API, registry reg.Registry) error {
+
+	remoteURL, err := url.Parse(remote)
+	if err != nil {
+		return internal.ErrOf(err, "invalid remote '%s'", remote)
+	}
+
 	local := api.Host.RandomTmpDir()
 
-	err := clone.Clone(protocol, remote, local, ".catalogue/config.toml", api)
+	err = clone.Clone(protocol, remote, local, ".catalogue/config.toml", api)
 	if err != nil {
 		return internal.ErrOf(err, "can not clone '%s'", remote)
 	}
@@ -42,9 +49,17 @@ func Add(protocol clone.Protocol, remote string, system internal.System, api *ex
 		return internal.Err("component '%s' has no supported target", config.Name)
 	}
 
+	record := newRecord(protocol, remoteURL)
+
 	if config.Type == component.Package {
-		return registry.AddPackage(config)
+		return registry.AddPackage(config, record)
 	}
 
 	return internal.Err("only packages can be added right now")
+}
+
+func newRecord(protocol clone.Protocol, remote *url.URL) component.Record {
+	return component.Record{
+		Origin: component.Origin{Type: component.Git, URL: remote},
+	}
 }

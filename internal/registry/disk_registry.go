@@ -53,7 +53,7 @@ func (registry *DiskRegistry) GetPackageConfig(name string) (component.Config, b
 	return config, true, nil
 }
 
-func (registry *DiskRegistry) AddPackage(config component.Config) error {
+func (registry *DiskRegistry) AddPackage(config component.Config, record component.Record) error {
 	exists, err := registry.HasPackage(config.Name)
 	if err != nil {
 		return internal.ErrOf(err, "failed tocheck if package '%s' already exists", config.Name)
@@ -62,16 +62,24 @@ func (registry *DiskRegistry) AddPackage(config component.Config) error {
 		return internal.Err("package '%s' already exists", config.Name)
 	}
 
-	var buffer bytes.Buffer
-	err = component.Serialize(config, &buffer)
+	err = registry.writeConfig(config)
 	if err != nil {
-		return internal.ErrOf(err, "can not serialize config")
+		return err
 	}
 
+	err = registry.writeRecord(config.Name, record)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (registry *DiskRegistry) writeConfig(config component.Config) error {
 	path := registry.packagePath(config.Name, "config.toml")
 
 	parent := filepath.Dir(path)
-	err = os.MkdirAll(parent, 0644)
+	err := os.MkdirAll(parent, 0644)
 	if err != nil {
 		return internal.ErrOf(err, "can not create component directory '%s'", parent)
 	}
@@ -82,12 +90,47 @@ func (registry *DiskRegistry) AddPackage(config component.Config) error {
 	}
 	defer file.Close()
 
+	var buffer bytes.Buffer
+	err = component.Serialize(config, &buffer)
+	if err != nil {
+		return internal.ErrOf(err, "can not serialize config")
+	}
+
 	_, err = io.Copy(file, &buffer)
 	if err != nil {
 		return internal.ErrOf(err, "can not write to file '%s'", path)
 	}
-	return nil
 
+	return nil
+}
+
+func (registry *DiskRegistry) writeRecord(packageName string, record component.Record) error {
+	path := registry.packagePath(packageName, "record.toml")
+
+	parent := filepath.Dir(path)
+	err := os.MkdirAll(parent, 0644)
+	if err != nil {
+		return internal.ErrOf(err, "can not create component directory '%s'", parent)
+	}
+
+	file, err := os.Create(path)
+	if err != nil {
+		return internal.ErrOf(err, "can not create component file '%s'", path)
+	}
+	defer file.Close()
+
+	var buffer bytes.Buffer
+	err = component.SerializeRecord(&buffer, record)
+	if err != nil {
+		return internal.ErrOf(err, "can not serialize record file")
+	}
+
+	_, err = io.Copy(file, &buffer)
+	if err != nil {
+		return internal.ErrOf(err, "can not write to file '%s'", path)
+	}
+
+	return nil
 }
 
 func (registry *DiskRegistry) HasPackage(name string) (bool, error) {
