@@ -37,23 +37,23 @@ func (registry *DiskRegistry) ListPackages() ([]string, error) {
 	return dirs, nil
 }
 
-func (registry *DiskRegistry) GetPackageConfig(name string) (config.Config, bool, error) {
+func (registry *DiskRegistry) GetPackageConfig(name string) (config.Component, bool, error) {
 	path := registry.packagePath(name, "config.toml")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return config.Config{}, false, nil
+			return config.Component{}, false, nil
 		}
-		return config.Config{}, false, internal.ErrOf(err, "can not read file '%s'", path)
+		return config.Component{}, false, internal.ErrOf(err, "can not read file '%s'", path)
 	}
 	component, err := config.Parse(bytes.NewReader(data))
 	if err != nil {
-		return config.Config{}, false, internal.ErrOf(err, "can not parse package config")
+		return config.Component{}, false, internal.ErrOf(err, "can not parse package config")
 	}
 	return component, true, nil
 }
 
-func (registry *DiskRegistry) AddPackage(component config.Config, record config.Record) error {
+func (registry *DiskRegistry) AddPackage(component config.Component, record config.Record) error {
 	exists, err := registry.HasPackage(component.Name)
 	if err != nil {
 		return internal.ErrOf(err, "failed tocheck if package '%s' already exists", component.Name)
@@ -75,7 +75,7 @@ func (registry *DiskRegistry) AddPackage(component config.Config, record config.
 	return nil
 }
 
-func (registry *DiskRegistry) writeConfig(component config.Config) error {
+func (registry *DiskRegistry) writeConfig(component config.Component) error {
 	path := registry.packagePath(component.Name, "config.toml")
 
 	parent := filepath.Dir(path)

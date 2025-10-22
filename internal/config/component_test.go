@@ -28,7 +28,7 @@ architecture='amd64'
 		t.Fatal(err)
 	}
 
-	expected := ConfigTOML{
+	expected := ComponentTOML{
 		Name: "  foobar ",
 		Type: "  package  ",
 		Metadata: map[string]MetadataTOML{
@@ -81,7 +81,7 @@ dst="path://root/usr/bin"
 		t.Fatal(err)
 	}
 
-	expected := ConfigTOML{
+	expected := ComponentTOML{
 		Name:             "foobar",
 		Type:             "package",
 		SupportedTargets: []string{"foo", "bar"},

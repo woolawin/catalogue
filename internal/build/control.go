@@ -8,7 +8,7 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func control(system internal.System, component config.Config, api *ext.API) error {
+func control(system internal.System, component config.Component, api *ext.API) error {
 
 	tarPath := api.Disk.Path("control.tar.gz")
 	dirPath := api.Disk.Path("control")
@@ -107,7 +107,7 @@ type ControlData struct {
 	Description  string
 }
 
-func (data *ControlData) SetFrom(component config.Config, metadata config.Metadata) {
+func (data *ControlData) SetFrom(component config.Component, metadata config.Metadata) {
 	if len(data.Package) == 0 {
 		data.Package = component.Name
 	}

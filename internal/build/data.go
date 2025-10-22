@@ -8,7 +8,7 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func data(system internal.System, component config.Config, api *ext.API) error {
+func data(system internal.System, component config.Component, api *ext.API) error {
 	tarPath := api.Disk.Path("data.tar.gz")
 	dirPath := api.Disk.Path("data")
 

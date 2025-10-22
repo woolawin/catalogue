@@ -8,7 +8,7 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func Build(dst io.Writer, component config.Config, system internal.System, api *ext.API) error {
+func Build(dst io.Writer, component config.Component, system internal.System, api *ext.API) error {
 	if component.Type != config.Package {
 		return internal.Err("component '%s' is not a package", component.Name)
 	}

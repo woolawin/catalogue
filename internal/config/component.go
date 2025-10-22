@@ -28,7 +28,7 @@ const (
 	GitLatestCommitValue = "git/latest_commit"
 )
 
-type ConfigTOML struct {
+type ComponentTOML struct {
 	Name             string                             `toml:"name"`
 	Type             string                             `toml:"type"`
 	Versioing        VersioningTOML                     `toml:"versioning"`
@@ -43,7 +43,7 @@ type VersioningTOML struct {
 	Branch string `toml:"branch"`
 }
 
-type Config struct {
+type Component struct {
 	Name             string
 	Type             Type
 	Versioning       Versioning
@@ -59,74 +59,74 @@ type Versioning struct {
 	Branch string
 }
 
-func Parse(src io.Reader) (Config, error) {
+func Parse(src io.Reader) (Component, error) {
 	deserialized, err := deserialize(src)
 	if err != nil {
-		return Config{}, err
+		return Component{}, err
 	}
 	return load(&deserialized)
 }
 
-func ParseWithFileSystems(src io.Reader, disk ext.Disk) (Config, error) {
+func ParseWithFileSystems(src io.Reader, disk ext.Disk) (Component, error) {
 	deserialized, err := deserialize(src)
 	if err != nil {
-		return Config{}, err
+		return Component{}, err
 	}
 
 	config, err := load(&deserialized)
 	if err != nil {
-		return Config{}, err
+		return Component{}, err
 	}
 	filesystems, err := loadFileSystems(config.Targets, disk)
 	if err != nil {
-		return Config{}, err
+		return Component{}, err
 	}
 	config.FileSystems = filesystems
 	return config, nil
 }
 
-func load(deserialized *ConfigTOML) (Config, error) {
+func load(deserialized *ComponentTOML) (Component, error) {
 
 	name := strings.TrimSpace(deserialized.Name)
 	if len(name) == 0 {
-		return Config{}, internal.Err("missing property name")
+		return Component{}, internal.Err("missing property name")
 	}
 	var ctype Type
 	switch strings.TrimSpace(deserialized.Type) {
 	case "":
-		return Config{}, internal.Err("missing property kind")
+		return Component{}, internal.Err("missing property kind")
 	case "package":
 		ctype = Package
 	case "repository":
 		ctype = Repository
 	default:
-		return Config{}, internal.Err("unknown type '%s'", deserialized.Type)
+		return Component{}, internal.Err("unknown type '%s'", deserialized.Type)
 	}
 
 	versioning, err := loadVersioning(deserialized.Versioing)
 	if err != nil {
-		return Config{}, internal.ErrOf(err, "invalid versioning")
+		return Component{}, internal.ErrOf(err, "invalid versioning")
 	}
 
 	targets, err := loadTargets(deserialized.Target)
 	if err != nil {
-		return Config{}, internal.ErrOf(err, "invalid target")
+		return Component{}, internal.ErrOf(err, "invalid target")
 	}
 
 	supportedTargets, err := loadSupportedTargets(targets, deserialized.SupportedTargets)
 	if err != nil {
-		return Config{}, internal.ErrOf(err, "invalid supports targets")
+		return Component{}, internal.ErrOf(err, "invalid supports targets")
 	}
 
 	downloads, err := loadDownloads(deserialized.Download, targets)
 	if err != nil {
-		return Config{}, internal.ErrOf(err, "invalid config download")
+		return Component{}, internal.ErrOf(err, "invalid config download")
 	}
 	metadatas, err := loadMetadata(deserialized.Metadata, targets)
 	if err != nil {
-		return Config{}, internal.ErrOf(err, "invalid config metadata")
+		return Component{}, internal.ErrOf(err, "invalid config metadata")
 	}
-	config := Config{
+	config := Component{
 		Name:             name,
 		Type:             ctype,
 		Versioning:       versioning,
@@ -138,11 +138,11 @@ func load(deserialized *ConfigTOML) (Config, error) {
 	return config, nil
 }
 
-func deserialize(src io.Reader) (ConfigTOML, error) {
-	deserialized := ConfigTOML{}
+func deserialize(src io.Reader) (ComponentTOML, error) {
+	deserialized := ComponentTOML{}
 	err := toml.NewDecoder(src).Decode(&deserialized)
 	if err != nil {
-		return ConfigTOML{}, internal.ErrOf(err, "can not deserialize config")
+		return ComponentTOML{}, internal.ErrOf(err, "can not deserialize config")
 	}
 	return deserialized, nil
 }

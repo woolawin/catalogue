@@ -3,12 +3,12 @@ package config
 import (
 	"io"
 
-	toml "github.com/pelletier/go-toml/v2"
+	tomllib "github.com/pelletier/go-toml/v2"
 	"github.com/woolawin/catalogue/internal"
 )
 
-func Serialize(config Config, writer io.Writer) error {
-	tml := ConfigTOML{}
+func Serialize(config Component, writer io.Writer) error {
+	tml := ComponentTOML{}
 	tml.Name = config.Name
 
 	switch config.Type {
@@ -79,7 +79,7 @@ func Serialize(config Config, writer io.Writer) error {
 		}
 	}
 
-	err := toml.NewEncoder(writer).Encode(&tml)
+	err := tomllib.NewEncoder(writer).Encode(&tml)
 	if err != nil {
 		return internal.ErrOf(err, "failed to serialize component config")
 	}
