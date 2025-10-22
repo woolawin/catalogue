@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	registry := reg.NewDiskRegistry()
+	registry := reg.NewRegistry()
 	server := NewHTTPServer(registry)
 	server.start()
 }

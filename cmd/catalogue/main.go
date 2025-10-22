@@ -76,7 +76,7 @@ func runAdd(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 	api := ext.NewAPI("/")
-	reg := registry.NewDiskRegistry()
+	reg := registry.NewRegistry()
 
 	err = add.Add(protocol, remote, system, api, reg)
 	if err != nil {

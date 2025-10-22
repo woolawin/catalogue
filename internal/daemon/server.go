@@ -22,10 +22,10 @@ const path = "/var/run/catalogue.sock"
 type Server struct {
 	system   internal.System
 	api      *ext.API
-	registry *reg.DiskRegistry
+	registry reg.Registry
 }
 
-func NewServer(system internal.System, api *ext.API, registry *reg.DiskRegistry) *Server {
+func NewServer(system internal.System, api *ext.API, registry reg.Registry) *Server {
 	return &Server{system: system, api: api, registry: registry}
 }
 
