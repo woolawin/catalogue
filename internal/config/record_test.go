@@ -15,7 +15,7 @@ type='git'
 url='https://github.com/foo/bar.git'
 `
 
-	actual, err := ReadRecord(strings.NewReader(value))
+	actual, err := DeserializeRecord(strings.NewReader(value))
 	if err != nil {
 		t.Fatal(err)
 	}

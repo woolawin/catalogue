@@ -37,7 +37,7 @@ type RecordTOML struct {
 	Origin OriginTOML `toml:"origin"`
 }
 
-func ReadRecord(src io.Reader) (Record, error) {
+func DeserializeRecord(src io.Reader) (Record, error) {
 	toml := RecordTOML{}
 	err := tomllib.NewDecoder(src).Decode(&toml)
 	if err != nil {

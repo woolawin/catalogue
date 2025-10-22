@@ -4,7 +4,7 @@ import (
 	"io"
 	"strings"
 
-	toml "github.com/pelletier/go-toml/v2"
+	tomllib "github.com/pelletier/go-toml/v2"
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/ext"
 )
@@ -140,7 +140,7 @@ func load(deserialized *ComponentTOML) (Component, error) {
 
 func deserialize(src io.Reader) (ComponentTOML, error) {
 	deserialized := ComponentTOML{}
-	err := toml.NewDecoder(src).Decode(&deserialized)
+	err := tomllib.NewDecoder(src).Decode(&deserialized)
 	if err != nil {
 		return ComponentTOML{}, internal.ErrOf(err, "can not deserialize config")
 	}
