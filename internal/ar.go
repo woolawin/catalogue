@@ -5,18 +5,18 @@ import (
 	"os"
 	"time"
 
-	"github.com/blakesmith/ar"
+	arlib "github.com/blakesmith/ar"
 )
 
-func CreateAR(input map[string]string, writer io.Writer) error {
+func CreateAR(input map[string]string, dst io.Writer) error {
 
-	arWriter := ar.NewWriter(writer)
-	if err := arWriter.WriteGlobalHeader(); err != nil {
+	writer := arlib.NewWriter(dst)
+	if err := writer.WriteGlobalHeader(); err != nil {
 		return ErrOf(err, "failed to write ar header")
 	}
 
 	for name, path := range input {
-		err := addFileToAr(arWriter, name, string(path), 0644)
+		err := addFileToAr(writer, name, string(path), 0644)
 		if err != nil {
 			return ErrOf(err, "can not add file '%s' to .deb", name)
 		}
@@ -25,13 +25,13 @@ func CreateAR(input map[string]string, writer io.Writer) error {
 	return nil
 }
 
-func addFileToAr(writer *ar.Writer, name string, filePath string, mode int64) error {
+func addFileToAr(writer *arlib.Writer, name string, filePath string, mode int64) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return ErrOf(err, "can not read file '%s'", filePath)
 	}
 
-	header := &ar.Header{
+	header := &arlib.Header{
 		Name:    name,
 		ModTime: time.Now().UTC(),
 		Uid:     0,
