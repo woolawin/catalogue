@@ -70,7 +70,7 @@ func runAdd(cmd *cobra.Command, cliargs []string) {
 		os.Exit(1)
 	}
 	log.Msg(7, "adding component").
-		With("protocol", protocol).
+		With("protocol", clone.ProtocolDebugString(protocol)).
 		With("remote", remote).
 		Info()
 

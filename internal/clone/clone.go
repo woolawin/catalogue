@@ -1,6 +1,7 @@
 package clone
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -17,6 +18,24 @@ type Protocol int
 const (
 	Git Protocol = 1
 )
+
+func ProtocolString(protocol Protocol) (string, bool) {
+	switch protocol {
+	case Git:
+		return "git", true
+	default:
+		return fmt.Sprintf("unknown value '%d'", protocol), false
+	}
+}
+
+func ProtocolDebugString(protocol Protocol) string {
+	switch protocol {
+	case Git:
+		return "git"
+	default:
+		return fmt.Sprintf("unknown value '%d'", protocol)
+	}
+}
 
 func Clone(protocol Protocol, remote string, local string, path string, api *ext.API) error {
 	localPath := api.Disk.Path(local)
