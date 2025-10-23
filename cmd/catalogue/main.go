@@ -61,8 +61,7 @@ func runSystem(cmd *cobra.Command, args []string) {
 }
 
 func runAdd(cmd *cobra.Command, cliargs []string) {
-
-	protocol, remote, err := getProtocolAndRemote(cliargs[0])
+	protocol, remote, err := getProtocolAndRemote(cmd, cliargs)
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())
@@ -180,6 +179,7 @@ func args() *cobra.Command {
 		Long:  ``,
 		Run:   runAdd,
 	}
+	add.Flags().String("git", "", "Add from a git repository")
 
 	var build = &cobra.Command{
 		Use:   "build",
@@ -196,6 +196,7 @@ func args() *cobra.Command {
 	build.Flags().String("os-release-version-code-name", "", "OS Release version code name of package to build for")
 	build.MarkFlagRequired("src")
 	build.MarkFlagRequired("dst")
+
 	var printSystem = &cobra.Command{
 		Use:   "system",
 		Short: "Print system values used for targets",

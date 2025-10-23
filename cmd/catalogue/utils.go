@@ -9,7 +9,18 @@ import (
 	"github.com/woolawin/catalogue/internal/clone"
 )
 
-func getProtocolAndRemote(value string) (clone.Protocol, string, error) {
+func getProtocolAndRemote(cmd *cobra.Command, args []string) (clone.Protocol, string, error) {
+	git, _ := cmd.Flags().GetString("git")
+	if len(git) != 0 {
+		return clone.Git, git, nil
+	}
+
+	if len(args) == 0 {
+		return 0, "", internal.Err("must specify name of component to install")
+	}
+
+	value := args[0]
+
 	if !strings.HasPrefix(value, "github/") {
 		return 0, "", internal.Err("only github components are currently supported")
 	}
