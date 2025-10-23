@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/woolawin/catalogue/internal/clone"
+	"github.com/woolawin/catalogue/internal/config"
 )
 
 func TestGetProtocolAndRemote(t *testing.T) {
@@ -13,7 +13,7 @@ func TestGetProtocolAndRemote(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if protocol != clone.Git {
+		if protocol != config.Git {
 			t.Fatal("expected protocol TO BE git")
 		}
 

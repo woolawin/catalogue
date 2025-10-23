@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -70,7 +71,7 @@ func runAdd(cmd *cobra.Command, cliargs []string) {
 		os.Exit(1)
 	}
 	log.Msg(7, "adding component").
-		With("protocol", clone.ProtocolDebugString(protocol)).
+		With("protocol", config.ProtocolDebugString(protocol)).
 		With("remote", remote).
 		Info()
 
@@ -155,12 +156,12 @@ func runClone(cmd *cobra.Command, args []string) {
 	local, _ := cmd.Flags().GetString("local")
 	path, _ := cmd.Flags().GetString("path")
 
-	var protocol clone.Protocol
+	var protocol config.Protocol
 	protocolCount := 0
 	git, _ := cmd.Flags().GetBool("git")
 	if git {
 		protocolCount++
-		protocol = clone.Git
+		protocol = config.Git
 	}
 
 	if protocolCount != 1 {
@@ -168,14 +169,21 @@ func runClone(cmd *cobra.Command, args []string) {
 		os.Exit(0)
 	}
 
+	remoteURL, err := url.Parse(remote)
+	if err != nil {
+		fmt.Println("BAD COMMAND: remote is not a URL")
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
 	api := ext.NewAPI("/")
 	log := internal.NewLog(internal.NewStdoutLogger(9))
 	opts := clone.CloneOpts{
-		Protocol: protocol,
-		Remote:   remote,
-		Local:    local,
+		Remote:  config.Remote{Protocol: protocol, URL: remoteURL},
+		Local:   local,
+		Filters: []clone.Filter{clone.Directory(path)},
 	}
-	ok := clone.Clone(opts, log, api, clone.Directory(path))
+	ok := clone.Clone(opts, log, api)
 	if !ok {
 		os.Exit(1)
 	}

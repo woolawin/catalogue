@@ -1,31 +1,37 @@
 package config
 
 import (
+	"fmt"
 	"io"
 	"net/url"
 	"strings"
 
 	tomllib "github.com/pelletier/go-toml/v2"
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/clone"
 )
 
-type Origin struct {
-	Type clone.Protocol
-	URL  *url.URL
+type Protocol int
+
+const (
+	Git Protocol = 1
+)
+
+type Remote struct {
+	Protocol Protocol
+	URL      *url.URL
 }
 
 type Record struct {
-	Origin Origin
+	Remote Remote
 }
 
-type OriginTOML struct {
-	Type string `toml:"type"`
-	URL  string `toml:"url"`
+type RemoteTOML struct {
+	Protocol string `toml:"protocol"`
+	URL      string `toml:"url"`
 }
 
 type RecordTOML struct {
-	Origin OriginTOML `toml:"origin"`
+	Remote RemoteTOML `toml:"remote"`
 }
 
 func DeserializeRecord(src io.Reader) (Record, error) {
@@ -39,20 +45,20 @@ func DeserializeRecord(src io.Reader) (Record, error) {
 
 func loadRecord(toml RecordTOML) (Record, error) {
 
-	protocol, ok := clone.FromProtocolString(strings.TrimSpace(toml.Origin.Type))
+	protocol, ok := FromProtocolString(strings.TrimSpace(toml.Remote.Protocol))
 	if !ok {
-		return Record{}, internal.Err("unknown origin '%s'", toml.Origin.Type)
+		return Record{}, internal.Err("unknown remite'%s'", toml.Remote.Protocol)
 	}
 
-	record := Record{Origin: Origin{Type: protocol}}
+	record := Record{Remote: Remote{Protocol: protocol}}
 
-	originURL := strings.TrimSpace(toml.Origin.URL)
-	if len(originURL) != 0 {
-		parsed, err := url.Parse(originURL)
+	remoteURL := strings.TrimSpace(toml.Remote.URL)
+	if len(remoteURL) != 0 {
+		parsed, err := url.Parse(remoteURL)
 		if err != nil {
-			return Record{}, internal.ErrOf(err, "invalid origin url '%s'", originURL)
+			return Record{}, internal.ErrOf(err, "invalid remote url '%s'", remoteURL)
 		}
-		record.Origin.URL = parsed
+		record.Remote.URL = parsed
 	}
 
 	return record, nil
@@ -61,11 +67,38 @@ func loadRecord(toml RecordTOML) (Record, error) {
 func SerializeRecord(dst io.Writer, record Record) error {
 
 	toml := RecordTOML{}
-	toml.Origin.Type = clone.ProtocolDebugString(record.Origin.Type)
+	toml.Remote.Protocol = ProtocolDebugString(record.Remote.Protocol)
 	err := tomllib.NewEncoder(dst).Encode(&toml)
 	if err != nil {
 		return internal.ErrOf(err, "failed to serialize record")
 	}
 
 	return nil
+}
+
+func ProtocolString(protocol Protocol) (string, bool) {
+	switch protocol {
+	case Git:
+		return "git", true
+	default:
+		return fmt.Sprintf("unknown value '%d'", protocol), false
+	}
+}
+
+func ProtocolDebugString(protocol Protocol) string {
+	switch protocol {
+	case Git:
+		return "git"
+	default:
+		return fmt.Sprintf("unknown value '%d'", protocol)
+	}
+}
+
+func FromProtocolString(value string) (Protocol, bool) {
+	switch value {
+	case "git":
+		return Git, true
+	default:
+		return 0, false
+	}
 }

@@ -1,7 +1,6 @@
 package clone
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -10,52 +9,19 @@ import (
 	"github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing/object"
 	"github.com/woolawin/catalogue/internal"
+	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
 )
-
-type Protocol int
-
-const (
-	Git Protocol = 1
-)
-
-func ProtocolString(protocol Protocol) (string, bool) {
-	switch protocol {
-	case Git:
-		return "git", true
-	default:
-		return fmt.Sprintf("unknown value '%d'", protocol), false
-	}
-}
-
-func ProtocolDebugString(protocol Protocol) string {
-	switch protocol {
-	case Git:
-		return "git"
-	default:
-		return fmt.Sprintf("unknown value '%d'", protocol)
-	}
-}
-
-func FromProtocolString(value string) (Protocol, bool) {
-	switch value {
-	case "git":
-		return Git, true
-	default:
-		return 0, false
-	}
-}
 
 type Filter func(file string) bool
 
 type CloneOpts struct {
-	Protocol Protocol
-	Remote   string
-	Local    string
-	Filters  []Filter
+	Remote  config.Remote
+	Local   string
+	Filters []Filter
 }
 
-func Clone(opts CloneOpts, log *internal.Log, api *ext.API, filters ...Filter) bool {
+func Clone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
 
 	localPath := api.Disk.Path(opts.Local)
 	exists, _, err := api.Disk.DirExists(localPath)
@@ -70,17 +36,19 @@ func Clone(opts CloneOpts, log *internal.Log, api *ext.API, filters ...Filter) b
 		log.Msg(10, "Clone destination already exists").With("dst", opts.Local).Error()
 		return false
 	}
-	switch opts.Protocol {
-	case Git:
+	switch opts.Remote.Protocol {
+	case config.Git:
 		return gitClone(opts, log, api)
 	}
-	log.Msg(9, "unsupported clone protocol").With("protocol", ProtocolDebugString(opts.Protocol)).Error()
+	log.Msg(9, "unsupported clone protocol").
+		With("protocol", config.ProtocolDebugString(opts.Remote.Protocol)).
+		Error()
 	return false
 }
 
 func gitClone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
 	gitopts := &git.CloneOptions{
-		URL:        opts.Remote,
+		URL:        opts.Remote.URL.String(),
 		Depth:      1,
 		NoCheckout: true,
 	}

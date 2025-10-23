@@ -13,7 +13,7 @@ import (
 	reg "github.com/woolawin/catalogue/internal/registry"
 )
 
-func Add(protocol clone.Protocol, remote string, log *internal.Log, system internal.System, api *ext.API, registry reg.Registry) error {
+func Add(protocol config.Protocol, remote string, log *internal.Log, system internal.System, api *ext.API, registry reg.Registry) error {
 
 	remoteURL, err := url.Parse(remote)
 	if err != nil {
@@ -23,11 +23,11 @@ func Add(protocol clone.Protocol, remote string, log *internal.Log, system inter
 	local := api.Host.RandomTmpDir()
 
 	opts := clone.CloneOpts{
-		Protocol: protocol,
-		Remote:   remote,
-		Local:    local,
+		Remote:  config.Remote{Protocol: protocol, URL: remoteURL},
+		Local:   local,
+		Filters: []clone.Filter{clone.File(".catalogue/config.toml")},
 	}
-	ok := clone.Clone(opts, log, api, clone.File(".catalogue/config.toml"))
+	ok := clone.Clone(opts, log, api)
 	if !ok {
 		return internal.ErrOf(err, "can not clone '%s'", remote)
 	}
@@ -54,17 +54,11 @@ func Add(protocol clone.Protocol, remote string, log *internal.Log, system inter
 		return internal.Err("component '%s' has no supported target", component.Name)
 	}
 
-	record := newRecord(protocol, remoteURL)
+	record := config.Record{Remote: config.Remote{Protocol: protocol, URL: remoteURL}}
 
 	if component.Type == config.Package {
 		return registry.AddPackage(component, record)
 	}
 
 	return internal.Err("only packages can be added right now")
-}
-
-func newRecord(protocol clone.Protocol, remote *url.URL) config.Record {
-	return config.Record{
-		Origin: config.Origin{Type: clone.Git, URL: remote},
-	}
 }

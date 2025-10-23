@@ -11,7 +11,7 @@ import (
 	msgpacklib "github.com/vmihailenco/msgpack/v5"
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/add"
-	"github.com/woolawin/catalogue/internal/clone"
+	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
 	reg "github.com/woolawin/catalogue/internal/registry"
 )
@@ -166,7 +166,7 @@ func (server *Server) add(msg Message, session *Session) {
 		return
 	}
 
-	err = add.Add(clone.Protocol(protocol), remote, server.log, server.system, server.api, server.registry)
+	err = add.Add(config.Protocol(protocol), remote, server.log, server.system, server.api, server.registry)
 	if err != nil {
 		slog.Error("failed to add package", "remote", remote, "error", err)
 		session.log(err.Error())

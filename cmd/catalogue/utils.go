@@ -6,13 +6,13 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/clone"
+	"github.com/woolawin/catalogue/internal/config"
 )
 
-func getProtocolAndRemote(cmd *cobra.Command, args []string) (clone.Protocol, string, error) {
+func getProtocolAndRemote(cmd *cobra.Command, args []string) (config.Protocol, string, error) {
 	git, _ := cmd.Flags().GetString("git")
 	if len(git) != 0 {
-		return clone.Git, git, nil
+		return config.Git, git, nil
 	}
 
 	if len(args) == 0 {
@@ -22,7 +22,7 @@ func getProtocolAndRemote(cmd *cobra.Command, args []string) (clone.Protocol, st
 	return getProtocolAndRemoteFromFreidnly(args[0])
 }
 
-func getProtocolAndRemoteFromFreidnly(value string) (clone.Protocol, string, error) {
+func getProtocolAndRemoteFromFreidnly(value string) (config.Protocol, string, error) {
 
 	if !strings.HasPrefix(value, "github/") {
 		return 0, "", internal.Err("only github components are currently supported")
@@ -46,7 +46,7 @@ func getProtocolAndRemoteFromFreidnly(value string) (clone.Protocol, string, err
 	}
 	remote := fmt.Sprintf("https://github.com/%s/%s.git", owner, repo)
 
-	return clone.Git, remote, nil
+	return config.Git, remote, nil
 }
 
 func overrideSystem(system *internal.System, cmd *cobra.Command) {
