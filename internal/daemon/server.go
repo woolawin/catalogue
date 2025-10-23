@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"os/user"
+	"strconv"
 
 	msgpacklib "github.com/vmihailenco/msgpack/v5"
 	"github.com/woolawin/catalogue/internal"
@@ -35,6 +37,31 @@ func (server *Server) Start() error {
 	err := os.RemoveAll(path)
 	if err != nil {
 		return internal.ErrOf(err, "can not clean up old socket '%s'", path)
+	}
+
+	group, err := user.LookupGroup("catalogue")
+	if err != nil {
+		return internal.ErrOf(err, "can not look up ground 'catalogue'")
+	}
+
+	currentUser, err := user.Current()
+	if err != nil {
+		return internal.ErrOf(err, "can not get current user")
+	}
+
+	groupID, err := strconv.Atoi(group.Gid)
+	if err != nil {
+		return internal.ErrOf(err, "invalid group id '%s'", group.Gid)
+	}
+
+	currentUserID, err := strconv.Atoi(currentUser.Uid)
+	if err != nil {
+		return internal.ErrOf(err, "invalid user id '%s'", group.Gid)
+	}
+
+	err = os.Chown(path, currentUserID, groupID)
+	if err != nil {
+		return internal.ErrOf(err, "can not change socket ownership to '%d'/'%d'", currentUserID, groupID)
 	}
 
 	listener, err := net.Listen("unix", path)
