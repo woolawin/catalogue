@@ -14,8 +14,9 @@ type Message struct {
 type Command int
 
 const (
-	Add        Command = 1
-	HasPackage Command = 2
+	Add          Command = 1
+	HasPackage   Command = 2
+	ListPackages Command = 3
 )
 
 type Cmd struct {

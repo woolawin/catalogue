@@ -10,12 +10,11 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/add"
 	"github.com/woolawin/catalogue/internal/build"
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/config"
+	"github.com/woolawin/catalogue/internal/daemon"
 	"github.com/woolawin/catalogue/internal/ext"
-	"github.com/woolawin/catalogue/internal/registry"
 )
 
 //go:embed version.txt
@@ -61,29 +60,29 @@ func runSystem(cmd *cobra.Command, args []string) {
 	fmt.Println(builder.String())
 }
 
-func runAdd(cmd *cobra.Command, args []string) {
-	system, err := ext.NewHost().GetSystem()
+func runAdd(cmd *cobra.Command, cliargs []string) {
+
+	protocol, remote, err := getProtocolAndRemote(cliargs[0])
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 
-	protocol, remote, err := getProtocolAndRemote(args[0])
+	client := daemon.NewClient()
+	args := map[string]any{"protocol": protocol, "remote": remote}
+	ok, _, err := client.Send(daemon.Cmd{Command: daemon.Add, Args: args})
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	api := ext.NewAPI("/")
-	reg := registry.NewRegistry()
 
-	err = add.Add(protocol, remote, system, api, reg)
-	if err != nil {
-		fmt.Println("ERROR")
-		fmt.Println(err.Error())
+	if !ok {
+		fmt.Println("ERROR: could not add package")
 		os.Exit(1)
 	}
+
 }
 
 func runBuild(cmd *cobra.Command, args []string) {

@@ -15,11 +15,11 @@ func NewClient() Client {
 	return Client{}
 }
 
-func (client *Client) Send(cmd Cmd) error {
+func (client *Client) Send(cmd Cmd) (bool, any, error) {
 
 	conn, err := net.Dial("unix", path)
 	if err != nil {
-		return internal.ErrOf(err, "can not connect to socket")
+		return false, nil, internal.ErrOf(err, "can not connect to socket")
 	}
 	defer conn.Close()
 
@@ -30,14 +30,14 @@ func (client *Client) Send(cmd Cmd) error {
 
 	err = writer.Encode(msg)
 	if err != nil {
-		return internal.ErrOf(err, "can not message daemon")
+		return false, nil, internal.ErrOf(err, "can not message daemon")
 	}
 
 	for {
 		reply := Message{}
 		err = reader.Decode(&reply)
 		if err != nil {
-			return internal.ErrOf(err, "can not read reply from daemon")
+			return false, nil, internal.ErrOf(err, "can not read reply from daemon")
 		}
 
 		if msg.Log != nil {
@@ -45,9 +45,8 @@ func (client *Client) Send(cmd Cmd) error {
 		}
 
 		if msg.End != nil {
-			break
+			return msg.End.Ok, msg.End.Value, nil
 		}
 	}
 
-	return nil
 }

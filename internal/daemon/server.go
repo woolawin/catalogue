@@ -68,6 +68,7 @@ func (server *Server) handle(conn net.Conn) {
 	defer conn.Close()
 
 	reader := msgpacklib.NewDecoder(conn)
+	writer := msgpacklib.NewEncoder(conn)
 
 	for {
 		msg := Message{}
@@ -84,13 +85,15 @@ func (server *Server) handle(conn net.Conn) {
 
 		switch msg.Cmd.Command {
 		case Add:
-			server.add(msg)
+			server.add(msg, writer)
+		case ListPackages:
+			server.list(writer)
 		}
 	}
 
 }
 
-func (server *Server) add(msg Message) {
+func (server *Server) add(msg Message, writer *msgpacklib.Encoder) {
 	remote, ok, err := msg.Cmd.StringArg("remote")
 	if err != nil {
 		slog.Warn("can not get remote argument", "error", err)
@@ -111,6 +114,36 @@ func (server *Server) add(msg Message) {
 		return
 	}
 
-	add.Add(clone.Protocol(protocol), remote, server.system, server.api, server.registry)
-	slog.Info("added")
+	err = add.Add(clone.Protocol(protocol), remote, server.system, server.api, server.registry)
+	ok = err == nil
+	if err != nil {
+		slog.Error("failed to add package", "remote", remote, "error", err)
+		err = writer.Encode(&Message{Log: &Log{Value: err.Error()}})
+		if err != nil {
+			slog.Error("failed to write log reply", "error", err)
+		}
+	}
+
+	err = writer.Encode(&Message{End: &End{Ok: ok}})
+	if err != nil {
+		slog.Error("failed to write end reply", "error", err)
+	}
+}
+
+func (server *Server) list(writer *msgpacklib.Encoder) {
+	packages, err := server.registry.ListPackages()
+	if err != nil {
+		slog.Error("failed to list packages", "error", err)
+		msg := Message{Log: &Log{Value: err.Error()}}
+		err = writer.Encode(&msg)
+		if err != nil {
+			slog.Error("failed to write log reply", "error", err)
+		}
+		return
+	}
+	reply := Message{End: &End{Ok: packages != nil, Value: packages}}
+	err = writer.Encode(&reply)
+	if err != nil {
+		slog.Error("failed to write log reply", "error", err)
+	}
 }
