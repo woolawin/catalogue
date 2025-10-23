@@ -46,7 +46,9 @@ func FromProtocolString(value string) (Protocol, bool) {
 	}
 }
 
-func Clone(protocol Protocol, remote string, local string, path string, api *ext.API) error {
+type Filter func(file string) bool
+
+func Clone(protocol Protocol, remote string, local string, api *ext.API, filters ...Filter) error {
 	localPath := api.Disk.Path(local)
 	exists, _, err := api.Disk.DirExists(localPath)
 	if err != nil {
@@ -57,12 +59,12 @@ func Clone(protocol Protocol, remote string, local string, path string, api *ext
 	}
 	switch protocol {
 	case Git:
-		return gitClone(remote, local, path, api)
+		return gitClone(remote, local, filters, api)
 	}
 	return internal.Err("unsupported protocol")
 }
 
-func gitClone(remote string, local string, path string, api *ext.API) error {
+func gitClone(remote string, local string, filters []Filter, api *ext.API) error {
 	opts := &git.CloneOptions{
 		URL:        remote,
 		Depth:      1,
@@ -88,7 +90,15 @@ func gitClone(remote string, local string, path string, api *ext.API) error {
 	}
 
 	err = tree.Files().ForEach(func(f *object.File) error {
-		if !isInPath(path, f.Name) {
+		filteredMatched := false
+		for _, filter := range filters {
+			matched := filter(f.Name)
+			if matched {
+				filteredMatched = true
+				break
+			}
+		}
+		if !filteredMatched {
 			return nil
 		}
 		blob, err := f.Blob.Reader()
@@ -119,9 +129,14 @@ func gitClone(remote string, local string, path string, api *ext.API) error {
 	return nil
 }
 
-func isInPath(path string, object string) bool {
-	if path == object {
-		return true
+func File(path string) func(string) bool {
+	return func(object string) bool {
+		return path == object
 	}
-	return strings.HasPrefix(object, path)
+}
+
+func Directory(path string) func(string) bool {
+	return func(object string) bool {
+		return strings.HasPrefix(object, path)
+	}
 }

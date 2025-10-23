@@ -25,7 +25,7 @@ func Assemble(dst io.Writer, log *internal.Log, component config.Component, syst
 	}
 
 	local := api.Host.RandomTmpDir()
-	err = clone.Clone(record.Origin.Type, record.Origin.URL.String(), local, "", api)
+	err = clone.Clone(record.Origin.Type, record.Origin.URL.String(), local, api, clone.Directory(".catalogue/"))
 	if err != nil {
 		log.Msg(10, "failed to clone package source").Error()
 		return false

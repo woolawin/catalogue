@@ -22,7 +22,7 @@ func Add(protocol clone.Protocol, remote string, system internal.System, api *ex
 
 	local := api.Host.RandomTmpDir()
 
-	err = clone.Clone(protocol, remote, local, ".catalogue/config.toml", api)
+	err = clone.Clone(protocol, remote, local, api, clone.File(".catalogue/config.toml"))
 	if err != nil {
 		return internal.ErrOf(err, "can not clone '%s'", remote)
 	}
