@@ -74,7 +74,7 @@ func runAdd(cmd *cobra.Command, cliargs []string) {
 		With("remote", remote).
 		Info()
 
-	client := daemon.NewClient()
+	client := daemon.NewClient(log)
 	args := map[string]any{"protocol": protocol, "remote": remote}
 	ok, _, err := client.Send(daemon.Cmd{Command: daemon.Add, Args: args})
 	if err != nil {

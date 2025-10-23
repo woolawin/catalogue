@@ -1,7 +1,6 @@
 package daemon
 
 import (
-	"fmt"
 	"net"
 
 	msgpacklib "github.com/vmihailenco/msgpack/v5"
@@ -9,10 +8,11 @@ import (
 )
 
 type Client struct {
+	log *internal.Log
 }
 
-func NewClient() Client {
-	return Client{}
+func NewClient(log *internal.Log) Client {
+	return Client{log: log}
 }
 
 func (client *Client) Send(cmd Cmd) (bool, any, error) {
@@ -40,12 +40,12 @@ func (client *Client) Send(cmd Cmd) (bool, any, error) {
 			return false, nil, internal.ErrOf(err, "can not read reply from daemon")
 		}
 
-		if msg.Log != nil {
-			fmt.Println(msg.Log.Value)
+		if reply.Log != nil {
+			client.log.Msg(9, reply.Log.Value).Info()
 		}
 
-		if msg.End != nil {
-			return msg.End.Ok, msg.End.Value, nil
+		if reply.End != nil {
+			return reply.End.Ok, reply.End.Value, nil
 		}
 	}
 

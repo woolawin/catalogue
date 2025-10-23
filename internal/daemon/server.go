@@ -96,11 +96,32 @@ func (server *Server) Shutdown() {
 	server.listener.Close()
 }
 
+type Session struct {
+	reader *msgpacklib.Decoder
+	writer *msgpacklib.Encoder
+}
+
+func (session *Session) end(ok bool, value any) {
+	err := session.writer.Encode(&Message{End: &End{Ok: ok, Value: value}})
+	if err != nil {
+		slog.Error("failed to write end reply", "error", err)
+	}
+}
+
+func (session *Session) log(message string) {
+	err := session.writer.Encode(&Message{Log: &Log{Value: message}})
+	if err != nil {
+		slog.Error("failed to write log reply", "error", err)
+	}
+}
+
 func (server *Server) handle(conn net.Conn) {
 	defer conn.Close()
 
 	reader := msgpacklib.NewDecoder(conn)
 	writer := msgpacklib.NewEncoder(conn)
+
+	session := Session{reader: reader, writer: writer}
 
 	msg := Message{}
 	err := reader.Decode(&msg)
@@ -116,14 +137,14 @@ func (server *Server) handle(conn net.Conn) {
 
 	switch msg.Cmd.Command {
 	case Add:
-		server.add(msg, writer)
+		server.add(msg, &session)
 	case ListPackages:
 		server.list(writer)
 	}
 
 }
 
-func (server *Server) add(msg Message, writer *msgpacklib.Encoder) {
+func (server *Server) add(msg Message, session *Session) {
 	remote, ok, err := msg.Cmd.StringArg("remote")
 	if err != nil {
 		slog.Warn("can not get remote argument", "error", err)
@@ -145,19 +166,11 @@ func (server *Server) add(msg Message, writer *msgpacklib.Encoder) {
 	}
 
 	err = add.Add(clone.Protocol(protocol), remote, server.system, server.api, server.registry)
-	ok = err == nil
 	if err != nil {
 		slog.Error("failed to add package", "remote", remote, "error", err)
-		err = writer.Encode(&Message{Log: &Log{Value: err.Error()}})
-		if err != nil {
-			slog.Error("failed to write log reply", "error", err)
-		}
+		session.log(err.Error())
 	}
-
-	err = writer.Encode(&Message{End: &End{Ok: ok}})
-	if err != nil {
-		slog.Error("failed to write end reply", "error", err)
-	}
+	session.end(err == nil, nil)
 }
 
 func (server *Server) list(writer *msgpacklib.Encoder) {
