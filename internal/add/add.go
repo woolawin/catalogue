@@ -13,7 +13,7 @@ import (
 	reg "github.com/woolawin/catalogue/internal/registry"
 )
 
-func Add(protocol clone.Protocol, remote string, system internal.System, api *ext.API, registry reg.Registry) error {
+func Add(protocol clone.Protocol, remote string, log *internal.Log, system internal.System, api *ext.API, registry reg.Registry) error {
 
 	remoteURL, err := url.Parse(remote)
 	if err != nil {
@@ -22,8 +22,8 @@ func Add(protocol clone.Protocol, remote string, system internal.System, api *ex
 
 	local := api.Host.RandomTmpDir()
 
-	err = clone.Clone(protocol, remote, local, api, clone.File(".catalogue/config.toml"))
-	if err != nil {
+	ok := clone.Clone(protocol, remote, local, log, api, clone.File(".catalogue/config.toml"))
+	if !ok {
 		return internal.ErrOf(err, "can not clone '%s'", remote)
 	}
 

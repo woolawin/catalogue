@@ -25,13 +25,14 @@ type Server struct {
 	system   internal.System
 	api      *ext.API
 	registry reg.Registry
+	log      *internal.Log
 
 	listener net.Listener
 }
 
 func NewServer(log *internal.Log, system internal.System, api *ext.API, registry reg.Registry) *Server {
 	log.Stage("server")
-	return &Server{system: system, api: api, registry: registry}
+	return &Server{log: log, system: system, api: api, registry: registry}
 }
 
 func (server *Server) Start() error {
@@ -165,7 +166,7 @@ func (server *Server) add(msg Message, session *Session) {
 		return
 	}
 
-	err = add.Add(clone.Protocol(protocol), remote, server.system, server.api, server.registry)
+	err = add.Add(clone.Protocol(protocol), remote, server.log, server.system, server.api, server.registry)
 	if err != nil {
 		slog.Error("failed to add package", "remote", remote, "error", err)
 		session.log(err.Error())

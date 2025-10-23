@@ -140,7 +140,7 @@ func (server *HTTPServer) Pool(writer http.ResponseWriter, request *http.Request
 	log := internal.NewLog(internal.NewStdoutLogger(1))
 
 	buffer := bytes.NewBuffer([]byte{})
-	ok := assemble.Assemble(buffer, log, component, system, api, server.registry)
+	ok := assemble.Assemble(buffer, component, log, system, api, server.registry)
 	if !ok {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return

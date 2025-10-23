@@ -48,23 +48,26 @@ func FromProtocolString(value string) (Protocol, bool) {
 
 type Filter func(file string) bool
 
-func Clone(protocol Protocol, remote string, local string, api *ext.API, filters ...Filter) error {
+func Clone(protocol Protocol, remote string, local string, log *internal.Log, api *ext.API, filters ...Filter) bool {
 	localPath := api.Disk.Path(local)
 	exists, _, err := api.Disk.DirExists(localPath)
 	if err != nil {
-		return internal.ErrOf(err, "can not check if local already exists")
+		log.Msg(10, "Failed to check clone destination").With("dst", local).With("error", err).Error()
+		return false
 	}
 	if exists {
-		return internal.Err("local already exists")
+		log.Msg(10, "Clone destination already exists").With("dst", local).Error()
+		return false
 	}
 	switch protocol {
 	case Git:
-		return gitClone(remote, local, filters, api)
+		return gitClone(remote, local, filters, log, api)
 	}
-	return internal.Err("unsupported protocol")
+	log.Msg(9, "unsupported clone protocol").With("protocol", ProtocolDebugString(protocol)).Error()
+	return false
 }
 
-func gitClone(remote string, local string, filters []Filter, api *ext.API) error {
+func gitClone(remote string, local string, filters []Filter, log *internal.Log, api *ext.API) bool {
 	opts := &git.CloneOptions{
 		URL:        remote,
 		Depth:      1,
@@ -72,21 +75,28 @@ func gitClone(remote string, local string, filters []Filter, api *ext.API) error
 	}
 	repo, err := api.Git.Clone(local, opts)
 	if err != nil {
-		return internal.ErrOf(err, "failed to clone '%s'", remote)
+		log.Msg(10, "Failed to clone git repository").
+			With("remote", remote).
+			With("error", err).
+			Error()
+		return false
 	}
 
 	ref, err := repo.Head()
 	if err != nil {
-		return internal.ErrOf(err, "can not get repository head")
+		log.Msg(10, "failed to get reository head").With("remote", remote).With("error", err).Error()
+		return false
 	}
 	commit, err := repo.CommitObject(ref.Hash())
 	if err != nil {
-		return internal.ErrOf(err, "can not get commit")
+		log.Msg(10, "failed to get reository commit").With("remote", remote).With("error", err).Error()
+		return false
 	}
 
 	tree, err := commit.Tree()
 	if err != nil {
-		return internal.ErrOf(err, "can not get tree")
+		log.Msg(10, "failed to get reository tree").With("remote", remote).With("error", err).Error()
+		return false
 	}
 
 	err = tree.Files().ForEach(func(f *object.File) error {
@@ -103,7 +113,12 @@ func gitClone(remote string, local string, filters []Filter, api *ext.API) error
 		}
 		blob, err := f.Blob.Reader()
 		if err != nil {
-			return internal.ErrOf(err, "can not read file blob")
+			log.Msg(10, "failed to read git blob").
+				With("remote", remote).
+				With("file", f.Name).
+				With("error", err).
+				Error()
+			return err
 		}
 		defer blob.Close()
 
@@ -112,21 +127,33 @@ func gitClone(remote string, local string, filters []Filter, api *ext.API) error
 
 		out, err := os.Create(absPath)
 		if err != nil {
-			return internal.ErrOf(err, "can not create local file '%s'", absPath)
+			log.Msg(10, "failed to read create local file for git blob").
+				With("remote", remote).
+				With("file", f.Name).
+				With("path", absPath).
+				With("error", err).
+				Error()
+			return err
 		}
 		defer out.Close()
 		_, err = io.Copy(out, blob)
 		if err != nil {
-			return internal.ErrOf(err, "can not write to local file '%s'", absPath)
+			log.Msg(10, "failed to write git blob to local file").
+				With("remote", remote).
+				With("file", f.Name).
+				With("path", absPath).
+				With("error", err).
+				Error()
+			return err
 		}
 		return nil
 	})
 
 	if err != nil {
-		return internal.ErrOf(err, "failed to navigate repository")
+		log.Msg(9, "cloned repository").Info()
 	}
 
-	return nil
+	return err == nil
 }
 
 func File(path string) func(string) bool {

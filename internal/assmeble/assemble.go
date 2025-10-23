@@ -11,7 +11,7 @@ import (
 	reg "github.com/woolawin/catalogue/internal/registry"
 )
 
-func Assemble(dst io.Writer, log *internal.Log, component config.Component, system internal.System, api *ext.API, registry reg.Registry) bool {
+func Assemble(dst io.Writer, component config.Component, log *internal.Log, system internal.System, api *ext.API, registry reg.Registry) bool {
 	log.Msg(10, "Assembling package").With("name", component.Name).Info()
 	record, found, err := registry.GetPackageRecord(component.Name)
 	if err != nil {
@@ -25,9 +25,8 @@ func Assemble(dst io.Writer, log *internal.Log, component config.Component, syst
 	}
 
 	local := api.Host.RandomTmpDir()
-	err = clone.Clone(record.Origin.Type, record.Origin.URL.String(), local, api, clone.Directory(".catalogue/"))
-	if err != nil {
-		log.Msg(10, "failed to clone package source").Error()
+	ok := clone.Clone(record.Origin.Type, record.Origin.URL.String(), local, log, api, clone.Directory(".catalogue/"))
+	if !ok {
 		return false
 	}
 	err = build.Build(dst, component, system, ext.NewAPI(local))
