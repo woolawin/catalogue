@@ -61,13 +61,15 @@ func runSystem(cmd *cobra.Command, args []string) {
 }
 
 func runAdd(cmd *cobra.Command, cliargs []string) {
+	log := internal.NewStdoutLogger(5)
+	log.Stage("cli")
 	protocol, remote, err := getProtocolAndRemote(cmd, cliargs)
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-
+	log.Info(7, "add component from protocol %d remote %s", protocol, remote)
 	client := daemon.NewClient()
 	args := map[string]any{"protocol": protocol, "remote": remote}
 	ok, _, err := client.Send(daemon.Cmd{Command: daemon.Add, Args: args})

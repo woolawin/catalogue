@@ -1,6 +1,8 @@
 package daemon
 
-import "errors"
+import (
+	"errors"
+)
 
 var ErrNotStringArg = errors.New("not a string argument")
 var ErrNotIntArg = errors.New("not a int argument")
@@ -40,20 +42,35 @@ func (cmd *Cmd) StringArg(name string) (string, bool, error) {
 	return "", false, ErrNotStringArg
 }
 
-func (cmd *Cmd) IntArg(name string) (int, bool, error) {
+func (cmd *Cmd) IntArg(name string) (int, bool, any, error) {
 	value, ok := cmd.Args[name]
 	if !ok {
-		return 0, false, nil
+		return 0, false, value, nil
 	}
 	if value == nil {
-		return 0, false, nil
+		return 0, false, value, nil
+	}
+	val8, ok := value.(int8)
+	if ok {
+		return int(val8), true, value, nil
 	}
 
-	val, ok := value.(int)
+	val16, ok := value.(int16)
 	if ok {
-		return val, true, nil
+		return int(val16), true, value, nil
 	}
-	return 0, false, ErrNotIntArg
+
+	val32, ok := value.(int32)
+	if ok {
+		return int(val32), true, value, nil
+	}
+
+	val64, ok := value.(int64)
+	if ok {
+		return int(val64), true, value, nil
+	}
+
+	return 0, false, value, ErrNotIntArg
 }
 
 type Log struct {

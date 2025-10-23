@@ -22,6 +22,7 @@ var ErrUnknownAction = errors.New("unknown action")
 const path = "/var/run/catalogue.sock"
 
 type Server struct {
+	log      internal.Log
 	system   internal.System
 	api      *ext.API
 	registry reg.Registry
@@ -29,8 +30,9 @@ type Server struct {
 	listener net.Listener
 }
 
-func NewServer(system internal.System, api *ext.API, registry reg.Registry) *Server {
-	return &Server{system: system, api: api, registry: registry}
+func NewServer(log internal.Log, system internal.System, api *ext.API, registry reg.Registry) *Server {
+	log.Stage("server")
+	return &Server{log: log, system: system, api: api, registry: registry}
 }
 
 func (server *Server) Start() error {
@@ -135,9 +137,9 @@ func (server *Server) add(msg Message, writer *msgpacklib.Encoder) {
 		return
 	}
 
-	protocol, ok, err := msg.Cmd.IntArg("protocol")
+	protocol, ok, raw, err := msg.Cmd.IntArg("protocol")
 	if err != nil {
-		slog.Warn("can not get protocol argument", "error", err)
+		server.log.Error(9, "invalid protocol argument '%v'", raw)
 		return
 	}
 	if !ok {

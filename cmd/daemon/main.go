@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/daemon"
 	"github.com/woolawin/catalogue/internal/ext"
 	reg "github.com/woolawin/catalogue/internal/registry"
@@ -24,7 +25,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	server := daemon.NewServer(system, api, registry)
+	log := internal.NewStdoutLogger(5)
+
+	server := daemon.NewServer(&log, system, api, registry)
 
 	err = server.Start()
 	if err != nil {
