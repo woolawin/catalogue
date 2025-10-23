@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/go-git/go-git/v6"
+	gitlib "github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing/object"
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/config"
@@ -47,12 +47,12 @@ func Clone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
 }
 
 func gitClone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
-	gitopts := &git.CloneOptions{
+	gitopts := &gitlib.CloneOptions{
 		URL:        opts.Remote.URL.String(),
 		Depth:      1,
 		NoCheckout: true,
 	}
-	repo, err := api.Git.Clone(opts.Local, gitopts)
+	repo, err := gitlib.PlainClone(opts.Local, gitopts)
 	if err != nil {
 		log.Msg(10, "Failed to clone git repository").
 			With("remote", opts.Remote).

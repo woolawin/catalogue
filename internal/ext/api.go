@@ -4,7 +4,6 @@ type API struct {
 	Disk Disk
 	Host *Host
 	Http *HTTP
-	Git  *Git
 }
 
 func NewAPI(base string) *API {
@@ -12,6 +11,5 @@ func NewAPI(base string) *API {
 		Disk: NewDisk(base),
 		Host: NewHost(),
 		Http: NewHTTP(),
-		Git:  NewGit(),
 	}
 }
