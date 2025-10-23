@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -140,6 +141,7 @@ func (server *HTTPServer) Pool(writer http.ResponseWriter, request *http.Request
 	buffer := bytes.NewBuffer([]byte{})
 	err = build.Build(buffer, config, system, api)
 	if err != nil {
+		fmt.Println(err.Error())
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}

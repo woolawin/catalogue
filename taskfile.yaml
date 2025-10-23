@@ -5,6 +5,7 @@ tasks:
         cmds:
             - task: build-cmd
             - task: build-daemon
+            - task: build-apt-server
 
     build-daemon:
         cmds:
@@ -12,3 +13,7 @@ tasks:
     build-cmd:
         cmds:
             - go build -o catalogue ./cmd/catalogue
+
+    build-apt-server:
+        cmds:
+            - go build -o catalogue-apt-server ./cmd/apt-catalogue-server

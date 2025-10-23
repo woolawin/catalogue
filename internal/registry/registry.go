@@ -53,6 +53,22 @@ func (registry *Registry) GetPackageConfig(name string) (config.Component, bool,
 	return component, true, nil
 }
 
+func (registry *Registry) GetPackageRecord(packageName string) (config.Record, bool, error) {
+	path := registry.packagePath(packageName, "record.toml")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return config.Record{}, false, nil
+		}
+		return config.Record{}, false, internal.ErrOf(err, "can not read file '%s'", path)
+	}
+	record, err := config.DeserializeRecord(bytes.NewReader(data))
+	if err != nil {
+		return config.Record{}, false, internal.ErrOf(err, "can not parse package record")
+	}
+	return record, true, nil
+}
+
 func (registry *Registry) AddPackage(component config.Component, record config.Record) error {
 	exists, err := registry.HasPackage(component.Name)
 	if err != nil {
