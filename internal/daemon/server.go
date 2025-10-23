@@ -70,6 +70,10 @@ func (server *Server) Start() error {
 		return internal.ErrOf(err, "can not change socket ownership to '%d'/'%d'", currentUserID, groupID)
 	}
 
+	err = os.Chmod(path, 0770)
+	if err != nil {
+		return internal.ErrOf(err, "can not set socket permissions")
+	}
 	go func() {
 		for {
 			conn, err := server.listener.Accept()

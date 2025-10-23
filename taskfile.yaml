@@ -1,9 +1,14 @@
 version: "3"
 
 tasks:
+    build:
+        cmds:
+            - task: build-cmd
+            - task: build-daemon
+
     build-daemon:
         cmds:
             - go build -o catalogue-daemon ./cmd/daemon
-    build:
+    build-cmd:
         cmds:
             - go build -o catalogue ./cmd/catalogue
