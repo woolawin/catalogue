@@ -2,6 +2,8 @@ package assemble
 
 import (
 	"io"
+	"log/slog"
+	"os"
 
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/build"
@@ -25,6 +27,7 @@ func Assemble(dst io.Writer, component config.Component, log *internal.Log, syst
 	}
 
 	local := api.Host.RandomTmpDir()
+	defer cleanup(local)
 	ok := clone.Clone(record.Origin.Type, record.Origin.URL.String(), local, log, api, clone.Directory(".catalogue/"))
 	if !ok {
 		return false
@@ -34,4 +37,11 @@ func Assemble(dst io.Writer, component config.Component, log *internal.Log, syst
 		return false
 	}
 	return true
+}
+
+func cleanup(dir string) {
+	err := os.RemoveAll(dir)
+	if err != nil {
+		slog.Error("failed to delete tmp directory", "dir", dir)
+	}
 }

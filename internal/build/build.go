@@ -112,6 +112,16 @@ func data(system internal.System, component config.Component, log *internal.Log,
 			Error()
 		return false
 	}
+	if !exists {
+		err = api.Disk.CreateDir(dirPath)
+		if err != nil {
+			log.Msg(10, "failed to create data dir").
+				With("path", dirPath).
+				With("error", err).
+				Error()
+			return false
+		}
+	}
 
 	ok := filesystem(system, component.FileSystems, log, api)
 	if !ok {
