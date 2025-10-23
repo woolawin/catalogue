@@ -1,9 +1,9 @@
 version: "3"
 
 tasks:
-    build-server:
+    build-daemon:
         cmds:
-            - go build -o apt-catalogue-server
+            - go build -o catalogue-daemon ./cmd/daemon
     build:
         cmds:
             - go build -o catalogue ./cmd/catalogue

@@ -26,6 +26,13 @@ func main() {
 
 	server := daemon.NewServer(system, api, registry)
 
+	err = server.Start()
+	if err != nil {
+		fmt.Println("ERROR")
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 	<-shutdown

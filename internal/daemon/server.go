@@ -39,6 +39,12 @@ func (server *Server) Start() error {
 		return internal.ErrOf(err, "can not clean up old socket '%s'", path)
 	}
 
+	listener, err := net.Listen("unix", path)
+	if err != nil {
+		return internal.ErrOf(err, "can not listen to socket '%s'", path)
+	}
+	server.listener = listener
+
 	group, err := user.LookupGroup("catalogue")
 	if err != nil {
 		return internal.ErrOf(err, "can not look up ground 'catalogue'")
@@ -63,12 +69,6 @@ func (server *Server) Start() error {
 	if err != nil {
 		return internal.ErrOf(err, "can not change socket ownership to '%d'/'%d'", currentUserID, groupID)
 	}
-
-	listener, err := net.Listen("unix", path)
-	if err != nil {
-		return internal.ErrOf(err, "can not listen to socket '%s'", path)
-	}
-	server.listener = listener
 
 	go func() {
 		for {
