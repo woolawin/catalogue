@@ -1,5 +1,7 @@
 
-
+rename origin to remote
+remove Git from ext
+refactor errors
 =====
 test download
 

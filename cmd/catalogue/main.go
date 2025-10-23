@@ -170,7 +170,12 @@ func runClone(cmd *cobra.Command, args []string) {
 
 	api := ext.NewAPI("/")
 	log := internal.NewLog(internal.NewStdoutLogger(9))
-	ok := clone.Clone(protocol, remote, local, log, api, clone.Directory(path))
+	opts := clone.CloneOpts{
+		Protocol: protocol,
+		Remote:   remote,
+		Local:    local,
+	}
+	ok := clone.Clone(opts, log, api, clone.Directory(path))
 	if !ok {
 		os.Exit(1)
 	}

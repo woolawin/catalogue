@@ -22,7 +22,12 @@ func Add(protocol clone.Protocol, remote string, log *internal.Log, system inter
 
 	local := api.Host.RandomTmpDir()
 
-	ok := clone.Clone(protocol, remote, local, log, api, clone.File(".catalogue/config.toml"))
+	opts := clone.CloneOpts{
+		Protocol: protocol,
+		Remote:   remote,
+		Local:    local,
+	}
+	ok := clone.Clone(opts, log, api, clone.File(".catalogue/config.toml"))
 	if !ok {
 		return internal.ErrOf(err, "can not clone '%s'", remote)
 	}

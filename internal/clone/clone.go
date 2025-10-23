@@ -48,35 +48,46 @@ func FromProtocolString(value string) (Protocol, bool) {
 
 type Filter func(file string) bool
 
-func Clone(protocol Protocol, remote string, local string, log *internal.Log, api *ext.API, filters ...Filter) bool {
-	localPath := api.Disk.Path(local)
+type CloneOpts struct {
+	Protocol Protocol
+	Remote   string
+	Local    string
+	Filters  []Filter
+}
+
+func Clone(opts CloneOpts, log *internal.Log, api *ext.API, filters ...Filter) bool {
+
+	localPath := api.Disk.Path(opts.Local)
 	exists, _, err := api.Disk.DirExists(localPath)
 	if err != nil {
-		log.Msg(10, "Failed to check clone destination").With("dst", local).With("error", err).Error()
+		log.Msg(10, "Failed to check clone destination").
+			With("dst", opts.Local).
+			With("error", err).
+			Error()
 		return false
 	}
 	if exists {
-		log.Msg(10, "Clone destination already exists").With("dst", local).Error()
+		log.Msg(10, "Clone destination already exists").With("dst", opts.Local).Error()
 		return false
 	}
-	switch protocol {
+	switch opts.Protocol {
 	case Git:
-		return gitClone(remote, local, filters, log, api)
+		return gitClone(opts, log, api)
 	}
-	log.Msg(9, "unsupported clone protocol").With("protocol", ProtocolDebugString(protocol)).Error()
+	log.Msg(9, "unsupported clone protocol").With("protocol", ProtocolDebugString(opts.Protocol)).Error()
 	return false
 }
 
-func gitClone(remote string, local string, filters []Filter, log *internal.Log, api *ext.API) bool {
-	opts := &git.CloneOptions{
-		URL:        remote,
+func gitClone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
+	gitopts := &git.CloneOptions{
+		URL:        opts.Remote,
 		Depth:      1,
 		NoCheckout: true,
 	}
-	repo, err := api.Git.Clone(local, opts)
+	repo, err := api.Git.Clone(opts.Local, gitopts)
 	if err != nil {
 		log.Msg(10, "Failed to clone git repository").
-			With("remote", remote).
+			With("remote", opts.Remote).
 			With("error", err).
 			Error()
 		return false
@@ -84,24 +95,33 @@ func gitClone(remote string, local string, filters []Filter, log *internal.Log, 
 
 	ref, err := repo.Head()
 	if err != nil {
-		log.Msg(10, "failed to get reository head").With("remote", remote).With("error", err).Error()
+		log.Msg(10, "failed to get reository head").
+			With("remote", opts.Remote).
+			With("error", err).
+			Error()
 		return false
 	}
 	commit, err := repo.CommitObject(ref.Hash())
 	if err != nil {
-		log.Msg(10, "failed to get reository commit").With("remote", remote).With("error", err).Error()
+		log.Msg(10, "failed to get reository commit").
+			With("remote", opts.Remote).
+			With("error", err).
+			Error()
 		return false
 	}
 
 	tree, err := commit.Tree()
 	if err != nil {
-		log.Msg(10, "failed to get reository tree").With("remote", remote).With("error", err).Error()
+		log.Msg(10, "failed to get reository tree").
+			With("remote", opts.Remote).
+			With("error", err).
+			Error()
 		return false
 	}
 
 	err = tree.Files().ForEach(func(f *object.File) error {
 		filteredMatched := false
-		for _, filter := range filters {
+		for _, filter := range opts.Filters {
 			matched := filter(f.Name)
 			if matched {
 				filteredMatched = true
@@ -114,7 +134,7 @@ func gitClone(remote string, local string, filters []Filter, log *internal.Log, 
 		blob, err := f.Blob.Reader()
 		if err != nil {
 			log.Msg(10, "failed to read git blob").
-				With("remote", remote).
+				With("remote", opts.Remote).
 				With("file", f.Name).
 				With("error", err).
 				Error()
@@ -122,13 +142,13 @@ func gitClone(remote string, local string, filters []Filter, log *internal.Log, 
 		}
 		defer blob.Close()
 
-		absPath := filepath.Join(local, f.Name)
+		absPath := filepath.Join(opts.Local, f.Name)
 		os.MkdirAll(filepath.Dir(absPath), 0o755)
 
 		out, err := os.Create(absPath)
 		if err != nil {
 			log.Msg(10, "failed to read create local file for git blob").
-				With("remote", remote).
+				With("remote", opts.Remote).
 				With("file", f.Name).
 				With("path", absPath).
 				With("error", err).
@@ -139,7 +159,7 @@ func gitClone(remote string, local string, filters []Filter, log *internal.Log, 
 		_, err = io.Copy(out, blob)
 		if err != nil {
 			log.Msg(10, "failed to write git blob to local file").
-				With("remote", remote).
+				With("remote", opts.Remote).
 				With("file", f.Name).
 				With("path", absPath).
 				With("error", err).
