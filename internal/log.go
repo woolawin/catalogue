@@ -3,50 +3,89 @@ package internal
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	stdout "github.com/fatih/color"
 )
 
-type Log interface {
-	Stage(value string)
-	File(value string)
+type Logger interface {
+	Info(stmt *LogStatement)
+	Error(stmt *LogStatement)
+}
 
-	Info(level int, format string, args ...any)
-	Error(level int, format string, args ...any)
+type LogStatement struct {
+	logger Logger
+	stage  string
+
+	level     int
+	timestamp time.Time
+	message   string
+	args      map[string]any
+}
+
+type Log struct {
+	stage  string
+	logger Logger
+}
+
+func NewLog(logger Logger) *Log {
+	return &Log{logger: logger}
+}
+
+func (log *Log) Stage(stage string) {
+	log.stage = strings.TrimSpace(stage)
+}
+
+func (log *Log) Msg(level int, msg string) *LogStatement {
+	stmt := LogStatement{logger: log.logger, stage: log.stage, level: level, message: msg, timestamp: time.Now().UTC()}
+	return &stmt
+}
+
+func (stmt *LogStatement) With(key string, value any) *LogStatement {
+	if stmt.args == nil {
+		stmt.args = make(map[string]any)
+	}
+	stmt.args[key] = value
+	return stmt
+}
+
+func (stmt *LogStatement) Info() {
+	stmt.logger.Info(stmt)
+}
+
+func (stmt *LogStatement) Error() {
+	stmt.logger.Error(stmt)
 }
 
 type StdoutLogger struct {
 	level int
-	stage string
-	file  string
 }
 
-func NewStdoutLogger(level int) StdoutLogger {
-	return StdoutLogger{level: level}
+func NewStdoutLogger(level int) *StdoutLogger {
+	return &StdoutLogger{level: level}
 }
 
-func (log *StdoutLogger) Stage(value string) {
-	log.stage = strings.TrimSpace(value)
-}
-
-func (log *StdoutLogger) File(value string) {
-	log.file = strings.TrimSpace(value)
-}
-
-func (log *StdoutLogger) Info(level int, format string, args ...any) {
-	if level < log.level {
+func (log *StdoutLogger) Info(stmt *LogStatement) {
+	if stmt.level < log.level {
 		return
 	}
 
-	stdout.New(stdout.Bold).Printf("[INFO] [%s]\t\t", log.stage)
-	fmt.Printf("%s\n", fmt.Sprintf(format, args...))
+	stdout.New(stdout.Bold).Printf("[INFO] [%s]\t\t", stmt.stage)
+	fmt.Println(stmt.message)
+	for key, value := range stmt.args {
+		fmt.Printf("\t\t\t\t%s: %v\n", key, value)
+	}
 }
 
-func (log *StdoutLogger) Error(level int, format string, args ...any) {
-	if level < log.level {
+func (log *StdoutLogger) Error(stmt *LogStatement) {
+	if stmt.level < log.level {
 		return
 	}
+
 	stdout.New(stdout.FgRed, stdout.Bold).Printf("[ERROR]")
-	stdout.New(stdout.Bold).Printf(" [%s]\t\t", log.stage)
-	fmt.Printf("%s\n", fmt.Sprintf(format, args...))
+	stdout.New(stdout.Bold).Printf("[%s]\t\t", stmt.stage)
+	fmt.Println(stmt.message)
+	for key, value := range stmt.args {
+		fmt.Printf("\t\t\t\t%s: %v\n", key, value)
+	}
 }
