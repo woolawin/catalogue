@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -12,7 +11,8 @@ import (
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
-	"github.com/woolawin/catalogue/internal/build"
+	"github.com/woolawin/catalogue/internal"
+	assemble "github.com/woolawin/catalogue/internal/assmeble"
 	"github.com/woolawin/catalogue/internal/ext"
 	reg "github.com/woolawin/catalogue/internal/registry"
 )
@@ -122,7 +122,7 @@ func (server *HTTPServer) Pool(writer http.ResponseWriter, request *http.Request
 	}
 
 	packageName := file[:dot]
-	config, found, err := server.registry.GetPackageConfig(packageName)
+	component, found, err := server.registry.GetPackageConfig(packageName)
 	if err != nil {
 		slog.Error("could not get config file for package", "package", packageName, "error", err)
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -137,11 +137,11 @@ func (server *HTTPServer) Pool(writer http.ResponseWriter, request *http.Request
 
 	api := ext.NewAPI("/")
 	system, err := api.Host.GetSystem()
+	log := internal.NewLog(internal.NewStdoutLogger(1))
 
 	buffer := bytes.NewBuffer([]byte{})
-	err = build.Build(buffer, config, system, api)
-	if err != nil {
-		fmt.Println(err.Error())
+	ok := assemble.Assemble(buffer, log, component, system, api, server.registry)
+	if !ok {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}

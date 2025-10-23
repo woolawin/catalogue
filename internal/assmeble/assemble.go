@@ -11,7 +11,7 @@ import (
 	reg "github.com/woolawin/catalogue/internal/registry"
 )
 
-func Assemble(log *internal.Log, dst io.Writer, component config.Component, system internal.System, api *ext.API, registry reg.Registry) bool {
+func Assemble(dst io.Writer, log *internal.Log, component config.Component, system internal.System, api *ext.API, registry reg.Registry) bool {
 	log.Msg(10, "Assembling package").With("name", component.Name).Info()
 	record, found, err := registry.GetPackageRecord(component.Name)
 	if err != nil {
