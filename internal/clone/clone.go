@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	gitlib "github.com/go-git/go-git/v6"
+	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/go-git/go-git/v6/plumbing/object"
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/config"
@@ -16,9 +18,10 @@ import (
 type Filter func(file string) bool
 
 type CloneOpts struct {
-	Remote  config.Remote
-	Local   string
-	Filters []Filter
+	Remote     config.Remote
+	Local      string
+	Filters    []Filter
+	Versioning *config.Versioning
 }
 
 func Clone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
@@ -54,11 +57,22 @@ func gitClone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
 	}
 	repo, err := gitlib.PlainClone(opts.Local, gitopts)
 	if err != nil {
-		log.Msg(10, "Failed to clone git repository").
+		log.Msg(10, "failed to clone git repository").
 			With("remote", opts.Remote).
 			With("error", err).
 			Error()
 		return false
+	}
+
+	if opts.Versioning != nil {
+		err = switchToLatestVersion(*opts.Versioning, repo)
+		if err != nil {
+			log.Msg(10, "failed to checkout latest version").
+				With("remote", opts.Remote).
+				With("type", opts.Versioning.Type).
+				With("branch", opts.Versioning.Branch).
+				Error()
+		}
 	}
 
 	ref, err := repo.Head()
@@ -142,6 +156,85 @@ func gitClone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
 	}
 
 	return err == nil
+}
+
+func switchToLatestVersion(versioning config.Versioning, repo *gitlib.Repository) error {
+	if versioning.Type == config.GitSemanticTag {
+		return switchToLatestSemanticTag(repo)
+	}
+
+	if versioning.Type == config.GitLatestCommit {
+		if len(versioning.Branch) == 0 {
+			return nil
+		}
+		return switchToLatestBranchCommit(repo, versioning.Branch)
+	}
+
+	return nil
+}
+
+func switchToLatestSemanticTag(repo *gitlib.Repository) error {
+
+	tags, err := repo.Tags()
+	if err != nil {
+		return err
+	}
+
+	var latest *semverlib.Version
+	var tagRef *plumbing.Reference
+
+	tags.ForEach(func(ref *plumbing.Reference) error {
+		version, err := semverlib.NewVersion(ref.Name().Short())
+		if err != nil {
+			return nil
+		}
+		if latest == nil {
+			latest = version
+			tagRef = ref
+			return nil
+		}
+		if latest.LessThan(version) {
+			tagRef = ref
+			latest = version
+		}
+		return nil
+	})
+
+	if latest == nil {
+		return internal.Err("no latest git tag found")
+	}
+
+	commit, err := repo.CommitObject(tagRef.Hash())
+	if err != nil {
+		return err
+	}
+
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	err = worktree.Checkout(&gitlib.CheckoutOptions{
+		Hash:  commit.Hash,
+		Force: true,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func switchToLatestBranchCommit(repo *gitlib.Repository, branch string) error {
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+	err = worktree.Checkout(&gitlib.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(branch),
+	})
+	return err
 }
 
 func File(path string) func(string) bool {
