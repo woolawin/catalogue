@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
@@ -24,7 +25,7 @@ type CloneOpts struct {
 	Versioning *config.Versioning
 }
 
-func Clone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
+func Clone(opts CloneOpts, log *internal.Log, api *ext.API) (string, bool) {
 
 	localPath := api.Disk.Path(opts.Local)
 	exists, _, err := api.Disk.DirExists(localPath)
@@ -33,11 +34,11 @@ func Clone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
 			With("dst", opts.Local).
 			With("error", err).
 			Error()
-		return false
+		return "", false
 	}
 	if exists {
 		log.Msg(10, "Clone destination already exists").With("dst", opts.Local).Error()
-		return false
+		return "", false
 	}
 	switch opts.Remote.Protocol {
 	case config.Git:
@@ -46,10 +47,10 @@ func Clone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
 	log.Msg(9, "unsupported clone protocol").
 		With("protocol", config.ProtocolDebugString(opts.Remote.Protocol)).
 		Error()
-	return false
+	return "", false
 }
 
-func gitClone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
+func gitClone(opts CloneOpts, log *internal.Log, api *ext.API) (string, bool) {
 	gitopts := &gitlib.CloneOptions{
 		URL:        opts.Remote.URL.String(),
 		Depth:      1,
@@ -61,17 +62,22 @@ func gitClone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
 			With("remote", opts.Remote).
 			With("error", err).
 			Error()
-		return false
+		return "", false
 	}
 
+	var version string
+
 	if opts.Versioning != nil {
-		err = switchToLatestVersion(*opts.Versioning, repo)
+		ver, err := switchToLatestVersion(*opts.Versioning, repo)
 		if err != nil {
 			log.Msg(10, "failed to checkout latest version").
 				With("remote", opts.Remote).
 				With("type", opts.Versioning.Type).
 				With("branch", opts.Versioning.Branch).
 				Error()
+		}
+		if ver != "" {
+			version = ver
 		}
 	}
 
@@ -81,7 +87,7 @@ func gitClone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
 			With("remote", opts.Remote).
 			With("error", err).
 			Error()
-		return false
+		return "", false
 	}
 	commit, err := repo.CommitObject(ref.Hash())
 	if err != nil {
@@ -89,7 +95,11 @@ func gitClone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
 			With("remote", opts.Remote).
 			With("error", err).
 			Error()
-		return false
+		return "", false
+	}
+
+	if version == "" {
+		version = strconv.FormatInt(commit.Committer.When.Unix(), 10)
 	}
 
 	tree, err := commit.Tree()
@@ -98,7 +108,7 @@ func gitClone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
 			With("remote", opts.Remote).
 			With("error", err).
 			Error()
-		return false
+		return "", false
 	}
 
 	err = tree.Files().ForEach(func(f *object.File) error {
@@ -155,29 +165,29 @@ func gitClone(opts CloneOpts, log *internal.Log, api *ext.API) bool {
 		log.Msg(9, "cloned repository").Info()
 	}
 
-	return err == nil
+	return version, err == nil
 }
 
-func switchToLatestVersion(versioning config.Versioning, repo *gitlib.Repository) error {
+func switchToLatestVersion(versioning config.Versioning, repo *gitlib.Repository) (string, error) {
 	if versioning.Type == config.GitSemanticTag {
 		return switchToLatestSemanticTag(repo)
 	}
 
 	if versioning.Type == config.GitLatestCommit {
 		if len(versioning.Branch) == 0 {
-			return nil
+			return "", nil
 		}
 		return switchToLatestBranchCommit(repo, versioning.Branch)
 	}
 
-	return nil
+	return "", nil
 }
 
-func switchToLatestSemanticTag(repo *gitlib.Repository) error {
+func switchToLatestSemanticTag(repo *gitlib.Repository) (string, error) {
 
 	tags, err := repo.Tags()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	var latest *semverlib.Version
@@ -201,17 +211,17 @@ func switchToLatestSemanticTag(repo *gitlib.Repository) error {
 	})
 
 	if latest == nil {
-		return internal.Err("no latest git tag found")
+		return "", internal.Err("no latest git tag found")
 	}
 
 	commit, err := repo.CommitObject(tagRef.Hash())
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	worktree, err := repo.Worktree()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = worktree.Checkout(&gitlib.CheckoutOptions{
@@ -220,21 +230,21 @@ func switchToLatestSemanticTag(repo *gitlib.Repository) error {
 	})
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return latest.String(), nil
 }
 
-func switchToLatestBranchCommit(repo *gitlib.Repository, branch string) error {
+func switchToLatestBranchCommit(repo *gitlib.Repository, branch string) (string, error) {
 	worktree, err := repo.Worktree()
 	if err != nil {
-		return err
+		return "", err
 	}
 	err = worktree.Checkout(&gitlib.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(branch),
 	})
-	return err
+	return "", err
 }
 
 func File(path string) func(string) bool {

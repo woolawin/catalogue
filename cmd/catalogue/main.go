@@ -183,7 +183,7 @@ func runClone(cmd *cobra.Command, args []string) {
 		Local:   local,
 		Filters: []clone.Filter{clone.Directory(path)},
 	}
-	ok := clone.Clone(opts, log, api)
+	_, ok := clone.Clone(opts, log, api)
 	if !ok {
 		os.Exit(1)
 	}

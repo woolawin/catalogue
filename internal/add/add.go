@@ -27,7 +27,7 @@ func Add(protocol config.Protocol, remote string, log *internal.Log, system inte
 		Local:   local,
 		Filters: []clone.Filter{clone.File(".catalogue/config.toml")},
 	}
-	ok := clone.Clone(opts, log, api)
+	_, ok := clone.Clone(opts, log, api)
 	if !ok {
 		return internal.ErrOf(err, "can not clone '%s'", remote)
 	}

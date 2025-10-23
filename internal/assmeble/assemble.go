@@ -33,7 +33,7 @@ func Assemble(dst io.Writer, component config.Component, log *internal.Log, syst
 		Local:   local,
 		Filters: []clone.Filter{clone.Directory(".catalogue/")},
 	}
-	ok := clone.Clone(opts, log, api)
+	_, ok := clone.Clone(opts, log, api)
 	if !ok {
 		return false
 	}
