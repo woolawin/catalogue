@@ -8,7 +8,7 @@ import (
 
 func TestGetProtocolAndRemote(t *testing.T) {
 	t.Run("github", func(t *testing.T) {
-		protocol, remote, err := getProtocolAndRemote("github/foo/bar")
+		protocol, remote, err := getProtocolAndRemoteFromFreidnly("github/foo/bar")
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -19,7 +19,10 @@ func getProtocolAndRemote(cmd *cobra.Command, args []string) (clone.Protocol, st
 		return 0, "", internal.Err("must specify name of component to install")
 	}
 
-	value := args[0]
+	return getProtocolAndRemoteFromFreidnly(args[0])
+}
+
+func getProtocolAndRemoteFromFreidnly(value string) (clone.Protocol, string, error) {
 
 	if !strings.HasPrefix(value, "github/") {
 		return 0, "", internal.Err("only github components are currently supported")
