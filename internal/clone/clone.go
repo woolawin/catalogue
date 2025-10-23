@@ -15,7 +15,7 @@ import (
 type Protocol int
 
 const (
-	Git Protocol = iota + 1
+	Git Protocol = 1
 )
 
 func Clone(protocol Protocol, remote string, local string, path string, api *ext.API) error {
