@@ -22,7 +22,6 @@ var ErrUnknownAction = errors.New("unknown action")
 const path = "/var/run/catalogue.sock"
 
 type Server struct {
-	log      *internal.Log
 	system   internal.System
 	api      *ext.API
 	registry reg.Registry
@@ -32,7 +31,7 @@ type Server struct {
 
 func NewServer(log *internal.Log, system internal.System, api *ext.API, registry reg.Registry) *Server {
 	log.Stage("server")
-	return &Server{log: log, system: system, api: api, registry: registry}
+	return &Server{system: system, api: api, registry: registry}
 }
 
 func (server *Server) Start() error {
@@ -103,25 +102,23 @@ func (server *Server) handle(conn net.Conn) {
 	reader := msgpacklib.NewDecoder(conn)
 	writer := msgpacklib.NewEncoder(conn)
 
-	for {
-		msg := Message{}
-		err := reader.Decode(&msg)
-		if err != nil {
-			slog.Error("can not read message", "error", err)
-			return
-		}
+	msg := Message{}
+	err := reader.Decode(&msg)
+	if err != nil {
+		slog.Error("can not read message", "error", err)
+		return
+	}
 
-		if msg.Cmd == nil {
-			slog.Error("received non command message from client")
-			continue
-		}
+	if msg.Cmd == nil {
+		slog.Error("received non command message from client")
+		return
+	}
 
-		switch msg.Cmd.Command {
-		case Add:
-			server.add(msg, writer)
-		case ListPackages:
-			server.list(writer)
-		}
+	switch msg.Cmd.Command {
+	case Add:
+		server.add(msg, writer)
+	case ListPackages:
+		server.list(writer)
 	}
 
 }
@@ -139,9 +136,7 @@ func (server *Server) add(msg Message, writer *msgpacklib.Encoder) {
 
 	protocol, ok, raw, err := msg.Cmd.IntArg("protocol")
 	if err != nil {
-		server.log.Msg(9, "invalid protocol argument").
-			With("value", raw).
-			Error()
+		slog.Error("invalid protocol value", "value", raw)
 		return
 	}
 	if !ok {
