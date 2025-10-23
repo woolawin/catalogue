@@ -70,10 +70,10 @@ func (log *StdoutLogger) Info(stmt *LogStatement) {
 		return
 	}
 
-	stdout.New(stdout.Bold).Printf("[INFO] [%s]\t\t", stmt.stage)
+	stdout.New(stdout.Bold).Printf("[INFO] [%s]", stmt.stage)
 	fmt.Println(stmt.message)
 	for key, value := range stmt.args {
-		fmt.Printf("\t\t\t\t%s: %v\n", key, value)
+		fmt.Printf("\t\t%s: %v\n", key, value)
 	}
 }
 
@@ -83,9 +83,9 @@ func (log *StdoutLogger) Error(stmt *LogStatement) {
 	}
 
 	stdout.New(stdout.FgRed, stdout.Bold).Printf("[ERROR]")
-	stdout.New(stdout.Bold).Printf("[%s]\t\t", stmt.stage)
+	stdout.New(stdout.Bold).Printf("[%s]", stmt.stage)
 	fmt.Println(stmt.message)
 	for key, value := range stmt.args {
-		fmt.Printf("\t\t\t\t%s: %v\n", key, value)
+		fmt.Printf("\t\t%s: %v\n", key, value)
 	}
 }
