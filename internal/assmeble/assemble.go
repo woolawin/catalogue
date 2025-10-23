@@ -29,9 +29,8 @@ func Assemble(dst io.Writer, component config.Component, log *internal.Log, syst
 	if !ok {
 		return false
 	}
-	err = build.Build(dst, component, system, ext.NewAPI(local))
-	if err != nil {
-		log.Msg(10, "failed to build package").Error()
+	ok = build.Build(dst, component, log, system, ext.NewAPI(local))
+	if !ok {
 		return false
 	}
 	return true

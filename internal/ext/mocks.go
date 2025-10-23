@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/woolawin/catalogue/internal"
 )
 
 type MockDisk struct {
@@ -79,8 +81,8 @@ func (mock *MockDisk) CreateTar(path DiskPath) error {
 	return nil
 }
 
-func (mock *MockDisk) Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool) error {
-	return nil
+func (mock *MockDisk) Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool, log *internal.Log) bool {
+	return false
 }
 
 func (mock *MockDisk) CreateDeb(path string, files map[string]DiskPath) error {

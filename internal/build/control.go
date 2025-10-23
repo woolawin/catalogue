@@ -8,34 +8,45 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func control(system internal.System, component config.Component, api *ext.API) error {
+func control(system internal.System, component config.Component, log *internal.Log, api *ext.API) bool {
+
+	log.Msg(8, "building control.tar.gz").Info()
 
 	tarPath := api.Disk.Path("control.tar.gz")
 	dirPath := api.Disk.Path("control")
 
 	exists, asFile, err := api.Disk.FileExists(tarPath)
 	if err != nil {
-		return internal.ErrOf(err, "can not check if file control.tar.gz exists")
-	}
-	if exists {
-		return nil
+		log.Msg(10, "failed to check if control.tar.gz exists").
+			With("path", tarPath).
+			With("error", err).
+			Error()
+		return false
 	}
 	if !asFile {
-		return internal.Err("data.tar.gz is not a file")
+		log.Msg(10, "control.tar.gz exists but not as a file").With("path", tarPath).Error()
+		return false
+	}
+	if exists {
+		log.Msg(8, "using existsing control.tar.gz").Info()
+		return true
 	}
 
 	exists, asDir, err := api.Disk.DirExists(dirPath)
 	if err != nil {
-		return internal.ErrOf(err, "can not check if directory control exists")
+		log.Msg(10, "failed to check for data directory exists").With("path", dirPath).With("error", err).Error()
+		return false
 	}
 	if !asDir {
-		return internal.Err("control is not a directory")
+		log.Msg(10, "data is not a directory").With("path", dirPath).Error()
+		return false
 	}
 
 	if !exists {
 		err = api.Disk.CreateDir(dirPath)
 		if err != nil {
-			return internal.ErrOf(err, "can not create control directory")
+			log.Msg(10, "failed to create data directory").With("path", dirPath).With("error", err).Error()
+			return false
 		}
 	}
 
@@ -43,17 +54,27 @@ func control(system internal.System, component config.Component, api *ext.API) e
 
 	md, err := Metadata(component.Metadata, system)
 	if err != nil {
-		return internal.ErrOf(err, "can not generate metadata for control")
+		log.Msg(10, "failed to generate metadata for control").With("error", err).Error()
+		return false
 	}
 	data.SetFrom(component, md)
 
 	controlFile := api.Disk.Path("control", "control")
 	err = api.Disk.WriteFile(controlFile, strings.NewReader(data.String()))
 	if err != nil {
-		return internal.ErrOf(err, "can not write to file control/control")
+		log.Msg(10, "failed to create control file").With("path", controlFile).With("error", err).Error()
+		return false
 	}
 
-	return api.Disk.ArchiveDir(dirPath, tarPath)
+	err = api.Disk.ArchiveDir(dirPath, tarPath)
+	if err != nil {
+		log.Msg(10, "failed to create data.tar.gz archive").
+			With("dir-path", dirPath).
+			With("tar-path", tarPath).
+			With("error", err).
+			Error()
+	}
+	return err == nil
 }
 
 func Metadata(metadatas []*config.Metadata, system internal.System) (config.Metadata, error) {

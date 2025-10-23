@@ -140,10 +140,10 @@ func runBuild(cmd *cobra.Command, args []string) {
 	}
 	defer dstFile.Close()
 
-	err = build.Build(dstFile, component, system, api)
-	if err != nil {
-		fmt.Println("ERROR")
-		fmt.Println(err.Error())
+	log := internal.NewLog(internal.NewStdoutLogger(8))
+
+	ok := build.Build(dstFile, component, log, system, api)
+	if !ok {
 		os.Exit(1)
 	} else {
 		fmt.Println("COMPLETED")

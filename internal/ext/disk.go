@@ -26,7 +26,7 @@ type Disk interface {
 	ListRec(path DiskPath) ([]DiskPath, error)
 	CreateTar(path DiskPath) error
 	ArchiveDir(src, dst DiskPath) error
-	Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool) error
+	Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool, log *internal.Log) bool
 }
 
 func NewDisk(base string) Disk {
@@ -170,18 +170,21 @@ func (disk *diskImpl) CreateTar(path DiskPath) error {
 	return nil
 }
 
-func (disk *diskImpl) Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool) error {
+func (disk *diskImpl) Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool, log *internal.Log) bool {
 	if disk.unsafe(toPath) {
-		return errFileBlocked(toPath, "written")
+		log.Msg(10, "file not permitted").With("path", toPath).Error()
+		return false
 	}
 	for _, file := range files {
 		newPath := filepath.Join(string(toPath), string(file))
 		if disk.unsafe(DiskPath(newPath)) {
-			return errFileBlocked(toPath, "written")
+			log.Msg(10, "file not permitted").With("path", newPath).Error()
+			return false
 		}
 		oldPath := filepath.Join(string(fromPath), string(file))
 		if disk.unsafe(DiskPath(oldPath)) {
-			return errFileBlocked(DiskPath(oldPath), "read")
+			log.Msg(10, "file not permitted").With("path", oldPath).Error()
+			return false
 		}
 		_, err := os.Stat(newPath)
 		if err == nil {
@@ -192,11 +195,13 @@ func (disk *diskImpl) Move(toPath DiskPath, fromPath DiskPath, files []DiskPath,
 		os.MkdirAll(filepath.Dir(newPath), 0755)
 		err = os.Rename(oldPath, newPath)
 		if err != nil {
-			return internal.ErrOf(err, "can not move file %s to %s", fromPath, toPath)
+			log.Msg(10, "failed to transfer file").With("from", oldPath).With("to", toPath).With("error", err).Error()
+			return false
 		}
+		log.Msg(8, "transfered file").With("from", oldPath).With("to", toPath).Info()
 	}
 
-	return nil
+	return true
 }
 
 func (disk *diskImpl) ArchiveDir(src DiskPath, dst DiskPath) error {
