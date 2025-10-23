@@ -60,6 +60,6 @@ func Add(protocol clone.Protocol, remote string, system internal.System, api *ex
 
 func newRecord(protocol clone.Protocol, remote *url.URL) config.Record {
 	return config.Record{
-		Origin: config.Origin{Type: config.Git, URL: remote},
+		Origin: config.Origin{Type: clone.Git, URL: remote},
 	}
 }

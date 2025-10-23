@@ -37,6 +37,15 @@ func ProtocolDebugString(protocol Protocol) string {
 	}
 }
 
+func FromProtocolString(value string) (Protocol, bool) {
+	switch value {
+	case "git":
+		return Git, true
+	default:
+		return 0, false
+	}
+}
+
 func Clone(protocol Protocol, remote string, local string, path string, api *ext.API) error {
 	localPath := api.Disk.Path(local)
 	exists, _, err := api.Disk.DirExists(localPath)

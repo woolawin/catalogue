@@ -7,20 +7,11 @@ import (
 
 	tomllib "github.com/pelletier/go-toml/v2"
 	"github.com/woolawin/catalogue/internal"
-)
-
-type OriginType int
-
-const (
-	Git OriginType = iota
-)
-
-const (
-	GitValue = "git"
+	"github.com/woolawin/catalogue/internal/clone"
 )
 
 type Origin struct {
-	Type OriginType
+	Type clone.Protocol
 	URL  *url.URL
 }
 
@@ -48,15 +39,12 @@ func DeserializeRecord(src io.Reader) (Record, error) {
 
 func loadRecord(toml RecordTOML) (Record, error) {
 
-	var originType OriginType
-	switch strings.TrimSpace(toml.Origin.Type) {
-	case GitValue:
-		originType = Git
-	default:
+	protocol, ok := clone.FromProtocolString(strings.TrimSpace(toml.Origin.Type))
+	if !ok {
 		return Record{}, internal.Err("unknown origin '%s'", toml.Origin.Type)
 	}
 
-	record := Record{Origin: Origin{Type: originType}}
+	record := Record{Origin: Origin{Type: protocol}}
 
 	originURL := strings.TrimSpace(toml.Origin.URL)
 	if len(originURL) != 0 {
@@ -73,14 +61,7 @@ func loadRecord(toml RecordTOML) (Record, error) {
 func SerializeRecord(dst io.Writer, record Record) error {
 
 	toml := RecordTOML{}
-	switch record.Origin.Type {
-	case Git:
-		toml.Origin.Type = GitValue
-	}
-	if record.Origin.URL != nil {
-		toml.Origin.URL = record.Origin.URL.String()
-	}
-
+	toml.Origin.Type = clone.ProtocolDebugString(record.Origin.Type)
 	err := tomllib.NewEncoder(dst).Encode(&toml)
 	if err != nil {
 		return internal.ErrOf(err, "failed to serialize record")

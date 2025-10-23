@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/woolawin/catalogue/internal/clone"
 )
 
 func TestReadRecord(t *testing.T) {
@@ -22,7 +23,7 @@ url='https://github.com/foo/bar.git'
 
 	expected := Record{
 		Origin: Origin{
-			Type: Git,
+			Type: clone.Git,
 			URL:  u("https://github.com/foo/bar.git"),
 		},
 	}
