@@ -22,7 +22,8 @@ type Remote struct {
 }
 
 type Record struct {
-	Remote Remote
+	LatestKnownVersion string
+	Remote             Remote
 }
 
 type RemoteTOML struct {
@@ -31,7 +32,8 @@ type RemoteTOML struct {
 }
 
 type RecordTOML struct {
-	Remote RemoteTOML `toml:"remote"`
+	LatestKnownVersion string     `toml:"latest_known_version"`
+	Remote             RemoteTOML `toml:"remote"`
 }
 
 func DeserializeRecord(src io.Reader) (Record, error) {
@@ -50,7 +52,10 @@ func loadRecord(toml RecordTOML) (Record, error) {
 		return Record{}, internal.Err("unknown remite'%s'", toml.Remote.Protocol)
 	}
 
-	record := Record{Remote: Remote{Protocol: protocol}}
+	record := Record{
+		LatestKnownVersion: strings.TrimSpace(toml.LatestKnownVersion),
+		Remote:             Remote{Protocol: protocol},
+	}
 
 	remoteURL := strings.TrimSpace(toml.Remote.URL)
 	if len(remoteURL) != 0 {
@@ -66,7 +71,9 @@ func loadRecord(toml RecordTOML) (Record, error) {
 
 func SerializeRecord(dst io.Writer, record Record) error {
 
-	toml := RecordTOML{}
+	toml := RecordTOML{
+		LatestKnownVersion: record.LatestKnownVersion,
+	}
 	toml.Remote.Protocol = ProtocolDebugString(record.Remote.Protocol)
 	err := tomllib.NewEncoder(dst).Encode(&toml)
 	if err != nil {

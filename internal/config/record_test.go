@@ -10,6 +10,8 @@ import (
 
 func TestReadRecord(t *testing.T) {
 	value := `
+latest_known_version='v0.54.2'
+
 [remote]
 protocol='git'
 url='https://github.com/foo/bar.git'
@@ -21,6 +23,7 @@ url='https://github.com/foo/bar.git'
 	}
 
 	expected := Record{
+		LatestKnownVersion: "v0.54.2",
 		Remote: Remote{
 			Protocol: Git,
 			URL:      u("https://github.com/foo/bar.git"),

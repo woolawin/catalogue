@@ -1,5 +1,7 @@
 
 refactor errors
+remove path.go
+move config.go into config package
 =====
 test download
 

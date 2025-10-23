@@ -27,7 +27,8 @@ func Add(protocol config.Protocol, remote string, log *internal.Log, system inte
 		Local:   local,
 		Filters: []clone.Filter{clone.File(".catalogue/config.toml")},
 	}
-	_, ok := clone.Clone(opts, log, api)
+
+	version, ok := clone.Clone(opts, log, api)
 	if !ok {
 		return internal.ErrOf(err, "can not clone '%s'", remote)
 	}
@@ -54,7 +55,10 @@ func Add(protocol config.Protocol, remote string, log *internal.Log, system inte
 		return internal.Err("component '%s' has no supported target", component.Name)
 	}
 
-	record := config.Record{Remote: config.Remote{Protocol: protocol, URL: remoteURL}}
+	record := config.Record{
+		LatestKnownVersion: version,
+		Remote:             config.Remote{Protocol: protocol, URL: remoteURL},
+	}
 
 	if component.Type == config.Package {
 		return registry.AddPackage(component, record)
