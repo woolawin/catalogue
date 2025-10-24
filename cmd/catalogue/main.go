@@ -32,6 +32,24 @@ func runVersion(cmd *cobra.Command, args []string) {
 	fmt.Print(strings.TrimSpace(Version))
 }
 
+func runUpdate(cmd *cobra.Command, cliargs []string) {
+	log := internal.NewLog(internal.NewStdoutLogger(5))
+	log.Stage("cli")
+	log.Msg(7, "updating").
+		Info()
+
+	client := daemon.NewClient(log)
+	component := ""
+	if len(cliargs) != 0 {
+		component = cliargs[0]
+	}
+	args := map[string]any{"component": component}
+	ok, _, err := client.Send(daemon.Cmd{Command: daemon.Add, Args: args})
+	if err != nil || !ok {
+		os.Exit(1)
+	}
+}
+
 func runConfig(cmd *cobra.Command, args []string) {
 	config, _ := ext.NewHost().GetConfig()
 	fmt.Println("DefaultUser: ", config.DefaultUser)
@@ -234,6 +252,13 @@ func args() *cobra.Command {
 		Run:   runConfig,
 	}
 
+	update := &cobra.Command{
+		Use:   "update",
+		Short: "Update registry on for all or one component",
+		Long:  "",
+		Run:   runUpdate,
+	}
+
 	var root = &cobra.Command{
 		Use:   "catalogue",
 		Short: "The missing piece to APT. An APT Repository Middleware",
@@ -245,5 +270,6 @@ func args() *cobra.Command {
 	root.AddCommand(version)
 	root.AddCommand(clone)
 	root.AddCommand(config)
+	root.AddCommand(update)
 	return root
 }
