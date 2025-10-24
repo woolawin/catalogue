@@ -1,8 +1,4 @@
-refactor errors
-refacto Log to log.Info(5, "log message", "main").Done() and log.Error(err).Done()
+pass in version/pin in build
 =====
 test download
 check how architecture works in /Release
-
-----
-update task

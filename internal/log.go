@@ -20,13 +20,12 @@ type LogStatement struct {
 	Timestamp time.Time
 	Message   string
 	Cause     *CLErr
-	Args      map[string]any
 
 	IsErr bool
 }
 
-func NewLogStatement(stage string, level int, timestamp time.Time, message string, args map[string]any, isErr bool) LogStatement {
-	return LogStatement{Stage: stage, Level: level, Timestamp: timestamp, Message: message, Args: args, IsErr: isErr}
+func NewLogStatement(stage string, level int, timestamp time.Time, message string, isErr bool) LogStatement {
+	return LogStatement{Stage: stage, Level: level, Timestamp: timestamp, Message: message, IsErr: isErr}
 }
 
 type Log struct {
@@ -46,12 +45,7 @@ func (log *Log) Stage(stage string) func() {
 	}
 }
 
-func (log *Log) Msg(level int, msg string) *LogStatement {
-	stmt := LogStatement{Logger: log.logger, Stage: log.stage, Level: level, Message: msg, Timestamp: time.Now().UTC()}
-	return &stmt
-}
-
-func (log *Log) Err(cause error, format string, args ...any) *LogStatement {
+func (log *Log) Err(cause error, format string, args ...any) {
 	error := ErrOf(cause, fmt.Sprintf(format, args...))
 	stmt := LogStatement{
 		Logger:    log.logger,
@@ -62,10 +56,10 @@ func (log *Log) Err(cause error, format string, args ...any) *LogStatement {
 		Timestamp: time.Now().UTC(),
 		IsErr:     true,
 	}
-	return &stmt
+	log.logger.Log(&stmt)
 }
 
-func (log *Log) Info(level int, format string, args ...any) *LogStatement {
+func (log *Log) Info(level int, format string, args ...any) {
 	stmt := LogStatement{
 		Logger:    log.logger,
 		Stage:     log.stage,
@@ -75,27 +69,7 @@ func (log *Log) Info(level int, format string, args ...any) *LogStatement {
 		Timestamp: time.Now().UTC(),
 		IsErr:     false,
 	}
-	return &stmt
-}
-
-func (stmt *LogStatement) With(key string, value any) *LogStatement {
-	if stmt.Args == nil {
-		stmt.Args = make(map[string]any)
-	}
-	stmt.Args[key] = value
-	return stmt
-}
-
-func (stmt *LogStatement) Done() {
-	stmt.Logger.Log(stmt)
-}
-
-func (stmt *LogStatement) Info() {
-	stmt.Logger.Log(stmt)
-}
-
-func (stmt *LogStatement) Error() {
-	stmt.Logger.Log(stmt)
+	log.logger.Log(&stmt)
 }
 
 type MultiLogger struct {
@@ -135,9 +109,6 @@ func (log *StdoutLogger) Info(stmt *LogStatement) {
 
 	stdout.New(stdout.Bold).Printf("[INFO] [%s] ", stmt.Stage)
 	fmt.Println(stmt.Message)
-	for key, value := range stmt.Args {
-		fmt.Printf("\t\t%s: %v\n", key, value)
-	}
 }
 
 func (log *StdoutLogger) Error(stmt *LogStatement) {
@@ -148,7 +119,7 @@ func (log *StdoutLogger) Error(stmt *LogStatement) {
 	stdout.New(stdout.FgRed, stdout.Bold).Printf("[ERROR]")
 	stdout.New(stdout.Bold).Printf("[%s]", stmt.Stage)
 	fmt.Println(stmt.Message)
-	for key, value := range stmt.Args {
-		fmt.Printf("\t\t%s: %v\n", key, value)
+	if stmt.Cause != nil {
+		fmt.Printf("\t\t Caused By: %s\n", stmt.Cause.Error())
 	}
 }

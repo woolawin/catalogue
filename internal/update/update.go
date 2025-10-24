@@ -22,7 +22,7 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 
 	local := api.Host.RandomTmpDir()
 
-	log.Info(9, "updating component %s", record.Name).With("dir", local).Done()
+	log.Info(9, "updating component '%s'", record.Name)
 	opts := clone.NewOpts(
 		record.Remote,
 		local,
@@ -38,24 +38,24 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 	configPath := filepath.Join(local, ".catalogue", "config.toml")
 	configData, err := api.Host.ReadTmpFile(configPath)
 	if err != nil {
-		log.Err(err, "failed to read config.toml").Done()
+		log.Err(err, "failed to read config.toml")
 		return false
 	}
 
 	component, err := config.Parse(bytes.NewReader(configData))
 	if err != nil {
-		log.Err(err, "failed to deserialize config.toml").Done()
+		log.Err(err, "failed to deserialize config.toml")
 		return false
 	}
 
 	metadata, err := build.Metadata(component.Metadata, system)
 	if err != nil {
-		log.Err(err, "failed to build metadata from config.toml").Done()
+		log.Err(err, "failed to build metadata from config.toml")
 		return false
 	}
 
 	if len(internal.Ranked(system, component.SupportedTargets)) == 0 {
-		log.Err(nil, "package not supported").Done()
+		log.Err(nil, "package not supported")
 		return false
 	}
 
@@ -69,7 +69,7 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 
 	err = regsitry.WriteRecord(record)
 	if err != nil {
-		log.Err(err, "failed to write record.toml").Done()
+		log.Err(err, "failed to write record.toml")
 		return false
 	}
 	return true
@@ -84,7 +84,7 @@ func PinRepo(dir string, versioning config.Versioning, log *internal.Log) (confi
 		return latestCommit(dir, versioning, log)
 	}
 
-	log.Err(nil, "unsupported versioning").Done()
+	log.Err(nil, "unsupported versioning")
 
 	return config.Pin{}, false
 }
@@ -92,23 +92,19 @@ func PinRepo(dir string, versioning config.Versioning, log *internal.Log) (confi
 func latestCommit(dir string, versioning config.Versioning, log *internal.Log) (config.Pin, bool) {
 	repo, err := gitlib.PlainOpen(dir)
 	if err != nil {
-		log.Err(err, "failed to open repository").With("dir", dir).Done()
+		log.Err(err, "failed to open repository at '%s'", dir)
 		return config.Pin{}, false
 	}
 
 	ref, err := repo.Reference(plumbing.NewBranchReferenceName(versioning.Branch), true)
 	if err != nil {
-		log.Err(err, "failed to checkout branch").
-			With("branch", versioning.Branch).
-			Done()
+		log.Err(err, "failed to checkout branch '%s'", versioning.Branch)
 		return config.Pin{}, false
 	}
 
 	commit, err := repo.CommitObject(ref.Hash())
 	if err != nil {
-		log.Err(err, "failed to get commit").
-			With("branch", versioning.Branch).
-			Done()
+		log.Err(err, "failed to get commit for branch '%s'", versioning.Branch)
 		return config.Pin{}, false
 	}
 
@@ -123,15 +119,13 @@ func latestCommit(dir string, versioning config.Versioning, log *internal.Log) (
 func semanticTag(dir string, versioning config.Versioning, log *internal.Log) (config.Pin, bool) {
 	repo, err := gitlib.PlainOpen(dir)
 	if err != nil {
-		log.Err(err, "failed to open repository").
-			With("dir", dir).
-			Done()
+		log.Err(err, "failed to open repository at '%s'", dir)
 		return config.Pin{}, false
 	}
 
 	tags, err := repo.Tags()
 	if err != nil {
-		log.Err(err, "failed to get repository tags").Done()
+		log.Err(err, "failed to get repository tags")
 		return config.Pin{}, false
 	}
 	defer tags.Close()
@@ -171,9 +165,7 @@ func semanticTag(dir string, versioning config.Versioning, log *internal.Log) (c
 	})
 
 	if latest == nil {
-		log.Err(nil, "no semantic versioned tags found").
-			With("dir", dir).
-			Done()
+		log.Err(nil, "no semantic versioned tags found")
 		return config.Pin{}, false
 	}
 

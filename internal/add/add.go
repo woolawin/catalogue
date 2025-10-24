@@ -41,24 +41,24 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 	configPath := filepath.Join(local, ".catalogue", "config.toml")
 	configData, err := api.Host.ReadTmpFile(configPath)
 	if err != nil {
-		log.Err(err, "can not read config file at '%s'", configPath).Done()
+		log.Err(err, "can not read config file at '%s'", configPath)
 		return false
 	}
 
 	component, err := config.Parse(bytes.NewReader(configData))
 	if err != nil {
-		log.Err(err, "failed to deserialize config.toml").Done()
+		log.Err(err, "failed to deserialize config.toml")
 		return false
 	}
 
 	metadata, err := build.Metadata(component.Metadata, system)
 	if err != nil {
-		log.Err(err, "failed to build metadata from config.toml at '%s'", remoteStr).Done()
+		log.Err(err, "failed to build metadata from config.toml at '%s'", remoteStr)
 		return false
 	}
 
 	if len(internal.Ranked(system, component.SupportedTargets)) == 0 {
-		log.Err(nil, "package '%s' not supported", component.Name).Done()
+		log.Err(nil, "package '%s' not supported", component.Name)
 		return false
 	}
 
@@ -79,12 +79,12 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 	if component.Type == config.Package {
 		err = registry.AddPackage(record)
 		if err != nil {
-			log.Err(err, "failed to add package '%s' to registry", component.Name).Done()
+			log.Err(err, "failed to add package '%s' to registry", component.Name)
 			return false
 		}
 		return true
 	}
 
-	log.Err(nil, "only packages can be added right now").Done()
+	log.Err(nil, "only packages can be added right now")
 	return false
 }

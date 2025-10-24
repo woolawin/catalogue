@@ -10,42 +10,39 @@ import (
 
 func control(system internal.System, component config.Component, log *internal.Log, api *ext.API) bool {
 
-	log.Msg(8, "building control.tar.gz").Info()
+	log.Info(8, "building control.tar.gz")
 
 	tarPath := api.Disk.Path("control.tar.gz")
 	dirPath := api.Disk.Path("control")
 
 	exists, asFile, err := api.Disk.FileExists(tarPath)
 	if err != nil {
-		log.Msg(10, "failed to check if control.tar.gz exists").
-			With("path", tarPath).
-			With("error", err).
-			Error()
+		log.Err(err, "failed to check if control.tar.gz exists at '%s'", tarPath)
 		return false
 	}
 	if !asFile {
-		log.Msg(10, "control.tar.gz exists but not as a file").With("path", tarPath).Error()
+		log.Err(nil, "control.tar.gz exists but not as a file at '%s'", tarPath)
 		return false
 	}
 	if exists {
-		log.Msg(8, "using existsing control.tar.gz").Info()
+		log.Info(8, "using existsing control.tar.gz")
 		return true
 	}
 
 	exists, asDir, err := api.Disk.DirExists(dirPath)
 	if err != nil {
-		log.Msg(10, "failed to check for data directory exists").With("path", dirPath).With("error", err).Error()
+		log.Err(err, "failed to check for data directory exists at '%s'", dirPath)
 		return false
 	}
 	if !asDir {
-		log.Msg(10, "data is not a directory").With("path", dirPath).Error()
+		log.Err(nil, "data is not a directory at '%s'", dirPath)
 		return false
 	}
 
 	if !exists {
 		err = api.Disk.CreateDir(dirPath)
 		if err != nil {
-			log.Msg(10, "failed to create data directory").With("path", dirPath).With("error", err).Error()
+			log.Err(err, "failed to create data directory at '%s'", dirPath)
 			return false
 		}
 	}
@@ -54,7 +51,7 @@ func control(system internal.System, component config.Component, log *internal.L
 
 	md, err := Metadata(component.Metadata, system)
 	if err != nil {
-		log.Msg(10, "failed to generate metadata for control").With("error", err).Error()
+		log.Err(err, "failed to generate metadata for control")
 		return false
 	}
 	data.SetFrom(component, md)
@@ -62,17 +59,13 @@ func control(system internal.System, component config.Component, log *internal.L
 	controlFile := api.Disk.Path("control", "control")
 	err = api.Disk.WriteFile(controlFile, strings.NewReader(data.String()))
 	if err != nil {
-		log.Msg(10, "failed to create control file").With("path", controlFile).With("error", err).Error()
+		log.Err(err, "failed to create control file at '%s'", controlFile)
 		return false
 	}
 
 	err = api.Disk.ArchiveDir(dirPath, tarPath)
 	if err != nil {
-		log.Msg(10, "failed to create data.tar.gz archive").
-			With("dir-path", dirPath).
-			With("tar-path", tarPath).
-			With("error", err).
-			Error()
+		log.Err(err, "failed to create data.tar.gz archive")
 	}
 	return err == nil
 }

@@ -27,22 +27,18 @@ func Clone(opts Opts, log *internal.Log, api *ext.API) bool {
 	localPath := api.Disk.Path(opts.local)
 	exists, _, err := api.Disk.DirExists(localPath)
 	if err != nil {
-		log.Err(err, "failed to check clone destination").
-			With("dst", opts.local).
-			Done()
+		log.Err(err, "failed to check clone destination to '%s'", opts.local)
 		return false
 	}
 	if exists {
-		log.Err(nil, "clone destination already exists").With("dst", opts.local).Done()
+		log.Err(nil, "clone destination '%s' is not empty", opts.local)
 		return false
 	}
 	switch opts.remote.Protocol {
 	case config.Git:
 		return gitClone(opts, log)
 	}
-	log.Err(nil, "unsupported clone protocol").
-		With("protocol", config.ProtocolDebugString(opts.remote.Protocol)).
-		Done()
+	log.Err(nil, "unsupported clone protocol '%s'", config.ProtocolDebugString(opts.remote.Protocol))
 	return false
 }
 
@@ -58,13 +54,11 @@ func gitClone(opts Opts, log *internal.Log) bool {
 		}
 		repo, err := gitlib.PlainClone(opts.local, gitopts)
 	*/
-	log.Info(9, "cloning git repository '%s'", opts.remote.URL.Redacted()).
-		With("local", opts.local).
-		Done()
+	log.Info(9, "cloning git repository '%s'", opts.remote.URL.Redacted())
 	cmd := exec.Command("git", "clone", "--depth", "1", "--filter=blob:none", "--no-checkout", opts.remote.URL.String(), opts.local)
 	err := cmd.Run()
 	if err != nil {
-		log.Err(err, "failed to clone git repository '%s'", opts.remote.URL.Redacted()).Done()
+		log.Err(err, "failed to clone git repository '%s'", opts.remote.URL.Redacted())
 		return false
 	}
 
@@ -88,19 +82,19 @@ func sparseCheckout(hash string, local string, path string, log *internal.Log) b
 	init := exec.Command("git", "-C", local, "sparse-checkout", "init", "--cone")
 	err := init.Run()
 	if err != nil {
-		log.Err(err, "failed to checkout (init sparse) hash '%s'", hash).Done()
+		log.Err(err, "failed to checkout (init sparse) hash '%s'", hash)
 		return false
 	}
 	set := exec.Command("git", "-C", local, "sparse-checkout", "set", path)
 	err = set.Run()
 	if err != nil {
-		log.Err(err, "failed to checkout (set sparse) hash '%s'", hash).Done()
+		log.Err(err, "failed to checkout (set sparse) hash '%s'", hash)
 		return false
 	}
 	checkout := exec.Command("git", "-C", local, "checkout", hash)
 	err = checkout.Run()
 	if err != nil {
-		log.Err(err, "failed to checkout hash '%s'", hash).Done()
+		log.Err(err, "failed to checkout hash '%s'", hash)
 		return false
 	}
 	return true
@@ -110,7 +104,7 @@ func getLatestCommitHash(local string, log *internal.Log) (string, bool) {
 	symbolicRef := exec.Command("git", "-C", local, "symbolic-ref", "refs/remotes/origin/HEAD")
 	out, err := symbolicRef.Output()
 	if err != nil {
-		log.Err(err, "failed to get symbolic ref").Done()
+		log.Err(err, "failed to get symbolic ref")
 		return "", false
 	}
 	branchRef := strings.TrimSpace(string(out))
@@ -120,7 +114,7 @@ func getLatestCommitHash(local string, log *internal.Log) (string, bool) {
 	revParse := exec.Command("git", "-C", local, "rev-parse", defaultBranch)
 	out, err = revParse.Output()
 	if err != nil {
-		log.Err(err, "failed to get latest commit from ref '%s'", branchRef).Done()
+		log.Err(err, "failed to get latest commit from ref '%s'", branchRef)
 		return "", false
 	}
 	return strings.TrimSpace(string(out)), true

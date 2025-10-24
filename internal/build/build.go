@@ -11,27 +11,24 @@ import (
 )
 
 func Build(dst io.Writer, log *internal.Log, system internal.System, api *ext.API) bool {
+	prev := log.Stage("build")
+	defer prev()
+
 	configPath := api.Disk.Path("config.toml")
 	configData, err := api.Disk.ReadFile(configPath)
 	if err != nil {
-		log.Msg(10, "failed to read config file").
-			With("path", configPath).
-			With("error", err).
-			Error()
+		log.Err(err, "failed to read config.toml at '%s'", configPath)
 		return false
 	}
 
 	component, err := config.ParseWithFileSystems(bytes.NewReader(configData), api.Disk)
 	if err != nil {
-		log.Msg(10, "failed to deserialize config file").
-			With("path", configPath).
-			With("error", err).
-			Error()
+		log.Err(err, "failed to deserialize config.toml at '%s'", configPath)
 		return false
 	}
 
 	if component.Type != config.Package {
-		log.Msg(10, "can not build non package").With("component", component.Name).Info()
+		log.Err(nil, "can not build non package '%s'", component.Name)
 		return false
 	}
 	ok := debianBinary(log, api)
@@ -57,10 +54,7 @@ func Build(dst io.Writer, log *internal.Log, system internal.System, api *ext.AP
 
 	err = internal.CreateAR(files, dst)
 	if err != nil {
-		log.Msg(10, "could not create .deb file").
-			With("path", dst).
-			With("error", err).
-			Error()
+		log.Err(err, "could not create .deb file")
 		return false
 	}
 	return true
@@ -70,74 +64,58 @@ func debianBinary(log *internal.Log, api *ext.API) bool {
 	path := api.Disk.Path("debian-binary")
 	exists, asFile, err := api.Disk.FileExists(path)
 	if err != nil {
-		log.Msg(10, "failed to check for debian-binary").With("path", path).Error()
+		log.Err(err, "failed to check for debian-binary at '%s'", path)
 		return false
 	}
 	if !asFile {
-		log.Msg(10, "debian-binary exists but not as a file").With("path", path).Error()
+		log.Err(nil, "debian-binary exists but not as a file '%s'", path)
 		return false
 	}
 	if exists {
-		log.Msg(8, "debian-binary already exists").Info()
+		log.Info(8, "debian-binary already exists")
 		return true
 	}
 	err = api.Disk.WriteFile(path, strings.NewReader("2.0"))
 	if err != nil {
-		log.Msg(10, "failed to write debian-binary file").
-			With("path", path).
-			With("error", err).
-			Error()
+		log.Err(err, "failed to write debian-binary file at '%s'", path)
 		return false
 	}
 	return true
 }
 
 func data(system internal.System, component config.Component, log *internal.Log, api *ext.API) bool {
-	log.Msg(8, "creating data.tar.gz").Info()
+	log.Info(8, "creating data.tar.gz")
 
 	tarPath := api.Disk.Path("data.tar.gz")
 	dirPath := api.Disk.Path("data")
 
 	exists, asFile, err := api.Disk.FileExists(tarPath)
 	if err != nil {
-		log.Msg(10, "failed to check if data.tar.gz exists").
-			With("path", tarPath).
-			With("error", err).
-			Error()
+		log.Err(err, "failed to check if data.tar.gz exists at '%s'", tarPath)
 		return false
 	}
 	if !asFile {
-		log.Msg(10, "data.tar.gz exists but not as a file").
-			With("path", tarPath).
-			Error()
+		log.Err(nil, "data.tar.gz exists but not as a file at '%s'", tarPath)
 		return false
 	}
 
 	if exists {
-		log.Msg(8, "using existsing data.tar.gz").Info()
+		log.Info(8, "using existsing data.tar.gz")
 		return true
 	}
 	exists, asDir, err := api.Disk.DirExists(dirPath)
 	if err != nil {
-		log.Msg(10, "failed to check if data directory exists").
-			With("path", dirPath).
-			With("error", err).
-			Error()
+		log.Err(err, "failed to check if data directory exists at '%s'", dirPath)
 		return false
 	}
 	if !asDir {
-		log.Msg(10, "data exists but not as a directory").
-			With("path", tarPath).
-			Error()
+		log.Err(nil, "data exists but not as a directory at '%s'", dirPath)
 		return false
 	}
 	if !exists {
 		err = api.Disk.CreateDir(dirPath)
 		if err != nil {
-			log.Msg(10, "failed to create data dir").
-				With("path", dirPath).
-				With("error", err).
-				Error()
+			log.Err(err, "failed to create data dir at '%s'", dirPath)
 			return false
 		}
 	}
@@ -153,11 +131,7 @@ func data(system internal.System, component config.Component, log *internal.Log,
 
 	err = api.Disk.ArchiveDir(dirPath, tarPath)
 	if err != nil {
-		log.Msg(10, "failed to create data.tar.gz archive").
-			With("dir-path", dirPath).
-			With("tar-path", tarPath).
-			With("error", err).
-			Error()
+		log.Err(err, "failed to create data.tar.gz archive")
 		return false
 	}
 
@@ -171,20 +145,13 @@ func filesystem(system internal.System, filesystems map[string][]*config.FileSys
 			path := api.Disk.Path("filesystem", filesystem.ID)
 			files, err := api.Disk.ListRec(path)
 			if err != nil {
-				log.Msg(10, "failed to list files in filesystem directory").
-					With("filesystem", filesystem.ID).
-					With("path", path).
-					With("error", err).
-					Error()
+				log.Err(err, "failed to list files in filesystem '%s' directory at '%s'", filesystem.ID, path)
 				return false
 			}
 
 			anchorPath, err := api.Host.ResolveAnchor(anchor)
 			if err != nil {
-				log.Msg(10, "unknown anchor").
-					With("anchor", anchor).
-					With("filesystem", filesystem.ID).
-					Error()
+				log.Err(err, "filesystem '%s' has unknown anchor '%s'", filesystem.ID, anchor)
 				return false
 			}
 			toPath := api.Disk.Path("data", anchorPath)
@@ -196,7 +163,7 @@ func filesystem(system internal.System, filesystems map[string][]*config.FileSys
 		}
 	}
 
-	log.Msg(9, "completed filesystems").Info()
+	log.Info(9, "completed filesystems")
 
 	return true
 }
@@ -213,39 +180,24 @@ func download(system internal.System, downloads map[string][]*config.Download, l
 		dst := tgt.Destination
 		anchorPath, err := api.Host.ResolveAnchor(dst.Host)
 		if err != nil {
-			log.Msg(10, "unknown anchor to download to").
-				With("download", tgt.ID).
-				With("anchor", dst.Host).
-				Error()
+			log.Err(err, "download for taret '%s' has unknown anchor '%s'", tgt.ID, dst.Host)
 			return false
 		}
 
 		dstPath := api.Disk.Path("data", anchorPath, dst.Path)
 		data, err := api.Http.Fetch(tgt.Source)
 		if err != nil {
-			log.Msg(10, "failed to download file").
-				With("download", tgt.ID).
-				With("src", tgt.Source).
-				With("dst", dstPath).
-				With("error", err).
-				Error()
+			log.Err(err, "failed to download filesystem '%s' file '%s'", tgt.ID, tgt.Source.Redacted())
 			return false
 		}
 
 		err = api.Disk.WriteFile(dstPath, bytes.NewReader(data))
 		if err != nil {
-			log.Msg(10, "failed to write file").
-				With("download", tgt.ID).
-				With("path", dstPath).
-				With("error", err).
-				Error()
+			log.Err(err, "failed to write filesystem '%s' file '%s'", tgt.ID, dstPath)
 			return false
 		}
 
-		log.Msg(8, "downloaded file").
-			With("download", tgt.ID).
-			With("path", dstPath).
-			Info()
+		log.Info(8, "downloaded filesystem '%s' file file '%s'", tgt.ID, tgt.Source.Redacted())
 	}
 
 	return true

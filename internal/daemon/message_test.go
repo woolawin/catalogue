@@ -16,7 +16,7 @@ func TestSerializeLog(t *testing.T) {
 
 	now := time.Now().UTC().Truncate(time.Second)
 
-	expected := internal.NewLogStatement("server", 6, now, "Hello", map[string]any{"to": "world"}, true)
+	expected := internal.NewLogStatement("server", 6, now, "Hello", true)
 
 	buffer := bytes.NewBuffer([]byte{})
 

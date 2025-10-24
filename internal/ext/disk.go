@@ -172,18 +172,18 @@ func (disk *diskImpl) CreateTar(path DiskPath) error {
 
 func (disk *diskImpl) Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool, log *internal.Log) bool {
 	if disk.unsafe(toPath) {
-		log.Msg(10, "file not permitted").With("path", toPath).Error()
+		log.Err(nil, "file not permitted '%s'", toPath)
 		return false
 	}
 	for _, file := range files {
 		newPath := filepath.Join(string(toPath), string(file))
 		if disk.unsafe(DiskPath(newPath)) {
-			log.Msg(10, "file not permitted").With("path", newPath).Error()
+			log.Err(nil, "file not permitted '%s'", newPath)
 			return false
 		}
 		oldPath := filepath.Join(string(fromPath), string(file))
 		if disk.unsafe(DiskPath(oldPath)) {
-			log.Msg(10, "file not permitted").With("path", oldPath).Error()
+			log.Err(nil, "file not permitted '%s'", oldPath)
 			return false
 		}
 		_, err := os.Stat(newPath)
@@ -195,10 +195,10 @@ func (disk *diskImpl) Move(toPath DiskPath, fromPath DiskPath, files []DiskPath,
 		os.MkdirAll(filepath.Dir(newPath), 0755)
 		err = os.Rename(oldPath, newPath)
 		if err != nil {
-			log.Msg(10, "failed to transfer file").With("from", oldPath).With("to", toPath).With("error", err).Error()
+			log.Err(err, "failed to transfer file from '%s' to '%s'", oldPath, toPath)
 			return false
 		}
-		log.Msg(8, "transfered file").With("from", oldPath).With("to", toPath).Info()
+		log.Info(8, "transfered file from '%s'", oldPath)
 	}
 
 	return true

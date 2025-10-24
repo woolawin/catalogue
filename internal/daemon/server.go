@@ -108,7 +108,7 @@ type Session struct {
 }
 
 func (session *Session) Log(stmt *internal.LogStatement) {
-	withoutLogger := internal.NewLogStatement(stmt.Stage, stmt.Level, stmt.Timestamp, stmt.Message, stmt.Args, stmt.IsErr)
+	withoutLogger := internal.NewLogStatement(stmt.Stage, stmt.Level, stmt.Timestamp, stmt.Message, stmt.IsErr)
 	err := session.writer.Encode(&Message{Log: &Log{Statement: &withoutLogger}})
 	if err != nil {
 		slog.Error("failed to write log reply", "error", err)
@@ -160,12 +160,12 @@ func (server *Server) add(session *Session) {
 	remote, ok, err := session.msg.Cmd.StringArg("remote")
 	session.log.Stage("server")
 	if err != nil {
-		session.log.Err(err, "can not get remote argument").Done()
+		session.log.Err(err, "can not get remote argument")
 		session.end(false, nil)
 		return
 	}
 	if !ok {
-		session.log.Err(nil, "missing required remote argument").Done()
+		session.log.Err(nil, "missing required remote argument")
 		session.end(false, nil)
 		return
 	}
@@ -190,7 +190,7 @@ func (server *Server) list(session *Session) {
 	session.log.Stage("server")
 	packages, err := server.registry.ListPackages()
 	if err != nil {
-		session.log.Err(err, "failed to list packages").Done()
+		session.log.Err(err, "failed to list packages")
 		return
 	}
 	session.end(true, packages)
@@ -200,7 +200,7 @@ func (server *Server) update(session *Session) {
 	session.log.Stage("server")
 	component, found, err := session.msg.Cmd.StringArg("component")
 	if err != nil {
-		session.log.Err(err, "failed to get component argument from client").Done()
+		session.log.Err(err, "failed to get component argument from client")
 		session.end(false, nil)
 		return
 	}
@@ -213,13 +213,13 @@ func (server *Server) update(session *Session) {
 
 	record, found, err := server.registry.GetPackageRecord(component)
 	if err != nil {
-		session.log.Err(err, "failed to get package record").Done()
+		session.log.Err(err, "failed to get package record")
 		session.end(false, nil)
 		return
 	}
 
 	if !found {
-		session.log.Err(nil, "could not find package '%s'", component).Done()
+		session.log.Err(nil, "could not find package '%s'", component)
 		session.end(false, nil)
 		return
 	}

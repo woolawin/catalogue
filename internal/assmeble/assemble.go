@@ -15,7 +15,9 @@ import (
 )
 
 func Assemble(dst io.Writer, record config.Record, log *internal.Log, system internal.System, api *ext.API, registry reg.Registry) bool {
-	log.Msg(10, "Assembling package").With("name", record.Name).Info()
+	prev := log.Stage("assemble")
+	defer prev()
+	log.Info(10, "assembling package '%s'", record.Name)
 
 	local := api.Host.RandomTmpDir()
 	//:w	defer cleanup(local)
