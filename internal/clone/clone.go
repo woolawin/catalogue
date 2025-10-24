@@ -37,7 +37,7 @@ func Clone(opts Opts, log *internal.Log, api *ext.API) bool {
 	}
 	switch opts.remote.Protocol {
 	case config.Git:
-		return gitClone(opts, log, api)
+		return gitClone(opts, log)
 	}
 	log.Msg(9, "unsupported clone protocol").
 		With("protocol", config.ProtocolDebugString(opts.remote.Protocol)).
@@ -45,7 +45,7 @@ func Clone(opts Opts, log *internal.Log, api *ext.API) bool {
 	return false
 }
 
-func gitClone(opts Opts, log *internal.Log, api *ext.API) bool {
+func gitClone(opts Opts, log *internal.Log) bool {
 	// Currently the go git library does not properly support partial clone. So we must use the git CLI
 	/*
 		gitopts := &gitlib.CloneOptions{
