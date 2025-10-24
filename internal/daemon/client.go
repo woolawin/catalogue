@@ -16,7 +16,7 @@ func NewClient(logger internal.Logger) Client {
 	return Client{logger: logger, log: internal.NewLog(logger)}
 }
 
-func (client *Client) Send(cmd Cmd) (bool, any, error) {
+func (client *Client) Send(command Command, args map[string]any) (bool, any, error) {
 
 	conn, err := net.Dial("unix", path)
 	if err != nil {
@@ -24,7 +24,7 @@ func (client *Client) Send(cmd Cmd) (bool, any, error) {
 	}
 	defer conn.Close()
 
-	msg := Message{Cmd: &cmd}
+	msg := Message{Cmd: &Cmd{Command: command, Args: args}}
 
 	writer := msgpacklib.NewEncoder(conn)
 	reader := msgpacklib.NewDecoder(conn)

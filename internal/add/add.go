@@ -14,11 +14,14 @@ import (
 	"github.com/woolawin/catalogue/internal/update"
 )
 
-func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system internal.System, api *ext.API, registry reg.Registry) error {
+func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system internal.System, api *ext.API, registry reg.Registry) bool {
+	prev := log.Stage("add")
+	defer prev()
 
 	remoteURL, err := url.Parse(remoteStr)
 	if err != nil {
-		return internal.ErrOf(err, "invalid remote '%s'", remoteStr)
+		log.Err(err, "invalid remote '%s'", remoteStr)
+		return false
 	}
 
 	local := api.Host.RandomTmpDir()
@@ -32,34 +35,38 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 
 	ok := clone.Clone(opts, log, api)
 	if !ok {
-		return internal.ErrOf(err, "can not clone '%s'", remoteStr)
+		return false
 	}
 
 	configPath := filepath.Join(local, ".catalogue", "config.toml")
 	configData, err := api.Host.ReadTmpFile(configPath)
 	if err != nil {
-		return internal.ErrOf(err, "can not read config file")
+		log.Err(err, "can not read config file at '%s'", configPath).Done()
+		return false
 	}
 
 	component, err := config.Parse(bytes.NewReader(configData))
 	if err != nil {
-		return internal.ErrOf(err, "invalid component config")
+		log.Err(err, "failed to deserialize config.toml").Done()
+		return false
 	}
 
 	metadata, err := build.Metadata(component.Metadata, system)
 	if err != nil {
-		return internal.ErrOf(err, "invalid metadata from '%s'", remoteStr)
+		log.Err(err, "failed to build metadata from config.toml at '%s'", remoteStr).Done()
+		return false
 	}
 
 	if len(internal.Ranked(system, component.SupportedTargets)) == 0 {
-		return internal.Err("component '%s' has no supported target", component.Name)
+		log.Err(nil, "package '%s' not supported", component.Name).Done()
+		return false
 	}
 
 	remote := config.Remote{Protocol: protocol, URL: remoteURL}
 
 	pin, ok := update.PinRepo(local, component.Versioning, log)
 	if !ok {
-		return internal.Err("failed to get pin")
+		return false
 	}
 	record := config.Record{
 		Name:       component.Name,
@@ -70,8 +77,14 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 	}
 
 	if component.Type == config.Package {
-		return registry.AddPackage(record)
+		err = registry.AddPackage(record)
+		if err != nil {
+			log.Err(err, "failed to add package '%s' to registry", component.Name).Done()
+			return false
+		}
+		return true
 	}
 
-	return internal.Err("only packages can be added right now")
+	log.Err(nil, "only packages can be added right now").Done()
+	return false
 }

@@ -108,7 +108,8 @@ type Session struct {
 }
 
 func (session *Session) Log(stmt *internal.LogStatement) {
-	err := session.writer.Encode(&Message{Log: &Log{Statement: stmt}})
+	withoutLogger := internal.NewLogStatement(stmt.Stage, stmt.Level, stmt.Timestamp, stmt.Message, stmt.Args, stmt.IsErr)
+	err := session.writer.Encode(&Message{Log: &Log{Statement: &withoutLogger}})
 	if err != nil {
 		slog.Error("failed to write log reply", "error", err)
 	}
@@ -157,33 +158,36 @@ func (server *Server) handle(conn net.Conn) {
 
 func (server *Server) add(session *Session) {
 	remote, ok, err := session.msg.Cmd.StringArg("remote")
+	session.log.Stage("server")
 	if err != nil {
-		slog.Warn("can not get remote argument", "error", err)
+		session.log.Err(err, "can not get remote argument").Done()
+		session.end(false, nil)
 		return
 	}
 	if !ok {
-		slog.Error("missing required remote argument")
+		session.log.Err(nil, "missing required remote argument").Done()
+		session.end(false, nil)
 		return
 	}
 
 	protocol, ok, raw, err := session.msg.Cmd.IntArg("protocol")
 	if err != nil {
-		slog.Error("invalid protocol value", "value", raw)
+		session.log.Err(err, "invalid protocol value '%s'", raw)
+		session.end(false, nil)
 		return
 	}
 	if !ok {
-		slog.Error("missing required protocol argument")
+		session.log.Err(nil, "missing required protocol argument")
+		session.end(false, nil)
 		return
 	}
 
-	err = add.Add(config.Protocol(protocol), remote, server.log, server.system, server.api, server.registry)
-	if err != nil {
-		session.log.Error(internal.ErrOf(err, "failed to add package")).With("remote", "remote").Done()
-	}
-	session.end(err == nil, nil)
+	ok = add.Add(config.Protocol(protocol), remote, server.log, server.system, server.api, server.registry)
+	session.end(ok, nil)
 }
 
 func (server *Server) list(session *Session) {
+	session.log.Stage("server")
 	packages, err := server.registry.ListPackages()
 	if err != nil {
 		session.log.Error(internal.ErrOf(err, "failed to list packages")).Done()
@@ -193,6 +197,7 @@ func (server *Server) list(session *Session) {
 }
 
 func (server *Server) update(session *Session) {
+	session.log.Stage("server")
 	component, found, err := session.msg.Cmd.StringArg("component")
 	if err != nil {
 		session.log.Error(internal.ErrOf(err, "failed to get component argument from client")).Done()
@@ -219,6 +224,6 @@ func (server *Server) update(session *Session) {
 		return
 	}
 
-	ok := update.Update(record, server.log, server.system, server.api, server.registry)
+	ok := update.Update(record, session.log, server.system, server.api, server.registry)
 	session.end(ok, nil)
 }

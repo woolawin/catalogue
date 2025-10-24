@@ -45,7 +45,7 @@ func runUpdate(cmd *cobra.Command, cliargs []string) {
 		component = cliargs[0]
 	}
 	args := map[string]any{"component": component}
-	ok, _, err := client.Send(daemon.Cmd{Command: daemon.Add, Args: args})
+	ok, _, err := client.Send(daemon.Update, args)
 	if err != nil || !ok {
 		os.Exit(1)
 	}
@@ -84,14 +84,13 @@ func runAdd(cmd *cobra.Command, cliargs []string) {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	log.Msg(7, "adding component").
+	log.Info(7, "adding component '%s'", remote).
 		With("protocol", config.ProtocolDebugString(protocol)).
-		With("remote", remote).
-		Info()
+		Done()
 
 	client := daemon.NewClient(logger)
 	args := map[string]any{"protocol": protocol, "remote": remote}
-	ok, _, err := client.Send(daemon.Cmd{Command: daemon.Add, Args: args})
+	ok, _, err := client.Send(daemon.Add, args)
 	if err != nil {
 		fmt.Println("ERROR")
 		fmt.Println(err.Error())

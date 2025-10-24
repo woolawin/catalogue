@@ -13,16 +13,20 @@ type Logger interface {
 }
 
 type LogStatement struct {
-	logger Logger
-	stage  string
+	Logger Logger
+	Stage  string
 
-	level     int
-	timestamp time.Time
-	message   string
-	cause     *CLErr
-	args      map[string]any
+	Level     int
+	Timestamp time.Time
+	Message   string
+	Cause     *CLErr
+	Args      map[string]any
 
-	isErr bool
+	IsErr bool
+}
+
+func NewLogStatement(stage string, level int, timestamp time.Time, message string, args map[string]any, isErr bool) LogStatement {
+	return LogStatement{Stage: stage, Level: level, Timestamp: timestamp, Message: message, Args: args, IsErr: isErr}
 }
 
 type Log struct {
@@ -34,59 +38,77 @@ func NewLog(logger Logger) *Log {
 	return &Log{logger: logger}
 }
 
-func (log *Log) Stage(stage string) {
+func (log *Log) Stage(stage string) func() {
+	prev := log.stage
 	log.stage = strings.TrimSpace(stage)
+	return func() {
+		log.stage = prev
+	}
 }
 
 func (log *Log) Msg(level int, msg string) *LogStatement {
-	stmt := LogStatement{logger: log.logger, stage: log.stage, level: level, message: msg, timestamp: time.Now().UTC()}
+	stmt := LogStatement{Logger: log.logger, Stage: log.stage, Level: level, Message: msg, Timestamp: time.Now().UTC()}
+	return &stmt
+}
+
+func (log *Log) Err(cause error, format string, args ...any) *LogStatement {
+	error := ErrOf(cause, fmt.Sprintf(format, args...))
+	stmt := LogStatement{
+		Logger:    log.logger,
+		Stage:     log.stage,
+		Level:     10,
+		Message:   error.Error(),
+		Cause:     error.Parent,
+		Timestamp: time.Now().UTC(),
+		IsErr:     true,
+	}
 	return &stmt
 }
 
 func (log *Log) Error(error *CLErr) *LogStatement {
 	stmt := LogStatement{
-		logger:    log.logger,
-		stage:     log.stage,
-		level:     10,
-		message:   error.Error(),
-		cause:     error.Parent,
-		timestamp: time.Now().UTC(),
-		isErr:     true,
+		Logger:    log.logger,
+		Stage:     log.stage,
+		Level:     10,
+		Message:   error.Error(),
+		Cause:     error.Parent,
+		Timestamp: time.Now().UTC(),
+		IsErr:     true,
 	}
 	return &stmt
 }
 
 func (log *Log) Info(level int, format string, args ...any) *LogStatement {
 	stmt := LogStatement{
-		logger:    log.logger,
-		stage:     log.stage,
-		level:     10,
-		message:   fmt.Sprintf(format, args...),
-		cause:     nil,
-		timestamp: time.Now().UTC(),
-		isErr:     true,
+		Logger:    log.logger,
+		Stage:     log.stage,
+		Level:     10,
+		Message:   fmt.Sprintf(format, args...),
+		Cause:     nil,
+		Timestamp: time.Now().UTC(),
+		IsErr:     false,
 	}
 	return &stmt
 }
 
 func (stmt *LogStatement) With(key string, value any) *LogStatement {
-	if stmt.args == nil {
-		stmt.args = make(map[string]any)
+	if stmt.Args == nil {
+		stmt.Args = make(map[string]any)
 	}
-	stmt.args[key] = value
+	stmt.Args[key] = value
 	return stmt
 }
 
 func (stmt *LogStatement) Done() {
-	stmt.logger.Log(stmt)
+	stmt.Logger.Log(stmt)
 }
 
 func (stmt *LogStatement) Info() {
-	stmt.logger.Log(stmt)
+	stmt.Logger.Log(stmt)
 }
 
 func (stmt *LogStatement) Error() {
-	stmt.logger.Log(stmt)
+	stmt.Logger.Log(stmt)
 }
 
 type MultiLogger struct {
@@ -112,7 +134,7 @@ func NewStdoutLogger(level int) *StdoutLogger {
 }
 
 func (log *StdoutLogger) Log(stmt *LogStatement) {
-	if stmt.isErr {
+	if stmt.IsErr {
 		log.Error(stmt)
 	} else {
 		log.Info(stmt)
@@ -120,26 +142,26 @@ func (log *StdoutLogger) Log(stmt *LogStatement) {
 }
 
 func (log *StdoutLogger) Info(stmt *LogStatement) {
-	if stmt.level < log.level {
+	if stmt.Level < log.level {
 		return
 	}
 
-	stdout.New(stdout.Bold).Printf("[INFO] [%s]", stmt.stage)
-	fmt.Println(stmt.message)
-	for key, value := range stmt.args {
+	stdout.New(stdout.Bold).Printf("[INFO] [%s]", stmt.Stage)
+	fmt.Println(stmt.Message)
+	for key, value := range stmt.Args {
 		fmt.Printf("\t\t%s: %v\n", key, value)
 	}
 }
 
 func (log *StdoutLogger) Error(stmt *LogStatement) {
-	if stmt.level < log.level {
+	if stmt.Level < log.level {
 		return
 	}
 
 	stdout.New(stdout.FgRed, stdout.Bold).Printf("[ERROR]")
-	stdout.New(stdout.Bold).Printf("[%s]", stmt.stage)
-	fmt.Println(stmt.message)
-	for key, value := range stmt.args {
+	stdout.New(stdout.Bold).Printf("[%s]", stmt.Stage)
+	fmt.Println(stmt.Message)
+	for key, value := range stmt.Args {
 		fmt.Printf("\t\t%s: %v\n", key, value)
 	}
 }

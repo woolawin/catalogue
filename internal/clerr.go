@@ -15,7 +15,11 @@ func ErrOf(err error, format string, args ...any) *CLErr {
 }
 
 func ErrCause(err error) *CLErr {
-	return &CLErr{Message: err.Error()}
+	msg := ""
+	if err != nil {
+		msg = err.Error()
+	}
+	return &CLErr{Message: msg}
 }
 
 func Err(format string, args ...any) *CLErr {
