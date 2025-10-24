@@ -2,43 +2,37 @@ package config
 
 import (
 	"io"
+	"strings"
 
 	tomllib "github.com/pelletier/go-toml/v2"
 	"github.com/woolawin/catalogue/internal"
 )
 
 func Serialize(config Component, writer io.Writer) error {
-	tml := ComponentTOML{}
-	tml.Name = config.Name
+	toml := ComponentTOML{}
+	toml.Name = config.Name
 
 	switch config.Type {
 	case Package:
-		tml.Type = "package"
+		toml.Type = "package"
 	case Repository:
-		tml.Type = "repository"
+		toml.Type = "repository"
 	}
 
 	for _, supported := range config.SupportedTargets {
-		tml.SupportedTargets = append(tml.SupportedTargets, supported.Name)
+		toml.SupportedTargets = append(toml.SupportedTargets, supported.Name)
 	}
 
-	switch config.Versioning.Type {
-	case GitLatestCommit:
-		tml.Versioing.Type = GitLatestCommitValue
-	case GitSemanticTag:
-		tml.Versioing.Type = GitSemanticTagValue
-	}
-
-	tml.Versioing.Branch = config.Versioning.Branch
+	toml.Versioing = toVersioningTOML(config.Versioning)
 
 	for _, tgt := range config.Targets {
 		if tgt.BuiltIn {
 			continue
 		}
-		if tml.Target == nil {
-			tml.Target = make(map[string]TargetTOML)
+		if toml.Target == nil {
+			toml.Target = make(map[string]TargetTOML)
 		}
-		tml.Target[tgt.Name] = TargetTOML{
+		toml.Target[tgt.Name] = TargetTOML{
 			Architecture:             string(tgt.Architecture),
 			OSReleaseID:              tgt.OSReleaseID,
 			OSReleaseVersion:         tgt.OSReleaseVersion,
@@ -48,40 +42,58 @@ func Serialize(config Component, writer io.Writer) error {
 	}
 
 	for _, metadata := range config.Metadata {
-		if tml.Metadata == nil {
-			tml.Metadata = make(map[string]MetadataTOML)
+		if toml.Metadata == nil {
+			toml.Metadata = make(map[string]MetadataTOML)
 		}
-		tml.Metadata[metadata.Target.Name] = MetadataTOML{
-			Dependencies:    metadata.Dependencies,
-			Section:         metadata.Section,
-			Priority:        metadata.Priority,
-			Homepage:        metadata.Homepage,
-			Maintainer:      metadata.Maintainer,
-			Description:     metadata.Description,
-			Architecture:    metadata.Architecture,
-			Recommendations: metadata.Recommendations,
-		}
+		toml.Metadata[metadata.Target.Name] = toMetadataTOML(metadata.Metadata)
 	}
 
 	for name, targets := range config.Downloads {
-		if tml.Download == nil {
-			tml.Download = make(map[string]map[string]DownloadTOML)
+		if toml.Download == nil {
+			toml.Download = make(map[string]map[string]DownloadTOML)
 		}
 		for _, download := range targets {
-			_, ok := tml.Download[name]
+			_, ok := toml.Download[name]
 			if !ok {
-				tml.Download[name] = make(map[string]DownloadTOML)
+				toml.Download[name] = make(map[string]DownloadTOML)
 			}
-			tml.Download[name][download.Target.Name] = DownloadTOML{
+			toml.Download[name][download.Target.Name] = DownloadTOML{
 				Source:      download.Source.String(),
 				Destination: download.Destination.String(),
 			}
 		}
 	}
 
-	err := tomllib.NewEncoder(writer).Encode(&tml)
+	err := tomllib.NewEncoder(writer).Encode(&toml)
 	if err != nil {
 		return internal.ErrOf(err, "failed to serialize component config")
 	}
 	return nil
+}
+
+func toVersioningTOML(versioning Versioning) VersioningTOML {
+	toml := VersioningTOML{}
+	switch versioning.Type {
+	case GitLatestCommit:
+		toml.Type = GitLatestCommitValue
+	case GitSemanticTag:
+		toml.Type = GitSemanticTagValue
+	}
+
+	toml.Branch = versioning.Branch
+	return toml
+}
+
+func toMetadataTOML(metadata Metadata) MetadataTOML {
+	return MetadataTOML{
+		Dependencies:    strings.TrimSpace(metadata.Dependencies),
+		Section:         strings.TrimSpace(metadata.Section),
+		Priority:        strings.TrimSpace(metadata.Priority),
+		Homepage:        strings.TrimSpace(metadata.Homepage),
+		Maintainer:      strings.TrimSpace(metadata.Maintainer),
+		Description:     strings.TrimSpace(metadata.Description),
+		Architecture:    strings.TrimSpace(metadata.Architecture),
+		Recommendations: strings.TrimSpace(metadata.Recommendations),
+	}
+
 }

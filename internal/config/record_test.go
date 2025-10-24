@@ -8,7 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestDeeralizeRecord(t *testing.T) {
+func TestDeseralizeRecord(t *testing.T) {
 	value := `
 name='Foo Bar'
 
@@ -28,6 +28,9 @@ architecture='amd64'
 [remote]
 protocol='git'
 url='https://github.com/foo/bar.git'
+
+[versioning]
+type='git/semantic_tag'
 `
 
 	actual, err := DeserializeRecord(strings.NewReader(value))
@@ -50,6 +53,9 @@ url='https://github.com/foo/bar.git'
 			Description:  "foo bar",
 			Maintainer:   "Bob Doe",
 			Architecture: "amd64",
+		},
+		Versioning: Versioning{
+			Type: GitSemanticTag,
 		},
 	}
 
@@ -76,6 +82,10 @@ func TestToRecordTOML(t *testing.T) {
 			Maintainer:   "Bob Doe",
 			Architecture: "amd64",
 		},
+		Versioning: Versioning{
+			Type:   GitSemanticTag,
+			Branch: "something",
+		},
 	}
 
 	actual := toRecordTOML(record)
@@ -94,6 +104,10 @@ func TestToRecordTOML(t *testing.T) {
 			Description:  "foo bar",
 			Maintainer:   "Bob Doe",
 			Architecture: "amd64",
+		},
+		Versioning: VersioningTOML{
+			Type:   GitSemanticTagValue,
+			Branch: "something",
 		},
 	}
 

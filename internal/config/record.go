@@ -27,10 +27,11 @@ type Pin struct {
 }
 
 type Record struct {
-	Name      string
-	LatestPin Pin
-	Remote    Remote
-	Metadata  Metadata
+	Name       string
+	LatestPin  Pin
+	Remote     Remote
+	Versioning Versioning
+	Metadata   Metadata
 }
 
 type RemoteTOML struct {
@@ -44,10 +45,11 @@ type PinTOML struct {
 }
 
 type RecordTOML struct {
-	Name      string       `toml:"name"`
-	LatestPin PinTOML      `toml:"latest_pin"`
-	Remote    RemoteTOML   `toml:"remote"`
-	Metadata  MetadataTOML `toml:"metadata"`
+	Name       string         `toml:"name"`
+	LatestPin  PinTOML        `toml:"latest_pin"`
+	Remote     RemoteTOML     `toml:"remote"`
+	Versioning VersioningTOML `toml:"versioning"`
+	Metadata   MetadataTOML   `toml:"metadata"`
 }
 
 func DeserializeRecord(src io.Reader) (Record, error) {
@@ -80,6 +82,11 @@ func loadRecord(toml RecordTOML) (Record, error) {
 		record.Remote.URL = parsed
 	}
 
+	versioning, err := loadVersioning(toml.Versioning)
+	if err != nil {
+		return Record{}, err
+	}
+	record.Versioning = versioning
 	record.LatestPin = Pin{
 		VersionName: strings.TrimSpace(toml.LatestPin.VersionName),
 		CommitHash:  strings.TrimSpace(toml.LatestPin.CommitHash),
@@ -99,7 +106,6 @@ func SerializeRecord(dst io.Writer, record Record) error {
 }
 
 func toRecordTOML(record Record) RecordTOML {
-
 	toml := RecordTOML{
 		Name: strings.TrimSpace(record.Name),
 		LatestPin: PinTOML{
@@ -110,17 +116,8 @@ func toRecordTOML(record Record) RecordTOML {
 			Protocol: ProtocolDebugString(record.Remote.Protocol),
 			URL:      record.Remote.URL.String(),
 		},
-	}
-
-	toml.Metadata = MetadataTOML{
-		Dependencies:    strings.TrimSpace(record.Metadata.Dependencies),
-		Section:         strings.TrimSpace(record.Metadata.Section),
-		Priority:        strings.TrimSpace(record.Metadata.Priority),
-		Homepage:        strings.TrimSpace(record.Metadata.Homepage),
-		Maintainer:      strings.TrimSpace(record.Metadata.Maintainer),
-		Description:     strings.TrimSpace(record.Metadata.Description),
-		Architecture:    strings.TrimSpace(record.Metadata.Architecture),
-		Recommendations: strings.TrimSpace(record.Metadata.Recommendations),
+		Versioning: toVersioningTOML(record.Versioning),
+		Metadata:   toMetadataTOML(record.Metadata),
 	}
 
 	return toml
