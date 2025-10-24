@@ -234,9 +234,9 @@ func (disk *diskImpl) ArchiveDir(src DiskPath, dst DiskPath) error {
 			return internal.ErrOf(err, "can not read file header %s", file)
 		}
 
-		relPath, err := filepath.Rel(filepath.Dir(string(src)), file)
+		relPath, err := arhiveFilePath(src, file)
 		if err != nil {
-			return internal.ErrOf(err, "can not determine relative file for %s", file)
+			return internal.ErrOf(err, "can not determine archive file path for %s", file)
 		}
 		header.Name = relPath
 
@@ -264,6 +264,16 @@ func (disk *diskImpl) ArchiveDir(src DiskPath, dst DiskPath) error {
 		return internal.ErrOf(err, "can not archive directory %s from %s", dst, src)
 	}
 	return nil
+}
+
+func arhiveFilePath(src DiskPath, file string) (string, error) {
+	rel, err := filepath.Rel(filepath.Dir(string(src)), file)
+	if err != nil {
+		return "", err
+	}
+	dir := filepath.Base(filepath.Clean(string(src)))
+	rel, _ = strings.CutPrefix(rel, dir)
+	return rel, nil
 }
 
 func (disk *diskImpl) unsafe(path DiskPath) bool {
