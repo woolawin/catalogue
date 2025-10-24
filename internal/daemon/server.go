@@ -190,7 +190,7 @@ func (server *Server) list(session *Session) {
 	session.log.Stage("server")
 	packages, err := server.registry.ListPackages()
 	if err != nil {
-		session.log.Error(internal.ErrOf(err, "failed to list packages")).Done()
+		session.log.Err(err, "failed to list packages").Done()
 		return
 	}
 	session.end(true, packages)
@@ -200,7 +200,7 @@ func (server *Server) update(session *Session) {
 	session.log.Stage("server")
 	component, found, err := session.msg.Cmd.StringArg("component")
 	if err != nil {
-		session.log.Error(internal.ErrOf(err, "failed to get component argument from client")).Done()
+		session.log.Err(err, "failed to get component argument from client").Done()
 		session.end(false, nil)
 		return
 	}
@@ -213,13 +213,13 @@ func (server *Server) update(session *Session) {
 
 	record, found, err := server.registry.GetPackageRecord(component)
 	if err != nil {
-		session.log.Error(internal.ErrOf(err, "failed to get package record")).Done()
+		session.log.Err(err, "failed to get package record").Done()
 		session.end(false, nil)
 		return
 	}
 
 	if !found {
-		session.log.Error(internal.Err("could not find package '%s'", component)).Done()
+		session.log.Err(nil, "could not find package '%s'", component).Done()
 		session.end(false, nil)
 		return
 	}

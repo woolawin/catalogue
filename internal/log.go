@@ -65,19 +65,6 @@ func (log *Log) Err(cause error, format string, args ...any) *LogStatement {
 	return &stmt
 }
 
-func (log *Log) Error(error *CLErr) *LogStatement {
-	stmt := LogStatement{
-		Logger:    log.logger,
-		Stage:     log.stage,
-		Level:     10,
-		Message:   error.Error(),
-		Cause:     error.Parent,
-		Timestamp: time.Now().UTC(),
-		IsErr:     true,
-	}
-	return &stmt
-}
-
 func (log *Log) Info(level int, format string, args ...any) *LogStatement {
 	stmt := LogStatement{
 		Logger:    log.logger,
@@ -146,7 +133,7 @@ func (log *StdoutLogger) Info(stmt *LogStatement) {
 		return
 	}
 
-	stdout.New(stdout.Bold).Printf("[INFO] [%s]", stmt.Stage)
+	stdout.New(stdout.Bold).Printf("[INFO] [%s] ", stmt.Stage)
 	fmt.Println(stmt.Message)
 	for key, value := range stmt.Args {
 		fmt.Printf("\t\t%s: %v\n", key, value)
