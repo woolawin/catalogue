@@ -14,6 +14,15 @@ func TestReadRecord(t *testing.T) {
 version_name='v0.54.2'
 commit_hash='c7t43c374c34yh43fc43'
 
+[metadata]
+dependencies=['foo', 'bar']
+section='utilities'
+priority='normal'
+homepage='https://foobar.com'
+description='foo bar'
+maintainer='Bob Doe'
+architecture='amd64'
+
 [remote]
 protocol='git'
 url='https://github.com/foo/bar.git'
@@ -29,6 +38,15 @@ url='https://github.com/foo/bar.git'
 		Remote: Remote{
 			Protocol: Git,
 			URL:      u("https://github.com/foo/bar.git"),
+		},
+		Metadata: RecordMetadata{
+			Dependencies: []string{"foo", "bar"},
+			Section:      "utilities",
+			Priority:     "normal",
+			Homepage:     "https://foobar.com",
+			Description:  "foo bar",
+			Maintainer:   "Bob Doe",
+			Architecture: "amd64",
 		},
 	}
 

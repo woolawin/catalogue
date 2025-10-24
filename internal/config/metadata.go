@@ -33,6 +33,20 @@ func (metadata *Metadata) GetTarget() internal.Target {
 	return metadata.Target
 }
 
+func (metadata *Metadata) ToRecord() RecordMetadata {
+	return RecordMetadata{
+		Dependencies:    metadata.Dependencies,
+		Section:         metadata.Section,
+		Priority:        metadata.Priority,
+		Homepage:        metadata.Homepage,
+		Maintainer:      metadata.Maintainer,
+		Description:     metadata.Description,
+		Architecture:    metadata.Architecture,
+		Recommendations: metadata.Recommendations,
+	}
+
+}
+
 func loadMetadata(deserialized map[string]MetadataTOML, targets []internal.Target) ([]*Metadata, error) {
 
 	var metadatas []*Metadata

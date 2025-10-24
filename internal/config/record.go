@@ -26,9 +26,21 @@ type Pin struct {
 	CommitHash  string
 }
 
+type RecordMetadata struct {
+	Dependencies    []string
+	Section         string
+	Priority        string
+	Homepage        string
+	Maintainer      string
+	Description     string
+	Architecture    string
+	Recommendations []string
+}
+
 type Record struct {
 	LatestPin Pin
 	Remote    Remote
+	Metadata  RecordMetadata
 }
 
 type RemoteTOML struct {
@@ -42,8 +54,9 @@ type PinTOML struct {
 }
 
 type RecordTOML struct {
-	LatestPin PinTOML    `toml:"latest_pin"`
-	Remote    RemoteTOML `toml:"remote"`
+	LatestPin PinTOML      `toml:"latest_pin"`
+	Remote    RemoteTOML   `toml:"remote"`
+	Metadata  MetadataTOML `toml:"metadata"`
 }
 
 func DeserializeRecord(src io.Reader) (Record, error) {
@@ -80,6 +93,17 @@ func loadRecord(toml RecordTOML) (Record, error) {
 		CommitHash:  strings.TrimSpace(toml.LatestPin.CommitHash),
 	}
 
+	record.Metadata = RecordMetadata{
+		Dependencies:    normalizeList(toml.Metadata.Dependencies),
+		Section:         strings.TrimSpace(toml.Metadata.Section),
+		Priority:        strings.TrimSpace(toml.Metadata.Priority),
+		Homepage:        strings.TrimSpace(toml.Metadata.Homepage),
+		Maintainer:      strings.TrimSpace(toml.Metadata.Maintainer),
+		Description:     strings.TrimSpace(toml.Metadata.Description),
+		Architecture:    strings.TrimSpace(toml.Metadata.Architecture),
+		Recommendations: normalizeList(toml.Metadata.Recommendations),
+	}
+
 	return record, nil
 }
 
@@ -95,6 +119,17 @@ func SerializeRecord(dst io.Writer, record Record) error {
 	err := tomllib.NewEncoder(dst).Encode(&toml)
 	if err != nil {
 		return internal.ErrOf(err, "failed to serialize record")
+	}
+
+	toml.Metadata = MetadataTOML{
+		Dependencies:    normalizeList(record.Metadata.Dependencies),
+		Section:         strings.TrimSpace(record.Metadata.Section),
+		Priority:        strings.TrimSpace(record.Metadata.Priority),
+		Homepage:        strings.TrimSpace(record.Metadata.Homepage),
+		Maintainer:      strings.TrimSpace(record.Metadata.Maintainer),
+		Description:     strings.TrimSpace(record.Metadata.Description),
+		Architecture:    strings.TrimSpace(record.Metadata.Architecture),
+		Recommendations: normalizeList(record.Metadata.Recommendations),
 	}
 
 	return nil

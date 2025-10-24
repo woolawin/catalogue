@@ -47,7 +47,7 @@ func Add(protocol config.Protocol, remote string, log *internal.Log, system inte
 		return internal.ErrOf(err, "invalid component config")
 	}
 
-	_, err = build.Metadata(component.Metadata, system)
+	metadata, err := build.Metadata(component.Metadata, system)
 	if err != nil {
 		return internal.ErrOf(err, "invalid metadata from '%s'", remote)
 	}
@@ -59,6 +59,7 @@ func Add(protocol config.Protocol, remote string, log *internal.Log, system inte
 	record := config.Record{
 		LatestPin: pin,
 		Remote:    config.Remote{Protocol: protocol, URL: remoteURL},
+		Metadata:  metadata.ToRecord(),
 	}
 
 	if component.Type == config.Package {

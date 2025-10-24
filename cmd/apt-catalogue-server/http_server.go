@@ -72,26 +72,31 @@ func (server *HTTPServer) Release(writer http.ResponseWriter, request *http.Requ
 	output := strings.Builder{}
 
 	for _, pkg := range packages {
-		resources, found, err := server.registry.GetPackageResources(pkg)
+		record, found, err := server.registry.GetPackageRecord(pkg)
 		if err != nil {
 			slog.Error("failed to get package config", "package", pkg, "error", err)
 			continue
 		}
 
 		if !found {
-			slog.Error("no config for package", "package", pkg, "error", err)
+			slog.Error("no record for package", "package", pkg, "error", err)
 			continue
 		}
 
-		// TODO add architecture
-		output.WriteString("Package: ")
-		output.WriteString(resources.Component.Name)
-		output.WriteString("\nVersion: ")
-		output.WriteString(resources.Record.LatestPin.VersionName)
-		output.WriteString("\nFilename: pool/")
-		output.WriteString(resources.Component.Name)
-		output.WriteString(".deb")
+		data := internal.Deb822{}
+		data.Add("Package", pkg)
+		data.Add("Version", record.LatestPin.VersionName)
+		data.Add("Filename", pkg+".deb")
+		data.AddList("Depends", record.Metadata.Dependencies)
+		data.Add("Section", record.Metadata.Section)
+		data.Add("Priority", record.Metadata.Priority)
+		data.Add("Homepage", record.Metadata.Homepage)
+		data.Add("Maintainer", record.Metadata.Maintainer)
+		data.Add("Description", record.Metadata.Description)
+		data.Add("Architecture", record.Metadata.Architecture)
+		data.AddList("Recommends", record.Metadata.Recommendations)
 
+		output.WriteString(data.String())
 		output.WriteString("\n")
 	}
 
