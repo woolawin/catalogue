@@ -89,6 +89,16 @@ func loadRecord(toml RecordTOML) (Record, error) {
 }
 
 func SerializeRecord(dst io.Writer, record Record) error {
+	toml := toRecordTOML(record)
+	err := tomllib.NewEncoder(dst).Encode(&toml)
+	if err != nil {
+		return internal.ErrOf(err, "failed to serialize record")
+	}
+
+	return nil
+}
+
+func toRecordTOML(record Record) RecordTOML {
 
 	toml := RecordTOML{
 		Name: strings.TrimSpace(record.Name),
@@ -96,11 +106,10 @@ func SerializeRecord(dst io.Writer, record Record) error {
 			VersionName: strings.TrimSpace(record.LatestPin.VersionName),
 			CommitHash:  strings.TrimSpace(record.LatestPin.CommitHash),
 		},
-	}
-	toml.Remote.Protocol = ProtocolDebugString(record.Remote.Protocol)
-	err := tomllib.NewEncoder(dst).Encode(&toml)
-	if err != nil {
-		return internal.ErrOf(err, "failed to serialize record")
+		Remote: RemoteTOML{
+			Protocol: ProtocolDebugString(record.Remote.Protocol),
+			URL:      record.Remote.URL.String(),
+		},
 	}
 
 	toml.Metadata = MetadataTOML{
@@ -114,7 +123,7 @@ func SerializeRecord(dst io.Writer, record Record) error {
 		Recommendations: strings.TrimSpace(record.Metadata.Recommendations),
 	}
 
-	return nil
+	return toml
 }
 
 func ProtocolString(protocol Protocol) (string, bool) {

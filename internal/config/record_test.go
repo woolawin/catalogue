@@ -8,7 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestReadRecord(t *testing.T) {
+func TestDeeralizeRecord(t *testing.T) {
 	value := `
 name='Foo Bar'
 
@@ -57,4 +57,47 @@ url='https://github.com/foo/bar.git'
 		fmt.Printf("Mismatch (-actual +expected):\n%s", diff)
 	}
 
+}
+
+func TestToRecordTOML(t *testing.T) {
+	record := Record{
+		Name:      "Foo Bar",
+		LatestPin: Pin{VersionName: "v0.54.2", CommitHash: "c7t43c374c34yh43fc43"},
+		Remote: Remote{
+			Protocol: Git,
+			URL:      u("https://github.com/foo/bar.git"),
+		},
+		Metadata: Metadata{
+			Dependencies: "foo,bar",
+			Section:      "utilities",
+			Priority:     "normal",
+			Homepage:     "https://foobar.com",
+			Description:  "foo bar",
+			Maintainer:   "Bob Doe",
+			Architecture: "amd64",
+		},
+	}
+
+	actual := toRecordTOML(record)
+	expected := RecordTOML{
+		Name:      "Foo Bar",
+		LatestPin: PinTOML{VersionName: "v0.54.2", CommitHash: "c7t43c374c34yh43fc43"},
+		Remote: RemoteTOML{
+			Protocol: "git",
+			URL:      "https://github.com/foo/bar.git",
+		},
+		Metadata: MetadataTOML{
+			Dependencies: "foo,bar",
+			Section:      "utilities",
+			Priority:     "normal",
+			Homepage:     "https://foobar.com",
+			Description:  "foo bar",
+			Maintainer:   "Bob Doe",
+			Architecture: "amd64",
+		},
+	}
+
+	if diff := cmp.Diff(actual, expected); diff != "" {
+		fmt.Printf("Mismatch (-actual +expected):\n%s", diff)
+	}
 }
