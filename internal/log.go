@@ -9,8 +9,7 @@ import (
 )
 
 type Logger interface {
-	Info(stmt *LogStatement)
-	Error(stmt *LogStatement)
+	Log(stmt *LogStatement)
 }
 
 type LogStatement struct {
@@ -20,7 +19,10 @@ type LogStatement struct {
 	level     int
 	timestamp time.Time
 	message   string
+	cause     *CLErr
 	args      map[string]any
+
+	isErr bool
 }
 
 type Log struct {
@@ -41,6 +43,32 @@ func (log *Log) Msg(level int, msg string) *LogStatement {
 	return &stmt
 }
 
+func (log *Log) Error(error *CLErr) *LogStatement {
+	stmt := LogStatement{
+		logger:    log.logger,
+		stage:     log.stage,
+		level:     10,
+		message:   error.Error(),
+		cause:     error.Parent,
+		timestamp: time.Now().UTC(),
+		isErr:     true,
+	}
+	return &stmt
+}
+
+func (log *Log) Info(level int, format string, args ...any) *LogStatement {
+	stmt := LogStatement{
+		logger:    log.logger,
+		stage:     log.stage,
+		level:     10,
+		message:   fmt.Sprintf(format, args...),
+		cause:     nil,
+		timestamp: time.Now().UTC(),
+		isErr:     true,
+	}
+	return &stmt
+}
+
 func (stmt *LogStatement) With(key string, value any) *LogStatement {
 	if stmt.args == nil {
 		stmt.args = make(map[string]any)
@@ -49,12 +77,30 @@ func (stmt *LogStatement) With(key string, value any) *LogStatement {
 	return stmt
 }
 
+func (stmt *LogStatement) Done() {
+	stmt.logger.Log(stmt)
+}
+
 func (stmt *LogStatement) Info() {
-	stmt.logger.Info(stmt)
+	stmt.logger.Log(stmt)
 }
 
 func (stmt *LogStatement) Error() {
-	stmt.logger.Error(stmt)
+	stmt.logger.Log(stmt)
+}
+
+type MultiLogger struct {
+	loggers []Logger
+}
+
+func NewMultiLogger(loggers ...Logger) *MultiLogger {
+	return &MultiLogger{loggers: loggers}
+}
+
+func (log *MultiLogger) Log(stmt *LogStatement) {
+	for _, logger := range log.loggers {
+		logger.Log(stmt)
+	}
 }
 
 type StdoutLogger struct {
@@ -63,6 +109,14 @@ type StdoutLogger struct {
 
 func NewStdoutLogger(level int) *StdoutLogger {
 	return &StdoutLogger{level: level}
+}
+
+func (log *StdoutLogger) Log(stmt *LogStatement) {
+	if stmt.isErr {
+		log.Error(stmt)
+	} else {
+		log.Info(stmt)
+	}
 }
 
 func (log *StdoutLogger) Info(stmt *LogStatement) {

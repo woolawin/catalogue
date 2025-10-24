@@ -26,14 +26,16 @@ type Server struct {
 	system   internal.System
 	api      *ext.API
 	registry reg.Registry
+	logger   internal.Logger
 	log      *internal.Log
 
 	listener net.Listener
 }
 
-func NewServer(log *internal.Log, system internal.System, api *ext.API, registry reg.Registry) *Server {
+func NewServer(logger internal.Logger, system internal.System, api *ext.API, registry reg.Registry) *Server {
+	log := internal.NewLog(logger)
 	log.Stage("server")
-	return &Server{log: log, system: system, api: api, registry: registry}
+	return &Server{log: log, logger: logger, system: system, api: api, registry: registry}
 }
 
 func (server *Server) Start() error {
@@ -102,19 +104,20 @@ type Session struct {
 	reader *msgpacklib.Decoder
 	writer *msgpacklib.Encoder
 	msg    *Message
+	log    *internal.Log
+}
+
+func (session *Session) Log(stmt *internal.LogStatement) {
+	err := session.writer.Encode(&Message{Log: &Log{Statement: stmt}})
+	if err != nil {
+		slog.Error("failed to write log reply", "error", err)
+	}
 }
 
 func (session *Session) end(ok bool, value any) {
 	err := session.writer.Encode(&Message{End: &End{Ok: ok, Value: value}})
 	if err != nil {
 		slog.Error("failed to write end reply", "error", err)
-	}
-}
-
-func (session *Session) log(message string) {
-	err := session.writer.Encode(&Message{Log: &Log{Value: message}})
-	if err != nil {
-		slog.Error("failed to write log reply", "error", err)
 	}
 }
 
@@ -137,6 +140,9 @@ func (server *Server) handle(conn net.Conn) {
 	}
 
 	session := Session{msg: &msg, reader: reader, writer: writer}
+
+	log := internal.NewLog(internal.NewMultiLogger(&session, server.logger))
+	session.log = log
 
 	switch msg.Cmd.Command {
 	case Add:
@@ -172,8 +178,7 @@ func (server *Server) add(session *Session) {
 
 	err = add.Add(config.Protocol(protocol), remote, server.log, server.system, server.api, server.registry)
 	if err != nil {
-		slog.Error("failed to add package", "remote", remote, "error", err)
-		session.log(err.Error())
+		session.log.Error(internal.ErrOf(err, "failed to add package")).With("remote", "remote").Done()
 	}
 	session.end(err == nil, nil)
 }
@@ -181,9 +186,7 @@ func (server *Server) add(session *Session) {
 func (server *Server) list(session *Session) {
 	packages, err := server.registry.ListPackages()
 	if err != nil {
-		slog.Error("failed to list packages", "error", err)
-		session.log(err.Error())
-		session.end(false, nil)
+		session.log.Error(internal.ErrOf(err, "failed to list packages")).Done()
 		return
 	}
 	session.end(true, packages)
@@ -192,8 +195,7 @@ func (server *Server) list(session *Session) {
 func (server *Server) update(session *Session) {
 	component, found, err := session.msg.Cmd.StringArg("component")
 	if err != nil {
-		slog.Error("failed to get component arg", "error", err)
-		session.log("daemon could not get component argument")
+		session.log.Error(internal.ErrOf(err, "failed to get component argument from client")).Done()
 		session.end(false, nil)
 		return
 	}
@@ -206,15 +208,13 @@ func (server *Server) update(session *Session) {
 
 	record, found, err := server.registry.GetPackageRecord(component)
 	if err != nil {
-		slog.Error("failed to get package record", "error", err)
-		session.log(err.Error())
+		session.log.Error(internal.ErrOf(err, "failed to get package record")).Done()
 		session.end(false, nil)
 		return
 	}
 
 	if !found {
-		slog.Error("could not find package", "name", component)
-		session.log("could not find package")
+		session.log.Error(internal.Err("could not find package '%s'", component)).Done()
 		session.end(false, nil)
 		return
 	}

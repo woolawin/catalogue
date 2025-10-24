@@ -2,6 +2,8 @@ package daemon
 
 import (
 	"errors"
+
+	"github.com/woolawin/catalogue/internal"
 )
 
 var ErrNotStringArg = errors.New("not a string argument")
@@ -75,7 +77,7 @@ func (cmd *Cmd) IntArg(name string) (int, bool, any, error) {
 }
 
 type Log struct {
-	Value string
+	Statement *internal.LogStatement
 }
 
 type End struct {

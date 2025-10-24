@@ -8,11 +8,12 @@ import (
 )
 
 type Client struct {
-	log *internal.Log
+	logger internal.Logger
+	log    *internal.Log
 }
 
-func NewClient(log *internal.Log) Client {
-	return Client{log: log}
+func NewClient(logger internal.Logger) Client {
+	return Client{logger: logger, log: internal.NewLog(logger)}
 }
 
 func (client *Client) Send(cmd Cmd) (bool, any, error) {
@@ -41,7 +42,7 @@ func (client *Client) Send(cmd Cmd) (bool, any, error) {
 		}
 
 		if reply.Log != nil {
-			client.log.Msg(9, reply.Log.Value).Info()
+			client.logger.Log(reply.Log.Statement)
 		}
 
 		if reply.End != nil {

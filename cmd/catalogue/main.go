@@ -33,12 +33,13 @@ func runVersion(cmd *cobra.Command, args []string) {
 }
 
 func runUpdate(cmd *cobra.Command, cliargs []string) {
-	log := internal.NewLog(internal.NewStdoutLogger(5))
+	logger := internal.NewStdoutLogger(5)
+	log := internal.NewLog(logger)
 	log.Stage("cli")
 	log.Msg(7, "updating").
 		Info()
 
-	client := daemon.NewClient(log)
+	client := daemon.NewClient(logger)
 	component := ""
 	if len(cliargs) != 0 {
 		component = cliargs[0]
@@ -74,7 +75,8 @@ func runSystem(cmd *cobra.Command, args []string) {
 }
 
 func runAdd(cmd *cobra.Command, cliargs []string) {
-	log := internal.NewLog(internal.NewStdoutLogger(5))
+	logger := internal.NewStdoutLogger(5)
+	log := internal.NewLog(logger)
 	log.Stage("cli")
 	protocol, remote, err := getProtocolAndRemote(cmd, cliargs)
 	if err != nil {
@@ -87,7 +89,7 @@ func runAdd(cmd *cobra.Command, cliargs []string) {
 		With("remote", remote).
 		Info()
 
-	client := daemon.NewClient(log)
+	client := daemon.NewClient(logger)
 	args := map[string]any{"protocol": protocol, "remote": remote}
 	ok, _, err := client.Send(daemon.Cmd{Command: daemon.Add, Args: args})
 	if err != nil {

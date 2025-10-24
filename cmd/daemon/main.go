@@ -25,9 +25,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	log := internal.NewLog(internal.NewStdoutLogger(5))
+	logger := internal.NewStdoutLogger(5)
 
-	server := daemon.NewServer(log, system, api, registry)
+	server := daemon.NewServer(logger, system, api, registry)
 
 	err = server.Start()
 	if err != nil {
