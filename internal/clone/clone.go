@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	semverlib "github.com/Masterminds/semver/v3"
 	gitlib "github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/go-git/go-git/v6/plumbing/object"
@@ -19,7 +18,7 @@ type Filter func(file string) bool
 
 type Version struct {
 	Pin    *config.Pin
-	Latest *config.Versioning
+	Latest bool
 }
 
 type Opts struct {
@@ -167,18 +166,7 @@ func switchToVersion(repo *gitlib.Repository, version Version, log *internal.Log
 		return switchToCommitHash(repo, version.Pin.CommitHash, log)
 	}
 
-	if version.Latest.Type == config.GitSemanticTag {
-		return switchToLatestSemanticTag(repo, log)
-	}
-
-	if version.Latest.Type == config.GitLatestCommit {
-		if len(version.Latest.Branch) == 0 {
-			return true
-		}
-		return switchToLatestBranchCommit(repo, version.Latest.Branch, log)
-	}
-
-	return false
+	return true
 }
 
 func switchToCommitHash(repo *gitlib.Repository, hashValue string, log *internal.Log) bool {
@@ -215,102 +203,102 @@ func switchToCommitHash(repo *gitlib.Repository, hashValue string, log *internal
 
 }
 
-func switchToLatestSemanticTag(repo *gitlib.Repository, log *internal.Log) bool {
-	tags, err := repo.Tags()
-	if err != nil {
-		log.Msg(10, "failed to get repository tags").
-			With("error", err).
-			Error()
-		return false
-	}
-	defer tags.Close()
+// func switchToLatestSemanticTag(repo *gitlib.Repository, log *internal.Log) bool {
+// 	tags, err := repo.Tags()
+// 	if err != nil {
+// 		log.Msg(10, "failed to get repository tags").
+// 			With("error", err).
+// 			Error()
+// 		return false
+// 	}
+// 	defer tags.Close()
 
-	var latest *semverlib.Version
-	var tagRef *plumbing.Reference
+// 	var latest *semverlib.Version
+// 	var tagRef *plumbing.Reference
 
-	tags.ForEach(func(ref *plumbing.Reference) error {
-		version, err := semverlib.NewVersion(ref.Name().Short())
-		if err != nil {
-			return nil
-		}
-		if latest == nil {
-			latest = version
-			tagRef = ref
-			return nil
-		}
-		if latest.LessThan(version) {
-			tagRef = ref
-			latest = version
-		}
-		return nil
-	})
+// 	tags.ForEach(func(ref *plumbing.Reference) error {
+// 		version, err := semverlib.NewVersion(ref.Name().Short())
+// 		if err != nil {
+// 			return nil
+// 		}
+// 		if latest == nil {
+// 			latest = version
+// 			tagRef = ref
+// 			return nil
+// 		}
+// 		if latest.LessThan(version) {
+// 			tagRef = ref
+// 			latest = version
+// 		}
+// 		return nil
+// 	})
 
-	if latest == nil {
-		log.Msg(10, "did not find any tags").Error()
-		return false
-	}
+// 	if latest == nil {
+// 		log.Msg(10, "did not find any tags").Error()
+// 		return false
+// 	}
 
-	commit, err := repo.CommitObject(tagRef.Hash())
-	if err != nil {
-		log.Msg(10, "failed to get commit").
-			With("tag", latest.String()).
-			With("error", err).
-			Error()
-		return false
-	}
+// 	commit, err := repo.CommitObject(tagRef.Hash())
+// 	if err != nil {
+// 		log.Msg(10, "failed to get commit").
+// 			With("tag", latest.String()).
+// 			With("error", err).
+// 			Error()
+// 		return false
+// 	}
 
-	worktree, err := repo.Worktree()
-	if err != nil {
-		log.Msg(10, "failed to get repository worktree").
-			With("tag", latest.String()).
-			With("error", err).
-			Error()
-		return false
-	}
+// 	worktree, err := repo.Worktree()
+// 	if err != nil {
+// 		log.Msg(10, "failed to get repository worktree").
+// 			With("tag", latest.String()).
+// 			With("error", err).
+// 			Error()
+// 		return false
+// 	}
 
-	err = worktree.Checkout(&gitlib.CheckoutOptions{
-		Hash:  commit.Hash,
-		Force: true,
-	})
+// 	err = worktree.Checkout(&gitlib.CheckoutOptions{
+// 		Hash:  commit.Hash,
+// 		Force: true,
+// 	})
 
-	if err != nil {
-		log.Msg(10, "failed to checkout commit").
-			With("tag", latest.String()).
-			With("hash", commit.Hash.String()).
-			With("error", err).
-			Error()
-		return false
-	}
+// 	if err != nil {
+// 		log.Msg(10, "failed to checkout commit").
+// 			With("tag", latest.String()).
+// 			With("hash", commit.Hash.String()).
+// 			With("error", err).
+// 			Error()
+// 		return false
+// 	}
 
-	log.Msg(8, "checkout out commit").
-		With("tag", latest.String()).
-		With("hash", commit.Hash.String()).
-		Info()
+// 	log.Msg(8, "checkout out commit").
+// 		With("tag", latest.String()).
+// 		With("hash", commit.Hash.String()).
+// 		Info()
 
-	return true
-}
+// 	return true
+// }
 
-func switchToLatestBranchCommit(repo *gitlib.Repository, branch string, log *internal.Log) bool {
-	worktree, err := repo.Worktree()
-	if err != nil {
-		log.Msg(10, "failed to get repository worktree").
-			With("branch", branch).
-			With("error", err).
-			Error()
-		return false
-	}
-	err = worktree.Checkout(&gitlib.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(branch),
-	})
-	if err != nil {
-		log.Msg(10, "failed to checkout branch commit").
-			With("branch", branch).
-			With("error", err).
-			Error()
-		return false
-	}
-	return true
-}
+// func switchToLatestBranchCommit(repo *gitlib.Repository, branch string, log *internal.Log) bool {
+// 	worktree, err := repo.Worktree()
+// 	if err != nil {
+// 		log.Msg(10, "failed to get repository worktree").
+// 			With("branch", branch).
+// 			With("error", err).
+// 			Error()
+// 		return false
+// 	}
+// 	err = worktree.Checkout(&gitlib.CheckoutOptions{
+// 		Branch: plumbing.NewBranchReferenceName(branch),
+// 	})
+// 	if err != nil {
+// 		log.Msg(10, "failed to checkout branch commit").
+// 			With("branch", branch).
+// 			With("error", err).
+// 			Error()
+// 		return false
+// 	}
+// 	return true
+// }
 
 func File(path string) func(string) bool {
 	return func(object string) bool {
@@ -325,7 +313,7 @@ func Directory(path string) func(string) bool {
 }
 
 func LatestCommit() Version {
-	return Version{Latest: &config.Versioning{Type: config.GitLatestCommit}}
+	return Version{Latest: true}
 }
 
 func Pin(pin config.Pin) Version {
