@@ -1,6 +1,7 @@
 package build
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -22,18 +23,18 @@ func TestControlDataString(t *testing.T) {
 		Description:  "meh",
 	}
 
-	actual := data.String()
-	expected := `Package: foo-bar
+	actual := strings.TrimSpace(data.String())
+	expected := strings.TrimSpace(`Package: foo-bar
 Version: 2.3.0
 Depends: baz,doh
-Recommends: hello|world
+Recommends: hello,world
 Section: other
 Priority: normal
 Homepage: https://foobar.com
 Architecture: amd64
 Maintainer: me
 Description: meh
-`
+`)
 	if actual != expected {
 		t.Fatalf("'%s' was not '%s'\n", actual, expected)
 	}

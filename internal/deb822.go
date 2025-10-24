@@ -7,6 +7,9 @@ type Deb822 struct {
 }
 
 func (deb *Deb822) Add(key string, value string) *Deb822 {
+	if len(strings.TrimSpace(value)) == 0 {
+		return deb
+	}
 	deb.builder.WriteString(key)
 	deb.builder.WriteString(": ")
 	deb.builder.WriteString(value)

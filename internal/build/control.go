@@ -167,67 +167,18 @@ func (data *ControlData) SetFrom(component config.Component, metadata config.Tar
 }
 
 func (data *ControlData) String() string {
-	builder := strings.Builder{}
+	deb := internal.Deb822{}
 
-	if len(data.Package) != 0 {
-		builder.WriteString("Package: ")
-		builder.WriteString(data.Package)
-		builder.WriteString("\n")
-	}
+	deb.Add("Package", data.Package)
+	deb.Add("Version", data.Version)
+	deb.AddList("Depends", data.Depends)
+	deb.AddList("Recommends", data.Recommends)
+	deb.Add("Section", data.Section)
+	deb.Add("Priority", data.Priority)
+	deb.Add("Homepage", data.Homepage)
+	deb.Add("Architecture", data.Architecture)
+	deb.Add("Maintainer", data.Maintainer)
+	deb.Add("Description", data.Description)
 
-	if len(data.Version) != 0 {
-		builder.WriteString("Version: ")
-		builder.WriteString(data.Version)
-		builder.WriteString("\n")
-	}
-
-	if len(data.Depends) != 0 {
-		builder.WriteString("Depends: ")
-		builder.WriteString(strings.Join(data.Depends, ","))
-		builder.WriteString("\n")
-	}
-
-	if len(data.Recommends) != 0 {
-		builder.WriteString("Recommends: ")
-		builder.WriteString(strings.Join(data.Recommends, "|"))
-		builder.WriteString("\n")
-	}
-
-	if len(data.Section) != 0 {
-		builder.WriteString("Section: ")
-		builder.WriteString(data.Section)
-		builder.WriteString("\n")
-	}
-
-	if len(data.Priority) != 0 {
-		builder.WriteString("Priority: ")
-		builder.WriteString(data.Priority)
-		builder.WriteString("\n")
-	}
-
-	if len(data.Homepage) != 0 {
-		builder.WriteString("Homepage: ")
-		builder.WriteString(data.Homepage)
-		builder.WriteString("\n")
-	}
-
-	if len(data.Architecture) != 0 {
-		builder.WriteString("Architecture: ")
-		builder.WriteString(data.Architecture)
-		builder.WriteString("\n")
-	}
-
-	if len(data.Maintainer) != 0 {
-		builder.WriteString("Maintainer: ")
-		builder.WriteString(data.Maintainer)
-		builder.WriteString("\n")
-	}
-
-	if len(data.Description) != 0 {
-		builder.WriteString("Description: ")
-		builder.WriteString(data.Description)
-		builder.WriteString("\n")
-	}
-
-	return builder.String()
+	return deb.String()
 }
