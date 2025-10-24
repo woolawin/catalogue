@@ -95,7 +95,7 @@ func (registry *Registry) writeConfig(component config.Component) error {
 	path := registry.packagePath(component.Name, "config.toml")
 
 	parent := filepath.Dir(path)
-	err := os.MkdirAll(parent, 0644)
+	err := os.MkdirAll(parent, 0755)
 	if err != nil {
 		return internal.ErrOf(err, "can not create component directory '%s'", parent)
 	}
@@ -124,7 +124,7 @@ func (registry *Registry) writeRecord(packageName string, record config.Record) 
 	path := registry.packagePath(packageName, "record.toml")
 
 	parent := filepath.Dir(path)
-	err := os.MkdirAll(parent, 0644)
+	err := os.MkdirAll(parent, 0755)
 	if err != nil {
 		return internal.ErrOf(err, "can not create component directory '%s'", parent)
 	}
