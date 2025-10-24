@@ -13,16 +13,16 @@ import (
 	reg "github.com/woolawin/catalogue/internal/registry"
 )
 
-func Assemble(dst io.Writer, component config.Component, log *internal.Log, system internal.System, api *ext.API, registry reg.Registry) bool {
-	log.Msg(10, "Assembling package").With("name", component.Name).Info()
-	record, found, err := registry.GetPackageRecord(component.Name)
+func Assemble(dst io.Writer, record config.Record, log *internal.Log, system internal.System, api *ext.API, registry reg.Registry) bool {
+	log.Msg(10, "Assembling package").With("name", record.Name).Info()
+	component, found, err := registry.GetPackageConfig(record.Name)
 	if err != nil {
-		log.Msg(10, "Failed to get package record").Error()
+		log.Msg(10, "Failed to get package config").Error()
 		return false
 	}
 
 	if !found {
-		log.Msg(10, "Could not find package record").Error()
+		log.Msg(10, "Could not find package config").Error()
 		return false
 	}
 
