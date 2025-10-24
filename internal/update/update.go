@@ -10,18 +10,13 @@ import (
 	"github.com/woolawin/catalogue/internal/config"
 )
 
-func Pin(remote config.Remote, versioning config.Versioning, log *internal.Log) (config.Pin, bool) {
-	if remote.Protocol != config.Git {
-		log.Msg(10, "only git supports updating").Error()
-		return config.Pin{}, false
-	}
-
+func PinRepo(dir string, versioning config.Versioning, log *internal.Log) (config.Pin, bool) {
 	if versioning.Type == config.GitSemanticTag {
-		return semanticTag(remote, versioning, log)
+		return semanticTag(dir, versioning, log)
 	}
 
 	if versioning.Type == config.GitLatestCommit {
-		return latestCommit(remote, versioning, log)
+		return latestCommit(dir, versioning, log)
 	}
 
 	log.Msg(10, "unsupported versioning").Error()
@@ -29,10 +24,10 @@ func Pin(remote config.Remote, versioning config.Versioning, log *internal.Log) 
 	return config.Pin{}, false
 }
 
-func latestCommit(remote config.Remote, versioning config.Versioning, log *internal.Log) (config.Pin, bool) {
-	repo, err := gitlib.PlainOpen(remote.URL.String())
+func latestCommit(dir string, versioning config.Versioning, log *internal.Log) (config.Pin, bool) {
+	repo, err := gitlib.PlainOpen(dir)
 	if err != nil {
-		log.Msg(10, "only git supports updating").Error()
+		log.Msg(10, "failed to open repository").With("dir", dir).With("error", err).Error()
 		return config.Pin{}, false
 	}
 
@@ -62,11 +57,11 @@ func latestCommit(remote config.Remote, versioning config.Versioning, log *inter
 	return pin, true
 }
 
-func semanticTag(remote config.Remote, versioning config.Versioning, log *internal.Log) (config.Pin, bool) {
-	repo, err := gitlib.PlainOpen(remote.URL.String())
+func semanticTag(dir string, versioning config.Versioning, log *internal.Log) (config.Pin, bool) {
+	repo, err := gitlib.PlainOpen(dir)
 	if err != nil {
-		log.Msg(10, "failed to checkout repository").
-			With("remote", remote.URL.String()).
+		log.Msg(10, "failed to open repository").
+			With("dir", dir).
 			With("error", err).
 			Error()
 		return config.Pin{}, false
@@ -117,7 +112,7 @@ func semanticTag(remote config.Remote, versioning config.Versioning, log *intern
 
 	if latest == nil {
 		log.Msg(10, "no semantic tags found").
-			With("remote", remote.URL.String()).
+			With("dir", dir).
 			Error()
 		return config.Pin{}, false
 	}

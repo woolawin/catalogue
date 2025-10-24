@@ -59,7 +59,7 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 
 	remote := config.Remote{Protocol: protocol, URL: remoteURL}
 
-	pin, ok := update.Pin(remote, component.Versioning, log)
+	pin, ok := update.PinRepo(local, component.Versioning, log)
 	if !ok {
 		return internal.Err("failed to get pin")
 	}
