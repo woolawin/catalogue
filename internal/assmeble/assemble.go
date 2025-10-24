@@ -28,11 +28,12 @@ func Assemble(dst io.Writer, component config.Component, log *internal.Log, syst
 
 	local := api.Host.RandomTmpDir()
 	defer cleanup(local)
-	opts := clone.CloneOpts{
-		Remote:  record.Remote,
-		Local:   local,
-		Filters: []clone.Filter{clone.Directory(".catalogue/")},
-	}
+	opts := clone.NewOpts(
+		record.Remote,
+		local,
+		clone.Pin(record.LatestPin),
+		clone.Directory(".catalogue/"),
+	)
 	_, ok := clone.Clone(opts, log, api)
 	if !ok {
 		return false

@@ -22,13 +22,14 @@ func Add(protocol config.Protocol, remote string, log *internal.Log, system inte
 
 	local := api.Host.RandomTmpDir()
 
-	opts := clone.CloneOpts{
-		Remote:  config.Remote{Protocol: protocol, URL: remoteURL},
-		Local:   local,
-		Filters: []clone.Filter{clone.File(".catalogue/config.toml")},
-	}
+	opts := clone.NewOpts(
+		config.Remote{Protocol: protocol, URL: remoteURL},
+		local,
+		clone.LatestCommit(),
+		clone.File(".catalogue/config.toml"),
+	)
 
-	version, ok := clone.Clone(opts, log, api)
+	pin, ok := clone.Clone(opts, log, api)
 	if !ok {
 		return internal.ErrOf(err, "can not clone '%s'", remote)
 	}
@@ -56,8 +57,8 @@ func Add(protocol config.Protocol, remote string, log *internal.Log, system inte
 	}
 
 	record := config.Record{
-		LatestKnownVersion: version,
-		Remote:             config.Remote{Protocol: protocol, URL: remoteURL},
+		LatestPin: pin,
+		Remote:    config.Remote{Protocol: protocol, URL: remoteURL},
 	}
 
 	if component.Type == config.Package {

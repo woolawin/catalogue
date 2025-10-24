@@ -21,9 +21,14 @@ type Remote struct {
 	URL      *url.URL
 }
 
+type Pin struct {
+	VersionName string
+	CommitHash  string
+}
+
 type Record struct {
-	LatestKnownVersion string
-	Remote             Remote
+	LatestPin Pin
+	Remote    Remote
 }
 
 type RemoteTOML struct {
@@ -31,9 +36,14 @@ type RemoteTOML struct {
 	URL      string `toml:"url"`
 }
 
+type PinTOML struct {
+	VersionName string `toml:"version_name"`
+	CommitHash  string `toml:"commit_hash"`
+}
+
 type RecordTOML struct {
-	LatestKnownVersion string     `toml:"latest_known_version"`
-	Remote             RemoteTOML `toml:"remote"`
+	LatestPin PinTOML    `toml:"latest_pin"`
+	Remote    RemoteTOML `toml:"remote"`
 }
 
 func DeserializeRecord(src io.Reader) (Record, error) {
@@ -53,8 +63,7 @@ func loadRecord(toml RecordTOML) (Record, error) {
 	}
 
 	record := Record{
-		LatestKnownVersion: strings.TrimSpace(toml.LatestKnownVersion),
-		Remote:             Remote{Protocol: protocol},
+		Remote: Remote{Protocol: protocol},
 	}
 
 	remoteURL := strings.TrimSpace(toml.Remote.URL)
@@ -66,13 +75,21 @@ func loadRecord(toml RecordTOML) (Record, error) {
 		record.Remote.URL = parsed
 	}
 
+	record.LatestPin = Pin{
+		VersionName: strings.TrimSpace(toml.LatestPin.VersionName),
+		CommitHash:  strings.TrimSpace(toml.LatestPin.CommitHash),
+	}
+
 	return record, nil
 }
 
 func SerializeRecord(dst io.Writer, record Record) error {
 
 	toml := RecordTOML{
-		LatestKnownVersion: record.LatestKnownVersion,
+		LatestPin: PinTOML{
+			VersionName: strings.TrimSpace(record.LatestPin.VersionName),
+			CommitHash:  strings.TrimSpace(record.LatestPin.CommitHash),
+		},
 	}
 	toml.Remote.Protocol = ProtocolDebugString(record.Remote.Protocol)
 	err := tomllib.NewEncoder(dst).Encode(&toml)
