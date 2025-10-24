@@ -184,7 +184,7 @@ func runClone(cmd *cobra.Command, args []string) {
 		clone.LatestCommit(),
 		clone.Directory(path),
 	)
-	_, ok := clone.Clone(opts, log, api)
+	ok := clone.Clone(opts, log, api)
 	if !ok {
 		os.Exit(1)
 	}

@@ -34,7 +34,7 @@ func Assemble(dst io.Writer, record config.Record, log *internal.Log, system int
 		clone.Pin(record.LatestPin),
 		clone.Directory(".catalogue/"),
 	)
-	_, ok := clone.Clone(opts, log, api)
+	ok := clone.Clone(opts, log, api)
 	if !ok {
 		return false
 	}

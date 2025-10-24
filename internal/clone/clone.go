@@ -4,7 +4,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	semverlib "github.com/Masterminds/semver/v3"
@@ -34,7 +33,7 @@ func NewOpts(remote config.Remote, local string, version Version, filters ...Fil
 	return Opts{remote: remote, local: local, version: version, filters: filters}
 }
 
-func Clone(opts Opts, log *internal.Log, api *ext.API) (config.Pin, bool) {
+func Clone(opts Opts, log *internal.Log, api *ext.API) bool {
 
 	localPath := api.Disk.Path(opts.local)
 	exists, _, err := api.Disk.DirExists(localPath)
@@ -43,11 +42,11 @@ func Clone(opts Opts, log *internal.Log, api *ext.API) (config.Pin, bool) {
 			With("dst", opts.local).
 			With("error", err).
 			Error()
-		return config.Pin{}, false
+		return false
 	}
 	if exists {
 		log.Msg(10, "Clone destination already exists").With("dst", opts.local).Error()
-		return config.Pin{}, false
+		return false
 	}
 	switch opts.remote.Protocol {
 	case config.Git:
@@ -56,10 +55,10 @@ func Clone(opts Opts, log *internal.Log, api *ext.API) (config.Pin, bool) {
 	log.Msg(9, "unsupported clone protocol").
 		With("protocol", config.ProtocolDebugString(opts.remote.Protocol)).
 		Error()
-	return config.Pin{}, false
+	return false
 }
 
-func gitClone(opts Opts, log *internal.Log, api *ext.API) (config.Pin, bool) {
+func gitClone(opts Opts, log *internal.Log, api *ext.API) bool {
 	gitopts := &gitlib.CloneOptions{
 		URL:        opts.remote.URL.String(),
 		Depth:      1,
@@ -71,12 +70,12 @@ func gitClone(opts Opts, log *internal.Log, api *ext.API) (config.Pin, bool) {
 			With("remote", opts.remote).
 			With("error", err).
 			Error()
-		return config.Pin{}, false
+		return false
 	}
 
-	pin, ok := switchToVersion(repo, opts.version, log)
+	ok := switchToVersion(repo, opts.version, log)
 	if !ok {
-		return config.Pin{}, false
+		return false
 	}
 
 	ref, err := repo.Head()
@@ -85,7 +84,7 @@ func gitClone(opts Opts, log *internal.Log, api *ext.API) (config.Pin, bool) {
 			With("remote", opts.remote).
 			With("error", err).
 			Error()
-		return config.Pin{}, false
+		return false
 	}
 	commit, err := repo.CommitObject(ref.Hash())
 	if err != nil {
@@ -93,14 +92,7 @@ func gitClone(opts Opts, log *internal.Log, api *ext.API) (config.Pin, bool) {
 			With("remote", opts.remote.URL.String()).
 			With("error", err).
 			Error()
-		return config.Pin{}, false
-	}
-
-	if pin == nil {
-		pin = &config.Pin{
-			VersionName: strconv.FormatInt(commit.Committer.When.Unix(), 10),
-			CommitHash:  commit.Hash.String(),
-		}
+		return false
 	}
 
 	tree, err := commit.Tree()
@@ -109,7 +101,7 @@ func gitClone(opts Opts, log *internal.Log, api *ext.API) (config.Pin, bool) {
 			With("remote", opts.remote).
 			With("error", err).
 			Error()
-		return config.Pin{}, false
+		return false
 	}
 
 	err = tree.Files().ForEach(func(f *object.File) error {
@@ -166,13 +158,13 @@ func gitClone(opts Opts, log *internal.Log, api *ext.API) (config.Pin, bool) {
 		log.Msg(9, "cloned repository").Info()
 	}
 
-	return *pin, err == nil
+	return err == nil
 }
 
-func switchToVersion(repo *gitlib.Repository, version Version, log *internal.Log) (*config.Pin, bool) {
+func switchToVersion(repo *gitlib.Repository, version Version, log *internal.Log) bool {
 
 	if version.Pin != nil {
-		return version.Pin, switchToCommitHash(repo, version.Pin.CommitHash, log)
+		return switchToCommitHash(repo, version.Pin.CommitHash, log)
 	}
 
 	if version.Latest.Type == config.GitSemanticTag {
@@ -181,12 +173,12 @@ func switchToVersion(repo *gitlib.Repository, version Version, log *internal.Log
 
 	if version.Latest.Type == config.GitLatestCommit {
 		if len(version.Latest.Branch) == 0 {
-			return nil, true
+			return true
 		}
 		return switchToLatestBranchCommit(repo, version.Latest.Branch, log)
 	}
 
-	return nil, false
+	return false
 }
 
 func switchToCommitHash(repo *gitlib.Repository, hashValue string, log *internal.Log) bool {
@@ -223,14 +215,15 @@ func switchToCommitHash(repo *gitlib.Repository, hashValue string, log *internal
 
 }
 
-func switchToLatestSemanticTag(repo *gitlib.Repository, log *internal.Log) (*config.Pin, bool) {
+func switchToLatestSemanticTag(repo *gitlib.Repository, log *internal.Log) bool {
 	tags, err := repo.Tags()
 	if err != nil {
 		log.Msg(10, "failed to get repository tags").
 			With("error", err).
-			Info()
-		return nil, false
+			Error()
+		return false
 	}
+	defer tags.Close()
 
 	var latest *semverlib.Version
 	var tagRef *plumbing.Reference
@@ -254,16 +247,16 @@ func switchToLatestSemanticTag(repo *gitlib.Repository, log *internal.Log) (*con
 
 	if latest == nil {
 		log.Msg(10, "did not find any tags").Error()
-		return nil, false
+		return false
 	}
 
 	commit, err := repo.CommitObject(tagRef.Hash())
 	if err != nil {
-		log.Msg(10, "filed to get commit").
+		log.Msg(10, "failed to get commit").
 			With("tag", latest.String()).
 			With("error", err).
 			Error()
-		return nil, false
+		return false
 	}
 
 	worktree, err := repo.Worktree()
@@ -272,7 +265,7 @@ func switchToLatestSemanticTag(repo *gitlib.Repository, log *internal.Log) (*con
 			With("tag", latest.String()).
 			With("error", err).
 			Error()
-		return nil, false
+		return false
 	}
 
 	err = worktree.Checkout(&gitlib.CheckoutOptions{
@@ -286,7 +279,7 @@ func switchToLatestSemanticTag(repo *gitlib.Repository, log *internal.Log) (*con
 			With("hash", commit.Hash.String()).
 			With("error", err).
 			Error()
-		return nil, false
+		return false
 	}
 
 	log.Msg(8, "checkout out commit").
@@ -294,33 +287,29 @@ func switchToLatestSemanticTag(repo *gitlib.Repository, log *internal.Log) (*con
 		With("hash", commit.Hash.String()).
 		Info()
 
-	pin := config.Pin{
-		VersionName: latest.String(),
-		CommitHash:  commit.Hash.String(),
-	}
-	return &pin, true
+	return true
 }
 
-func switchToLatestBranchCommit(repo *gitlib.Repository, branch string, log *internal.Log) (*config.Pin, bool) {
+func switchToLatestBranchCommit(repo *gitlib.Repository, branch string, log *internal.Log) bool {
 	worktree, err := repo.Worktree()
 	if err != nil {
 		log.Msg(10, "failed to get repository worktree").
 			With("branch", branch).
 			With("error", err).
 			Error()
-		return nil, false
+		return false
 	}
 	err = worktree.Checkout(&gitlib.CheckoutOptions{
 		Branch: plumbing.NewBranchReferenceName(branch),
 	})
 	if err != nil {
-		log.Msg(10, "failed to checkout commit").
+		log.Msg(10, "failed to checkout branch commit").
 			With("branch", branch).
 			With("error", err).
 			Error()
-		return nil, false
+		return false
 	}
-	return nil, true
+	return true
 }
 
 func File(path string) func(string) bool {
