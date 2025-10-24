@@ -72,7 +72,7 @@ func (server *HTTPServer) Release(writer http.ResponseWriter, request *http.Requ
 	output := strings.Builder{}
 
 	for _, pkg := range packages {
-		config, found, err := server.registry.GetPackageConfig(pkg)
+		resources, found, err := server.registry.GetPackageResources(pkg)
 		if err != nil {
 			slog.Error("failed to get package config", "package", pkg, "error", err)
 			continue
@@ -85,9 +85,11 @@ func (server *HTTPServer) Release(writer http.ResponseWriter, request *http.Requ
 
 		// TODO add architecture
 		output.WriteString("Package: ")
-		output.WriteString(config.Name)
+		output.WriteString(resources.Component.Name)
+		output.WriteString("\nVersion: ")
+		output.WriteString(resources.Record.LatestPin.VersionName)
 		output.WriteString("\nFilename: pool/")
-		output.WriteString(config.Name)
+		output.WriteString(resources.Component.Name)
 		output.WriteString(".deb")
 
 		output.WriteString("\n")

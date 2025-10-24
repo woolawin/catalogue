@@ -37,6 +37,31 @@ func (registry *Registry) ListPackages() ([]string, error) {
 	return dirs, nil
 }
 
+type Resources struct {
+	Component config.Component
+	Record    config.Record
+}
+
+func (registry *Registry) GetPackageResources(name string) (*Resources, bool, error) {
+	component, found, err := registry.GetPackageConfig(name)
+	if err != nil {
+		return nil, false, err
+	}
+	if !found {
+		return nil, false, nil
+	}
+
+	record, found, err := registry.GetPackageRecord(name)
+	if err != nil {
+		return nil, false, err
+	}
+	if !found {
+		return nil, false, nil
+	}
+
+	return &Resources{Component: component, Record: record}, true, nil
+}
+
 func (registry *Registry) GetPackageConfig(name string) (config.Component, bool, error) {
 	path := registry.packagePath(name, "config.toml")
 	data, err := os.ReadFile(path)
