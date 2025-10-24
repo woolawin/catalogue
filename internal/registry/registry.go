@@ -37,22 +37,6 @@ func (registry *Registry) ListPackages() ([]string, error) {
 	return dirs, nil
 }
 
-func (registry *Registry) GetPackageConfig(name string) (config.Component, bool, error) {
-	path := registry.packagePath(name, "config.toml")
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return config.Component{}, false, nil
-		}
-		return config.Component{}, false, internal.ErrOf(err, "can not read file '%s'", path)
-	}
-	component, err := config.Parse(bytes.NewReader(data))
-	if err != nil {
-		return config.Component{}, false, internal.ErrOf(err, "can not parse package config")
-	}
-	return component, true, nil
-}
-
 func (registry *Registry) GetPackageRecord(packageName string) (config.Record, bool, error) {
 	path := registry.packagePath(packageName, "record.toml")
 	data, err := os.ReadFile(path)
@@ -69,21 +53,16 @@ func (registry *Registry) GetPackageRecord(packageName string) (config.Record, b
 	return record, true, nil
 }
 
-func (registry *Registry) AddPackage(component config.Component, record config.Record) error {
-	exists, err := registry.HasPackage(component.Name)
+func (registry *Registry) AddPackage(record config.Record) error {
+	exists, err := registry.HasPackage(record.Name)
 	if err != nil {
-		return internal.ErrOf(err, "failed tocheck if package '%s' already exists", component.Name)
+		return internal.ErrOf(err, "failed tocheck if package '%s' already exists", record.Name)
 	}
 	if exists {
-		return internal.Err("package '%s' already exists", component.Name)
+		return internal.Err("package '%s' already exists", record.Name)
 	}
 
-	err = registry.writeConfig(component)
-	if err != nil {
-		return err
-	}
-
-	err = registry.writeRecord(component.Name, record)
+	err = registry.writeRecord(record)
 	if err != nil {
 		return err
 	}
@@ -91,37 +70,8 @@ func (registry *Registry) AddPackage(component config.Component, record config.R
 	return nil
 }
 
-func (registry *Registry) writeConfig(component config.Component) error {
-	path := registry.packagePath(component.Name, "config.toml")
-
-	parent := filepath.Dir(path)
-	err := os.MkdirAll(parent, 0755)
-	if err != nil {
-		return internal.ErrOf(err, "can not create component directory '%s'", parent)
-	}
-
-	file, err := os.Create(path)
-	if err != nil {
-		return internal.ErrOf(err, "can not create component file '%s'", path)
-	}
-	defer file.Close()
-
-	var buffer bytes.Buffer
-	err = config.Serialize(component, &buffer)
-	if err != nil {
-		return internal.ErrOf(err, "can not serialize config")
-	}
-
-	_, err = io.Copy(file, &buffer)
-	if err != nil {
-		return internal.ErrOf(err, "can not write to file '%s'", path)
-	}
-
-	return nil
-}
-
-func (registry *Registry) writeRecord(packageName string, record config.Record) error {
-	path := registry.packagePath(packageName, "record.toml")
+func (registry *Registry) writeRecord(record config.Record) error {
+	path := registry.packagePath(record.Name, "record.toml")
 
 	parent := filepath.Dir(path)
 	err := os.MkdirAll(parent, 0755)

@@ -35,15 +35,13 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 		return internal.ErrOf(err, "can not clone '%s'", remoteStr)
 	}
 
-	buildApi := ext.NewAPI(local)
-
 	configPath := filepath.Join(local, ".catalogue", "config.toml")
 	configData, err := api.Host.ReadTmpFile(configPath)
 	if err != nil {
 		return internal.ErrOf(err, "can not read config file")
 	}
 
-	component, err := config.ParseWithFileSystems(bytes.NewReader(configData), buildApi.Disk)
+	component, err := config.Parse(bytes.NewReader(configData))
 	if err != nil {
 		return internal.ErrOf(err, "invalid component config")
 	}
@@ -72,7 +70,7 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 	}
 
 	if component.Type == config.Package {
-		return registry.AddPackage(component, record)
+		return registry.AddPackage(record)
 	}
 
 	return internal.Err("only packages can be added right now")

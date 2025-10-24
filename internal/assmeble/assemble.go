@@ -4,6 +4,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/build"
@@ -15,19 +16,9 @@ import (
 
 func Assemble(dst io.Writer, record config.Record, log *internal.Log, system internal.System, api *ext.API, registry reg.Registry) bool {
 	log.Msg(10, "Assembling package").With("name", record.Name).Info()
-	component, found, err := registry.GetPackageConfig(record.Name)
-	if err != nil {
-		log.Msg(10, "Failed to get package config").Error()
-		return false
-	}
-
-	if !found {
-		log.Msg(10, "Could not find package config").Error()
-		return false
-	}
 
 	local := api.Host.RandomTmpDir()
-	defer cleanup(local)
+	//:w	defer cleanup(local)
 	opts := clone.NewOpts(
 		record.Remote,
 		local,
@@ -38,7 +29,10 @@ func Assemble(dst io.Writer, record config.Record, log *internal.Log, system int
 	if !ok {
 		return false
 	}
-	ok = build.Build(dst, component, log, system, ext.NewAPI(local))
+
+	buildDir := filepath.Join(local, ".catalogue")
+
+	ok = build.Build(dst, log, system, ext.NewAPI(buildDir))
 	if !ok {
 		return false
 	}

@@ -1,6 +1,7 @@
 package clone
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -113,8 +114,13 @@ func gitClone(opts Opts, log *internal.Log, api *ext.API) bool {
 			}
 		}
 		if !filteredMatched {
+			fmt.Printf("file did not match '%s'\n", f.Name)
+			return nil
+		} else {
 			return nil
 		}
+
+		fmt.Printf("get file '%s'\n", f.Name)
 		blob, err := f.Blob.Reader()
 		if err != nil {
 			log.Msg(10, "failed to read git blob").
@@ -308,6 +314,7 @@ func File(path string) func(string) bool {
 
 func Directory(path string) func(string) bool {
 	return func(object string) bool {
+		fmt.Printf("path='%s' file='%s' ok='%v'\n", path, object, strings.HasPrefix(object, path))
 		return strings.HasPrefix(object, path)
 	}
 }

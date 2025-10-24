@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	_ "embed"
 	"fmt"
 	"net/url"
@@ -116,22 +115,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	configPath := filepath.Join(srcAbs, "config.toml")
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		fmt.Println("ERROR")
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-
 	api := ext.NewAPI(srcAbs)
-	component, err := config.ParseWithFileSystems(bytes.NewReader(data), api.Disk)
-	if err != nil {
-		fmt.Println("ERROR")
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-
 	dstFile, err := os.Create(dstAbs)
 	if err != nil {
 		fmt.Println("ERROR")
@@ -143,7 +127,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 
 	log := internal.NewLog(internal.NewStdoutLogger(8))
 
-	ok := build.Build(dstFile, component, log, system, api)
+	ok := build.Build(dstFile, log, system, api)
 	if !ok {
 		os.Exit(1)
 	} else {

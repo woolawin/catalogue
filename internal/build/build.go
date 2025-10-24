@@ -10,7 +10,26 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func Build(dst io.Writer, component config.Component, log *internal.Log, system internal.System, api *ext.API) bool {
+func Build(dst io.Writer, log *internal.Log, system internal.System, api *ext.API) bool {
+	configPath := api.Disk.Path("config.toml")
+	configData, err := api.Disk.ReadFile(configPath)
+	if err != nil {
+		log.Msg(10, "failed to read config file").
+			With("path", configPath).
+			With("error", err).
+			Error()
+		return false
+	}
+
+	component, err := config.ParseWithFileSystems(bytes.NewReader(configData), api.Disk)
+	if err != nil {
+		log.Msg(10, "failed to deserialize config file").
+			With("path", configPath).
+			With("error", err).
+			Error()
+		return false
+	}
+
 	if component.Type != config.Package {
 		log.Msg(10, "can not build non package").With("component", component.Name).Info()
 		return false
@@ -36,7 +55,7 @@ func Build(dst io.Writer, component config.Component, log *internal.Log, system 
 		"data.tar.gz":    string(api.Disk.Path("data.tar.gz")),
 	}
 
-	err := internal.CreateAR(files, dst)
+	err = internal.CreateAR(files, dst)
 	if err != nil {
 		log.Msg(10, "could not create .deb file").
 			With("path", dst).
