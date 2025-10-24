@@ -63,17 +63,12 @@ func runSystem(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	builder := strings.Builder{}
-	builder.WriteString("Arhiteture: ")
-	builder.WriteString(string(system.Architecture))
-	builder.WriteString("\nOSReleaseID: ")
-	builder.WriteString(system.OSReleaseID)
-	builder.WriteString("\nOSReleaseVersion: ")
-	builder.WriteString(system.OSReleaseVersion)
-	builder.WriteString("\nOSReleaseVersionID: ")
-	builder.WriteString(system.OSReleaseVersionID)
-	builder.WriteString("\nOSReleaseVersionCodeName: ")
-	builder.WriteString(system.OSReleaseVersionCodeName)
+	builder := internal.Deb822{}
+	builder.Add("Arhiteture", string(system.Architecture))
+	builder.Add("OSReleaseID", system.OSReleaseID)
+	builder.Add("OSReleaseVersion", system.OSReleaseVersion)
+	builder.Add("OSReleaseVersionID", system.OSReleaseVersionID)
+	builder.Add("OSReleaseVersionCodeName", system.OSReleaseVersionCodeName)
 
 	fmt.Println(builder.String())
 }
