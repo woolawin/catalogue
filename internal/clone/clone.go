@@ -75,14 +75,8 @@ func gitClone(opts Opts, log *internal.Log, api *ext.API) bool {
 			return false
 		}
 	} else {
-		revParse := exec.Command("git", "-C", opts.local, "rev-parse", "origin/main")
-		out, err := revParse.Output()
-		if err != nil {
-			log.Msg(10, "failed to get latest commit").With("error", err).Error()
-			return false
-		}
-		hash := strings.TrimSpace(string(out))
-		ok := sparseCheckout(hash, opts.local, opts.path, log)
+		hash, ok := getLatestCommitHash(opts.local, log)
+		ok = sparseCheckout(hash, opts.local, opts.path, log)
 		if !ok {
 			return false
 		}
@@ -111,4 +105,24 @@ func sparseCheckout(hash string, local string, path string, log *internal.Log) b
 		return false
 	}
 	return true
+}
+
+func getLatestCommitHash(local string, log *internal.Log) (string, bool) {
+	symbolicRef := exec.Command("git", "-C", local, "symbolic-ref", "refs/remotes/origin/HEAD")
+	out, err := symbolicRef.Output()
+	if err != nil {
+		log.Msg(10, "failed to get symbolic ref").With("error", err).Error()
+		return "", false
+	}
+	branchRef := strings.TrimSpace(string(out))
+	parts := strings.Split(branchRef, "/")
+	defaultBranch := parts[len(parts)-1]
+
+	revParse := exec.Command("git", "-C", local, "rev-parse", defaultBranch)
+	out, err = revParse.Output()
+	if err != nil {
+		log.Msg(10, "failed to get latest commit").With("error", err).Error()
+		return "", false
+	}
+	return strings.TrimSpace(string(out)), true
 }
