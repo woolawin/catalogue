@@ -26,8 +26,8 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 	opts := clone.NewOpts(
 		config.Remote{Protocol: protocol, URL: remoteURL},
 		local,
-		clone.LatestCommit(),
-		clone.File(".catalogue/config.toml"),
+		".catalogue/config.toml",
+		nil,
 	)
 
 	ok := clone.Clone(opts, log, api)

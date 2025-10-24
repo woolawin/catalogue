@@ -22,8 +22,8 @@ func Assemble(dst io.Writer, record config.Record, log *internal.Log, system int
 	opts := clone.NewOpts(
 		record.Remote,
 		local,
-		clone.Pin(record.LatestPin),
-		clone.Directory(".catalogue/"),
+		".catalogue",
+		&record.LatestPin,
 	)
 	ok := clone.Clone(opts, log, api)
 	if !ok {

@@ -165,8 +165,8 @@ func runClone(cmd *cobra.Command, args []string) {
 	opts := clone.NewOpts(
 		config.Remote{Protocol: protocol, URL: remoteURL},
 		local,
-		clone.LatestCommit(),
-		clone.Directory(path),
+		path,
+		nil,
 	)
 	ok := clone.Clone(opts, log, api)
 	if !ok {
