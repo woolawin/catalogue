@@ -48,7 +48,7 @@ type Component struct {
 	Type             Type
 	Versioning       Versioning
 	SupportedTargets []*internal.Target
-	Metadata         []*Metadata
+	Metadata         []*TargetMetadata
 	Targets          []internal.Target
 	Downloads        map[string][]*Download
 	FileSystems      map[string][]*FileSystem
@@ -122,7 +122,7 @@ func load(deserialized *ComponentTOML) (Component, error) {
 	if err != nil {
 		return Component{}, internal.ErrOf(err, "invalid config download")
 	}
-	metadatas, err := loadMetadata(deserialized.Metadata, targets)
+	metadatas, err := loadTargetMetadata(deserialized.Metadata, targets)
 	if err != nil {
 		return Component{}, internal.ErrOf(err, "invalid config metadata")
 	}

@@ -9,7 +9,7 @@ import (
 	"github.com/woolawin/catalogue/internal"
 )
 
-func TestLoadMetadata(t *testing.T) {
+func TestLoadTargetMetadata(t *testing.T) {
 
 	targets := []internal.Target{
 		{
@@ -50,26 +50,28 @@ func TestLoadMetadata(t *testing.T) {
 		},
 	}
 
-	actual, err := loadMetadata(deserialized, targets)
+	actual, err := loadTargetMetadata(deserialized, targets)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expected := []*Metadata{
+	expected := []*TargetMetadata{
 		{
-			Target:     internal.Target{Name: "ubuntu", OSReleaseID: "ubuntu"},
-			Maintainer: "canonical",
+			Target:   internal.Target{Name: "ubuntu", OSReleaseID: "ubuntu"},
+			Metadata: Metadata{Maintainer: "canonical"},
 		},
 		{
-			Target:          internal.Target{Name: "all", All: true},
-			Dependencies:    []string{"foo", "bar"},
-			Section:         "other",
-			Priority:        "normal",
-			Homepage:        "https://foo.com/bar",
-			Maintainer:      "me",
-			Description:     "Foo Bar",
-			Architecture:    "all",
-			Recommendations: []string{"baz"},
+			Target: internal.Target{Name: "all", All: true},
+			Metadata: Metadata{
+				Dependencies:    []string{"foo", "bar"},
+				Section:         "other",
+				Priority:        "normal",
+				Homepage:        "https://foo.com/bar",
+				Maintainer:      "me",
+				Description:     "Foo Bar",
+				Architecture:    "all",
+				Recommendations: []string{"baz"},
+			},
 		},
 		{
 			Target: internal.Target{
@@ -77,8 +79,10 @@ func TestLoadMetadata(t *testing.T) {
 				Architecture: internal.ARM64,
 				OSReleaseID:  "ubuntu",
 			},
-			Homepage:        "https://arm.com/foo",
-			Recommendations: []string{"driver"},
+			Metadata: Metadata{
+				Homepage:        "https://arm.com/foo",
+				Recommendations: []string{"driver"},
+			},
 		},
 	}
 

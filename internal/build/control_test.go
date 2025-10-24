@@ -42,24 +42,30 @@ Description: meh
 func TestMergeMeta(t *testing.T) {
 	system := internal.System{Architecture: internal.AMD64}
 
-	metadatas := []*config.Metadata{
+	metadatas := []*config.TargetMetadata{
 		{
-			Target:       internal.Target{Name: "all", All: true},
-			Dependencies: []string{"foo", "bar"},
-			Section:      "utilities",
-			Priority:     "normal",
-			Homepage:     "https://foobar.com",
-			Description:  "foo bar",
-			Maintainer:   "Bob Doe",
+			Target: internal.Target{Name: "all", All: true},
+			Metadata: config.Metadata{
+				Dependencies: []string{"foo", "bar"},
+				Section:      "utilities",
+				Priority:     "normal",
+				Homepage:     "https://foobar.com",
+				Description:  "foo bar",
+				Maintainer:   "Bob Doe",
+			},
 		},
 		{
-			Target:       internal.Target{Name: "amd64", Architecture: internal.AMD64},
-			Architecture: "amd64",
-			Maintainer:   "Jane Doe",
+			Target: internal.Target{Name: "amd64", Architecture: internal.AMD64},
+			Metadata: config.Metadata{
+				Architecture: "amd64",
+				Maintainer:   "Jane Doe",
+			},
 		},
 		{
-			Target:          internal.Target{Name: "arm64", Architecture: internal.ARM64},
-			Recommendations: []string{"happy", "puppy"},
+			Target: internal.Target{Name: "arm64", Architecture: internal.ARM64},
+			Metadata: config.Metadata{
+				Recommendations: []string{"happy", "puppy"},
+			},
 		},
 	}
 
@@ -77,7 +83,7 @@ func TestMergeMeta(t *testing.T) {
 		Architecture: "amd64",
 	}
 
-	if diff := cmp.Diff(actual, expected); diff != "" {
+	if diff := cmp.Diff(actual.Metadata, expected); diff != "" {
 		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 	}
 }

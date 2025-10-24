@@ -39,7 +39,7 @@ url='https://github.com/foo/bar.git'
 			Protocol: Git,
 			URL:      u("https://github.com/foo/bar.git"),
 		},
-		Metadata: RecordMetadata{
+		Metadata: Metadata{
 			Dependencies: []string{"foo", "bar"},
 			Section:      "utilities",
 			Priority:     "normal",

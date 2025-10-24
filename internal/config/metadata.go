@@ -6,6 +6,17 @@ import (
 	"github.com/woolawin/catalogue/internal"
 )
 
+type Metadata struct {
+	Dependencies    []string
+	Section         string
+	Priority        string
+	Homepage        string
+	Maintainer      string
+	Description     string
+	Architecture    string
+	Recommendations []string
+}
+
 type MetadataTOML struct {
 	Dependencies    []string `toml:"dependencies"`
 	Section         string   `toml:"section"`
@@ -17,39 +28,18 @@ type MetadataTOML struct {
 	Recommendations []string `toml:"recommendations"`
 }
 
-type Metadata struct {
-	Target          internal.Target
-	Dependencies    []string
-	Section         string
-	Priority        string
-	Homepage        string
-	Maintainer      string
-	Description     string
-	Architecture    string
-	Recommendations []string
+type TargetMetadata struct {
+	Metadata
+	Target internal.Target
 }
 
-func (metadata *Metadata) GetTarget() internal.Target {
+func (metadata *TargetMetadata) GetTarget() internal.Target {
 	return metadata.Target
 }
 
-func (metadata *Metadata) ToRecord() RecordMetadata {
-	return RecordMetadata{
-		Dependencies:    metadata.Dependencies,
-		Section:         metadata.Section,
-		Priority:        metadata.Priority,
-		Homepage:        metadata.Homepage,
-		Maintainer:      metadata.Maintainer,
-		Description:     metadata.Description,
-		Architecture:    metadata.Architecture,
-		Recommendations: metadata.Recommendations,
-	}
+func loadTargetMetadata(deserialized map[string]MetadataTOML, targets []internal.Target) ([]*TargetMetadata, error) {
 
-}
-
-func loadMetadata(deserialized map[string]MetadataTOML, targets []internal.Target) ([]*Metadata, error) {
-
-	var metadatas []*Metadata
+	var metadatas []*TargetMetadata
 
 	for targetStr, meta := range deserialized {
 		targetNames, err := internal.ValidateNameList(targetStr)
@@ -60,18 +50,24 @@ func loadMetadata(deserialized map[string]MetadataTOML, targets []internal.Targe
 		if err != nil {
 			return nil, internal.ErrOf(err, "invalid metadata target %s", targetStr)
 		}
-		metadata := Metadata{
-			Target:          tgt,
-			Dependencies:    normalizeList(meta.Dependencies),
-			Section:         strings.TrimSpace(meta.Section),
-			Priority:        strings.TrimSpace(meta.Priority),
-			Homepage:        strings.TrimSpace(meta.Homepage),
-			Maintainer:      strings.TrimSpace(meta.Maintainer),
-			Description:     strings.TrimSpace(meta.Description),
-			Architecture:    strings.TrimSpace(meta.Architecture),
-			Recommendations: normalizeList(meta.Recommendations),
+		metadata := TargetMetadata{
+			Target:   tgt,
+			Metadata: loadMetadata(meta),
 		}
 		metadatas = append(metadatas, &metadata)
 	}
 	return metadatas, nil
+}
+
+func loadMetadata(toml MetadataTOML) Metadata {
+	return Metadata{
+		Dependencies:    normalizeList(toml.Dependencies),
+		Section:         strings.TrimSpace(toml.Section),
+		Priority:        strings.TrimSpace(toml.Priority),
+		Homepage:        strings.TrimSpace(toml.Homepage),
+		Maintainer:      strings.TrimSpace(toml.Maintainer),
+		Description:     strings.TrimSpace(toml.Description),
+		Architecture:    strings.TrimSpace(toml.Architecture),
+		Recommendations: normalizeList(toml.Recommendations),
+	}
 }

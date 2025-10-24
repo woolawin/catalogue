@@ -77,8 +77,8 @@ func control(system internal.System, component config.Component, log *internal.L
 	return err == nil
 }
 
-func Metadata(metadatas []*config.Metadata, system internal.System) (config.Metadata, error) {
-	metadata := config.Metadata{}
+func Metadata(metadatas []*config.TargetMetadata, system internal.System) (config.TargetMetadata, error) {
+	metadata := config.TargetMetadata{}
 	for _, data := range internal.Ranked(system, metadatas) {
 		if len(metadata.Dependencies) == 0 && len(data.Dependencies) != 0 {
 			metadata.Dependencies = data.Dependencies
@@ -128,7 +128,7 @@ type ControlData struct {
 	Description  string
 }
 
-func (data *ControlData) SetFrom(component config.Component, metadata config.Metadata) {
+func (data *ControlData) SetFrom(component config.Component, metadata config.TargetMetadata) {
 	if len(data.Package) == 0 {
 		data.Package = component.Name
 	}

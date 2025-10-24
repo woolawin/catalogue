@@ -26,21 +26,10 @@ type Pin struct {
 	CommitHash  string
 }
 
-type RecordMetadata struct {
-	Dependencies    []string
-	Section         string
-	Priority        string
-	Homepage        string
-	Maintainer      string
-	Description     string
-	Architecture    string
-	Recommendations []string
-}
-
 type Record struct {
 	LatestPin Pin
 	Remote    Remote
-	Metadata  RecordMetadata
+	Metadata  Metadata
 }
 
 type RemoteTOML struct {
@@ -92,18 +81,7 @@ func loadRecord(toml RecordTOML) (Record, error) {
 		VersionName: strings.TrimSpace(toml.LatestPin.VersionName),
 		CommitHash:  strings.TrimSpace(toml.LatestPin.CommitHash),
 	}
-
-	record.Metadata = RecordMetadata{
-		Dependencies:    normalizeList(toml.Metadata.Dependencies),
-		Section:         strings.TrimSpace(toml.Metadata.Section),
-		Priority:        strings.TrimSpace(toml.Metadata.Priority),
-		Homepage:        strings.TrimSpace(toml.Metadata.Homepage),
-		Maintainer:      strings.TrimSpace(toml.Metadata.Maintainer),
-		Description:     strings.TrimSpace(toml.Metadata.Description),
-		Architecture:    strings.TrimSpace(toml.Metadata.Architecture),
-		Recommendations: normalizeList(toml.Metadata.Recommendations),
-	}
-
+	record.Metadata = loadMetadata(toml.Metadata)
 	return record, nil
 }
 
