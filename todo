@@ -1,10 +1,9 @@
 refactor errors
 refacto Log to log.Info(5, "log message", "main").Done() and log.Error(err).Done()
 move config.go into config package
-change recommends and depends to string
 =====
 test download
-
+check how architecture works in /Release
 
 ----
 components structure

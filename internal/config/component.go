@@ -147,17 +147,6 @@ func deserialize(src io.Reader) (ComponentTOML, error) {
 	return deserialized, nil
 }
 
-func normalizeList(list []string) []string {
-	var cleaned []string
-	for _, value := range list {
-		value = strings.TrimSpace(value)
-		if len(value) != 0 {
-			cleaned = append(cleaned, value)
-		}
-	}
-	return cleaned
-}
-
 func loadSupportedTargets(targets []internal.Target, values []string) ([]*internal.Target, error) {
 	var supported []*internal.Target
 

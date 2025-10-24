@@ -118,8 +118,8 @@ func Metadata(metadatas []*config.TargetMetadata, system internal.System) (confi
 type ControlData struct {
 	Package      string
 	Version      string
-	Depends      []string
-	Recommends   []string
+	Depends      string
+	Recommends   string
 	Section      string
 	Priority     string
 	Homepage     string
@@ -171,8 +171,8 @@ func (data *ControlData) String() string {
 
 	deb.Add("Package", data.Package)
 	deb.Add("Version", data.Version)
-	deb.AddList("Depends", data.Depends)
-	deb.AddList("Recommends", data.Recommends)
+	deb.Add("Depends", data.Depends)
+	deb.Add("Recommends", data.Recommends)
 	deb.Add("Section", data.Section)
 	deb.Add("Priority", data.Priority)
 	deb.Add("Homepage", data.Homepage)

@@ -17,7 +17,7 @@ version_name='v0.54.2'
 commit_hash='c7t43c374c34yh43fc43'
 
 [metadata]
-dependencies=['foo', 'bar']
+dependencies='foo,bar'
 section='utilities'
 priority='normal'
 homepage='https://foobar.com'
@@ -43,7 +43,7 @@ url='https://github.com/foo/bar.git'
 			URL:      u("https://github.com/foo/bar.git"),
 		},
 		Metadata: Metadata{
-			Dependencies: []string{"foo", "bar"},
+			Dependencies: "foo,bar",
 			Section:      "utilities",
 			Priority:     "normal",
 			Homepage:     "https://foobar.com",

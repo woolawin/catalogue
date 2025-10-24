@@ -17,10 +17,6 @@ func (deb *Deb822) Add(key string, value string) *Deb822 {
 	return deb
 }
 
-func (deb *Deb822) AddList(key string, value []string) *Deb822 {
-	return deb.Add(key, strings.Join(value, ","))
-}
-
 func (deb *Deb822) String() string {
 	return deb.builder.String()
 }

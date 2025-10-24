@@ -13,8 +13,8 @@ func TestControlDataString(t *testing.T) {
 	data := ControlData{
 		Package:      "foo-bar",
 		Version:      "2.3.0",
-		Depends:      []string{"baz", "doh"},
-		Recommends:   []string{"hello", "world"},
+		Depends:      "baz,doh",
+		Recommends:   "hello,world",
 		Section:      "other",
 		Priority:     "normal",
 		Homepage:     "https://foobar.com",
@@ -47,7 +47,7 @@ func TestMergeMeta(t *testing.T) {
 		{
 			Target: internal.Target{Name: "all", All: true},
 			Metadata: config.Metadata{
-				Dependencies: []string{"foo", "bar"},
+				Dependencies: "foo,bar",
 				Section:      "utilities",
 				Priority:     "normal",
 				Homepage:     "https://foobar.com",
@@ -65,7 +65,7 @@ func TestMergeMeta(t *testing.T) {
 		{
 			Target: internal.Target{Name: "arm64", Architecture: internal.ARM64},
 			Metadata: config.Metadata{
-				Recommendations: []string{"happy", "puppy"},
+				Recommendations: "happy,puppy",
 			},
 		},
 	}
@@ -75,7 +75,7 @@ func TestMergeMeta(t *testing.T) {
 		t.Fatal(err)
 	}
 	expected := config.Metadata{
-		Dependencies: []string{"foo", "bar"},
+		Dependencies: "foo,bar",
 		Section:      "utilities",
 		Priority:     "normal",
 		Homepage:     "https://foobar.com",

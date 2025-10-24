@@ -32,21 +32,21 @@ func TestLoadTargetMetadata(t *testing.T) {
 
 	deserialized := map[string]MetadataTOML{
 		"all": {
-			Dependencies:    []string{"foo ", " bar "},
+			Dependencies:    " foo,bar ",
 			Section:         "  other ",
 			Priority:        "  normal  ",
 			Homepage:        "   https://foo.com/bar   ",
 			Maintainer:      " me  ",
 			Description:     "  Foo Bar ",
 			Architecture:    " all ",
-			Recommendations: []string{"  baz "},
+			Recommendations: "  baz ",
 		},
 		"ubuntu": {
 			Maintainer: " canonical ",
 		},
 		"arm64-ubuntu": {
 			Homepage:        "https://arm.com/foo",
-			Recommendations: []string{"driver"},
+			Recommendations: "driver",
 		},
 	}
 
@@ -63,14 +63,14 @@ func TestLoadTargetMetadata(t *testing.T) {
 		{
 			Target: internal.Target{Name: "all", All: true},
 			Metadata: Metadata{
-				Dependencies:    []string{"foo", "bar"},
+				Dependencies:    "foo,bar",
 				Section:         "other",
 				Priority:        "normal",
 				Homepage:        "https://foo.com/bar",
 				Maintainer:      "me",
 				Description:     "Foo Bar",
 				Architecture:    "all",
-				Recommendations: []string{"baz"},
+				Recommendations: "baz",
 			},
 		},
 		{
@@ -81,7 +81,7 @@ func TestLoadTargetMetadata(t *testing.T) {
 			},
 			Metadata: Metadata{
 				Homepage:        "https://arm.com/foo",
-				Recommendations: []string{"driver"},
+				Recommendations: "driver",
 			},
 		},
 	}

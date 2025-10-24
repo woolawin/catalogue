@@ -104,14 +104,14 @@ func SerializeRecord(dst io.Writer, record Record) error {
 	}
 
 	toml.Metadata = MetadataTOML{
-		Dependencies:    normalizeList(record.Metadata.Dependencies),
+		Dependencies:    strings.TrimSpace(record.Metadata.Dependencies),
 		Section:         strings.TrimSpace(record.Metadata.Section),
 		Priority:        strings.TrimSpace(record.Metadata.Priority),
 		Homepage:        strings.TrimSpace(record.Metadata.Homepage),
 		Maintainer:      strings.TrimSpace(record.Metadata.Maintainer),
 		Description:     strings.TrimSpace(record.Metadata.Description),
 		Architecture:    strings.TrimSpace(record.Metadata.Architecture),
-		Recommendations: normalizeList(record.Metadata.Recommendations),
+		Recommendations: strings.TrimSpace(record.Metadata.Recommendations),
 	}
 
 	return nil

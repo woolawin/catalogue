@@ -14,7 +14,7 @@ name='  foobar '
 type='  package  '
 
 [metadata.all]
-dependencies=['foo', 'bar']
+dependencies='foo, bar'
 section='utilities'
 priority='normal'
 homepage='https://foobar.com'
@@ -33,7 +33,7 @@ architecture='amd64'
 		Type: "  package  ",
 		Metadata: map[string]MetadataTOML{
 			"all": {
-				Dependencies: []string{"foo", "bar"},
+				Dependencies: "foo, bar",
 				Section:      "utilities",
 				Priority:     "normal",
 				Homepage:     "https://foobar.com",
@@ -60,7 +60,7 @@ supported_targets=['foo', 'bar']
 os_release_id='ubuntu'
 
 [metadata.all]
-dependencies=['foo', 'bar']
+dependencies='foo,bar'
 section='utilities'
 priority='normal'
 homepage='https://foobar.com'
@@ -87,7 +87,7 @@ dst="path://root/usr/bin"
 		SupportedTargets: []string{"foo", "bar"},
 		Metadata: map[string]MetadataTOML{
 			"all": {
-				Dependencies: []string{"foo", "bar"},
+				Dependencies: "foo,bar",
 				Section:      "utilities",
 				Priority:     "normal",
 				Homepage:     "https://foobar.com",
@@ -118,38 +118,4 @@ dst="path://root/usr/bin"
 		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 	}
 
-}
-
-func TestNormalizeList(t *testing.T) {
-	actual := []string{"foo", "bar"}
-	actual = normalizeList(actual)
-	expected := []string{"foo", "bar"}
-
-	if diff := cmp.Diff(actual, expected); diff != "" {
-		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
-	}
-
-	actual = []string{" foo ", " bar "}
-	actual = normalizeList(actual)
-	expected = []string{"foo", "bar"}
-
-	if diff := cmp.Diff(actual, expected); diff != "" {
-		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
-	}
-
-	actual = []string{" foo ", " ", "baz"}
-	actual = normalizeList(actual)
-	expected = []string{"foo", "baz"}
-
-	if diff := cmp.Diff(actual, expected); diff != "" {
-		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
-	}
-
-	actual = []string{"  ", " "}
-	actual = normalizeList(actual)
-	expected = nil
-
-	if diff := cmp.Diff(actual, expected); diff != "" {
-		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
-	}
 }
