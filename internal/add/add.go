@@ -57,6 +57,7 @@ func Add(protocol config.Protocol, remote string, log *internal.Log, system inte
 	}
 
 	record := config.Record{
+		Name:      component.Name,
 		LatestPin: pin,
 		Remote:    config.Remote{Protocol: protocol, URL: remoteURL},
 		Metadata:  metadata.Metadata,

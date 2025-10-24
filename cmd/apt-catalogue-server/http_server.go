@@ -84,9 +84,9 @@ func (server *HTTPServer) Release(writer http.ResponseWriter, request *http.Requ
 		}
 
 		data := internal.Deb822{}
-		data.Add("Package", pkg)
+		data.Add("Package", record.Name)
 		data.Add("Version", record.LatestPin.VersionName)
-		data.Add("Filename", pkg+".deb")
+		data.Add("Filename", record.Name+".deb")
 		data.AddList("Depends", record.Metadata.Dependencies)
 		data.Add("Section", record.Metadata.Section)
 		data.Add("Priority", record.Metadata.Priority)

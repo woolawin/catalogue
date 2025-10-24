@@ -27,6 +27,7 @@ type Pin struct {
 }
 
 type Record struct {
+	Name      string
 	LatestPin Pin
 	Remote    Remote
 	Metadata  Metadata
@@ -43,6 +44,7 @@ type PinTOML struct {
 }
 
 type RecordTOML struct {
+	Name      string       `toml:"name"`
 	LatestPin PinTOML      `toml:"latest_pin"`
 	Remote    RemoteTOML   `toml:"remote"`
 	Metadata  MetadataTOML `toml:"metadata"`
@@ -65,6 +67,7 @@ func loadRecord(toml RecordTOML) (Record, error) {
 	}
 
 	record := Record{
+		Name:   strings.TrimSpace(toml.Name),
 		Remote: Remote{Protocol: protocol},
 	}
 
@@ -88,6 +91,7 @@ func loadRecord(toml RecordTOML) (Record, error) {
 func SerializeRecord(dst io.Writer, record Record) error {
 
 	toml := RecordTOML{
+		Name: strings.TrimSpace(record.Name),
 		LatestPin: PinTOML{
 			VersionName: strings.TrimSpace(record.LatestPin.VersionName),
 			CommitHash:  strings.TrimSpace(record.LatestPin.CommitHash),

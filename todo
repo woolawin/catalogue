@@ -1,4 +1,3 @@
-add name to record.toml
 refactor errors
 refacto Log to log.Info(5, "log message", "main").Done() and log.Error(err).Done()
 move config.go into config package
