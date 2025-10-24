@@ -2,6 +2,7 @@ package clone
 
 import (
 	"os/exec"
+	"strings"
 
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/config"
@@ -69,12 +70,20 @@ func gitClone(opts Opts, log *internal.Log, api *ext.API) bool {
 	}
 
 	if opts.pin != nil {
-		sparseCheckout(opts.pin.CommitHash, opts.local, opts.path, log)
+		ok := sparseCheckout(opts.pin.CommitHash, opts.local, opts.path, log)
+		if !ok {
+			return false
+		}
+	} else {
+		revParse := exec.Command("git", "-C", opts.local, "rev-parse", "origin/main")
+		out, err := revParse.Output()
 		if err != nil {
-			log.Msg(10, "failed to checkout commit").
-				With("hash", opts.pin.CommitHash).
-				With("error", err).
-				Error()
+			log.Msg(10, "failed to get latest commit").With("error", err).Error()
+			return false
+		}
+		hash := strings.TrimSpace(string(out))
+		ok := sparseCheckout(hash, opts.local, opts.path, log)
+		if !ok {
 			return false
 		}
 	}
@@ -86,19 +95,19 @@ func sparseCheckout(hash string, local string, path string, log *internal.Log) b
 	init := exec.Command("git", "-C", local, "sparse-checkout", "init", "--cone")
 	err := init.Run()
 	if err != nil {
-		log.Msg(10, "failed to init sparse checkout").With("error", err).Error()
+		log.Msg(10, "failed to checkout, init sparse").With("hash", hash).With("error", err).Error()
 		return false
 	}
 	set := exec.Command("git", "-C", local, "sparse-checkout", "set", path)
 	err = set.Run()
 	if err != nil {
-		log.Msg(10, "failed to set sparse checkout").With("error", err).Error()
+		log.Msg(10, "failed to checkout, set sparse").With("hash", hash).With("error", err).Error()
 		return false
 	}
 	checkout := exec.Command("git", "-C", local, "checkout", hash)
 	err = checkout.Run()
 	if err != nil {
-		log.Msg(10, "failed to checkout").With("error", err).Error()
+		log.Msg(10, "failed to checkout").With("hash", hash).With("error", err).Error()
 		return false
 	}
 	return true
