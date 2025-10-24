@@ -14,6 +14,7 @@ import (
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
 	reg "github.com/woolawin/catalogue/internal/registry"
+	"github.com/woolawin/catalogue/internal/update"
 )
 
 var ErrInvalidMessage = errors.New("invalid command syntax")
@@ -100,6 +101,7 @@ func (server *Server) Shutdown() {
 type Session struct {
 	reader *msgpacklib.Decoder
 	writer *msgpacklib.Encoder
+	msg    *Message
 }
 
 func (session *Session) end(ok bool, value any) {
@@ -122,8 +124,6 @@ func (server *Server) handle(conn net.Conn) {
 	reader := msgpacklib.NewDecoder(conn)
 	writer := msgpacklib.NewEncoder(conn)
 
-	session := Session{reader: reader, writer: writer}
-
 	msg := Message{}
 	err := reader.Decode(&msg)
 	if err != nil {
@@ -136,17 +136,21 @@ func (server *Server) handle(conn net.Conn) {
 		return
 	}
 
+	session := Session{msg: &msg, reader: reader, writer: writer}
+
 	switch msg.Cmd.Command {
 	case Add:
-		server.add(msg, &session)
+		server.add(&session)
+	case Update:
+		server.update(&session)
 	case ListPackages:
-		server.list(writer)
+		server.list(&session)
 	}
 
 }
 
-func (server *Server) add(msg Message, session *Session) {
-	remote, ok, err := msg.Cmd.StringArg("remote")
+func (server *Server) add(session *Session) {
+	remote, ok, err := session.msg.Cmd.StringArg("remote")
 	if err != nil {
 		slog.Warn("can not get remote argument", "error", err)
 		return
@@ -156,7 +160,7 @@ func (server *Server) add(msg Message, session *Session) {
 		return
 	}
 
-	protocol, ok, raw, err := msg.Cmd.IntArg("protocol")
+	protocol, ok, raw, err := session.msg.Cmd.IntArg("protocol")
 	if err != nil {
 		slog.Error("invalid protocol value", "value", raw)
 		return
@@ -174,20 +178,47 @@ func (server *Server) add(msg Message, session *Session) {
 	session.end(err == nil, nil)
 }
 
-func (server *Server) list(writer *msgpacklib.Encoder) {
+func (server *Server) list(session *Session) {
 	packages, err := server.registry.ListPackages()
 	if err != nil {
 		slog.Error("failed to list packages", "error", err)
-		msg := Message{Log: &Log{Value: err.Error()}}
-		err = writer.Encode(&msg)
-		if err != nil {
-			slog.Error("failed to write log reply", "error", err)
-		}
+		session.log(err.Error())
+		session.end(false, nil)
 		return
 	}
-	reply := Message{End: &End{Ok: packages != nil, Value: packages}}
-	err = writer.Encode(&reply)
+	session.end(true, packages)
+}
+
+func (server *Server) update(session *Session) {
+	component, found, err := session.msg.Cmd.StringArg("component")
 	if err != nil {
-		slog.Error("failed to write log reply", "error", err)
+		slog.Error("failed to get component arg", "error", err)
+		session.log("daemon could not get component argument")
+		session.end(false, nil)
+		return
 	}
+
+	if !found {
+		// support updating all later on
+		session.end(true, nil)
+		return
+	}
+
+	record, found, err := server.registry.GetPackageRecord(component)
+	if err != nil {
+		slog.Error("failed to get package record", "error", err)
+		session.log(err.Error())
+		session.end(false, nil)
+		return
+	}
+
+	if !found {
+		slog.Error("could not find package", "name", component)
+		session.log("could not find package")
+		session.end(false, nil)
+		return
+	}
+
+	ok := update.Update(record, server.log, server.system, server.api, server.registry)
+	session.end(ok, nil)
 }

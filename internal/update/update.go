@@ -1,14 +1,70 @@
 package update
 
 import (
+	"bytes"
+	"path/filepath"
 	"strconv"
 
 	semverlib "github.com/Masterminds/semver/v3"
 	gitlib "github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/woolawin/catalogue/internal"
+	"github.com/woolawin/catalogue/internal/build"
+	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/config"
+	"github.com/woolawin/catalogue/internal/ext"
+	reg "github.com/woolawin/catalogue/internal/registry"
 )
+
+func Update(record config.Record, log *internal.Log, system internal.System, api *ext.API, regsitry reg.Registry) bool {
+	local := api.Host.RandomTmpDir()
+
+	opts := clone.NewOpts(
+		record.Remote,
+		local,
+		".catalogue/config.toml",
+		nil,
+	)
+
+	ok := clone.Clone(opts, log, api)
+	if !ok {
+		return false
+	}
+
+	configPath := filepath.Join(local, ".catalogue", "config.toml")
+	configData, err := api.Host.ReadTmpFile(configPath)
+	if err != nil {
+		return false
+	}
+
+	component, err := config.Parse(bytes.NewReader(configData))
+	if err != nil {
+		return false
+	}
+
+	metadata, err := build.Metadata(component.Metadata, system)
+	if err != nil {
+		return false
+	}
+
+	if len(internal.Ranked(system, component.SupportedTargets)) == 0 {
+		return false
+	}
+
+	pin, ok := PinRepo(local, component.Versioning, log)
+	if !ok {
+		return false
+	}
+
+	record.Metadata = metadata.Metadata
+	record.LatestPin = pin
+
+	err = regsitry.WriteRecord(record)
+	if err != nil {
+		return false
+	}
+	return true
+}
 
 func PinRepo(dir string, versioning config.Versioning, log *internal.Log) (config.Pin, bool) {
 	if versioning.Type == config.GitSemanticTag {

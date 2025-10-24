@@ -62,7 +62,7 @@ func (registry *Registry) AddPackage(record config.Record) error {
 		return internal.Err("package '%s' already exists", record.Name)
 	}
 
-	err = registry.writeRecord(record)
+	err = registry.WriteRecord(record)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (registry *Registry) AddPackage(record config.Record) error {
 	return nil
 }
 
-func (registry *Registry) writeRecord(record config.Record) error {
+func (registry *Registry) WriteRecord(record config.Record) error {
 	path := registry.packagePath(record.Name, "record.toml")
 
 	parent := filepath.Dir(path)
