@@ -73,12 +73,12 @@ func (dl *DownloadTOML) validate() (Download, error) {
 		return Download{}, internal.Err("download must specify a destination")
 	}
 
-	source, err := internal.ParseURL(srcValue)
+	source, err := url.Parse(srcValue)
 	if err != nil {
 		return Download{}, internal.ErrOf(err, "invalid download source")
 	}
 
-	destination, err := internal.ParseURL(dstValue)
+	destination, err := url.Parse(dstValue)
 	if err != nil {
 		return Download{}, internal.ErrOf(err, "invalid download destination")
 	}

@@ -2,8 +2,8 @@
 refactor errors
 refacto Log to log.Info(5, "log message", "main").Done() and log.Error(err).Done()
 add architectore to /Release
-remove path.go
 move config.go into config package
+add computed metadata to record
 =====
 test download
 
