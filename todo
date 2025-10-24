@@ -1,15 +1,8 @@
 refactor errors
 refacto Log to log.Info(5, "log message", "main").Done() and log.Error(err).Done()
-move config.go into config package
 =====
 test download
 check how architecture works in /Release
 
 ----
-components structure
-
-/etc/catalogue/components
-/etc/catalogue/components/packages/
-/etc/catalogue/components/packages/foo/config.toml
-/etc/catalogue/components/packages/foo/status.toml
-/etc/catalogue/components/repositories/bar/config.toml
+update task
