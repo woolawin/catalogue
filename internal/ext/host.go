@@ -2,12 +2,14 @@ package ext
 
 import (
 	"bytes"
+	"log/slog"
 	"math/rand"
 	"os"
 	"runtime"
 	"strings"
 	"time"
 
+	pgplib "github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/woolawin/catalogue/internal"
 )
 
@@ -73,6 +75,9 @@ func (host *Host) GetSystem() (internal.System, error) {
 	return system, nil
 }
 
+const privatePGPKeyPath = "/etc/catalogue/apt-private.bin"
+const publicPGPKeyPath = "/etc/catalogue/apt-public.bin"
+
 func (host *Host) GetConfigPath() string {
 	return "/etc/catalogue/config.toml"
 }
@@ -104,8 +109,28 @@ func (host *Host) GetConfig() (internal.Config, error) {
 		return internal.Config{}, err
 	}
 
+	config.PrivateAPTKey = loadPrivatePGPKey()
+
 	host.config = &config
 	return config, nil
+}
+
+func loadPrivatePGPKey() *pgplib.Entity {
+	privBytes, err := os.ReadFile(privatePGPKeyPath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			slog.Error("failed to read private gpg key file", "path", privatePGPKeyPath, "error", err)
+		}
+		return nil
+	}
+
+	key, err := internal.ReadPrivateKey(privBytes)
+	if err != nil {
+		slog.Error("failed to parse private key", "error", err)
+		return nil
+	}
+
+	return key
 }
 
 func getArch(value string) (internal.Architecture, bool) {

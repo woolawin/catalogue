@@ -25,14 +25,30 @@ import (
 
 type HTTPServer struct {
 	registry reg.Registry
+	host     *ext.Host
 	server   *http.Server
+	config   internal.Config
+	system   internal.System
 }
 
-func NewHTTPServer(registry reg.Registry) *HTTPServer {
-	return &HTTPServer{}
+func NewHTTPServer(host *ext.Host, registry reg.Registry) *HTTPServer {
+	return &HTTPServer{host: host, registry: registry}
 }
 
 func (server *HTTPServer) start() error {
+
+	cfg, err := server.host.GetConfig()
+	if err != nil {
+		return err
+	}
+	server.config = cfg
+
+	system, err := server.host.GetSystem()
+	if err != nil {
+		return err
+	}
+	server.system = system
+
 	router := chi.NewRouter()
 
 	router.Use(middleware.Logger)
@@ -123,8 +139,6 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 		fmt.Sprintf("%s %d packages/release/xz/%s/Packages", xzHash, len(xzBytes), timestamp),
 	}
 
-	var system internal.System
-
 	message := internal.SerializeDebFile([]map[string]string{
 		{
 			"Hash": "SHA512",
@@ -132,11 +146,11 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 		{
 			"Origin":        "Catalogue",
 			"Label":         "Catalogue",
-			"Suite":         system.OSReleaseVersionCodeName,
-			"Codename":      system.OSReleaseVersionCodeName,
-			"Version":       system.APTDistroVersion,
+			"Suite":         server.system.OSReleaseVersionCodeName,
+			"Codename":      server.system.OSReleaseVersionCodeName,
+			"Version":       server.system.APTDistroVersion,
 			"Date":          time.Now().UTC().Truncate(time.Second).Format(time.RFC1123),
-			"Architectures": string(system.Architecture),
+			"Architectures": string(server.system.Architecture),
 			"Components":    "packages",
 			"SHA256":        internal.DebMultiLine(sha256),
 		},
@@ -144,7 +158,7 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 
 	messageHash := sha512.Sum512([]byte(message))
 
-	signature, err := internal.PGPSign(nil, messageHash[:])
+	signature, err := internal.PGPSign(server.config.PrivateAPTKey, messageHash[:])
 	if err != nil {
 		slog.Error("failed to create signature of message", "error", err)
 		writer.WriteHeader(http.StatusInternalServerError)

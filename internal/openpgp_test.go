@@ -12,15 +12,7 @@ func TestSignPGP(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	/*
-		fmt.Println("PUBLIC")
-		fmt.Println(key.Public)
-
-		fmt.Println("PRIVATE")
-		fmt.Println(key.Private)
-	*/
-
-	priv, err := ReadPrivateKey(key.Private, nil)
+	priv, err := ReadPrivateKey(key.Private)
 	if err != nil {
 		t.Fatal(err)
 	}

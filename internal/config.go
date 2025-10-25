@@ -4,12 +4,14 @@ import (
 	"io"
 	"strings"
 
-	"github.com/pelletier/go-toml/v2"
+	pgplib "github.com/ProtonMail/go-crypto/openpgp"
+	tomllib "github.com/pelletier/go-toml/v2"
 )
 
 type Config struct {
 	DefaultUser      string
 	APTDistroVersion string
+	PrivateAPTKey    *pgplib.Entity
 }
 
 type ConfigTOML struct {
@@ -18,15 +20,15 @@ type ConfigTOML struct {
 }
 
 func ParseConfig(src io.Reader) (Config, error) {
-	deserialized := ConfigTOML{}
-	err := toml.NewDecoder(src).Decode(&deserialized)
+	toml := ConfigTOML{}
+	err := tomllib.NewDecoder(src).Decode(&toml)
 	if err != nil {
 		return Config{}, ErrOf(err, "can not deserialize config")
 	}
 
 	config := Config{
-		DefaultUser:      strings.TrimSpace(deserialized.DefaultUser),
-		APTDistroVersion: strings.TrimSpace(deserialized.APTDistroVersion),
+		DefaultUser:      strings.TrimSpace(toml.DefaultUser),
+		APTDistroVersion: strings.TrimSpace(toml.APTDistroVersion),
 	}
 
 	return config, nil

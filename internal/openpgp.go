@@ -72,7 +72,7 @@ func CreateOpenPGPKey() (*PGPKey, error) {
 	return &PGPKey{Public: public.Bytes(), Private: private.Bytes()}, nil
 }
 
-func ReadPrivateKey(private []byte, passphrase []byte) (*pgplib.Entity, error) {
+func ReadPrivateKey(private []byte) (*pgplib.Entity, error) {
 	entities, err := pgplib.ReadKeyRing(bytes.NewReader(private))
 	if err != nil {
 		return nil, err

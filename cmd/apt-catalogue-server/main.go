@@ -8,12 +8,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/woolawin/catalogue/internal/ext"
 	reg "github.com/woolawin/catalogue/internal/registry"
 )
 
 func main() {
 	registry := reg.NewRegistry()
-	server := NewHTTPServer(registry)
+	host := ext.NewHost()
+	server := NewHTTPServer(host, registry)
 
 	err := server.start()
 	if err != nil {
