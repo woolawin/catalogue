@@ -187,8 +187,8 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 		{
 			"Origin":        "Catalogue",
 			"Label":         "Catalogue",
-			"Suite":         server.system.OSReleaseVersionCodeName,
-			"Codename":      server.system.OSReleaseVersionCodeName,
+			"Suite":         "stable",
+			"Codename":      "stable",
 			"Version":       server.system.APTDistroVersion,
 			"Date":          time.Now().UTC().Truncate(time.Second).Format(time.RFC1123),
 			"Architectures": string(server.system.Architecture),

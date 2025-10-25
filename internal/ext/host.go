@@ -15,6 +15,8 @@ import (
 
 const ConfigPath = "/etc/catalogue/config.toml"
 
+const APTSourceListPath = "/etc/apt/sources.list.d/catalogue.list"
+
 const APTKeyRingPath = "/etc/catalogue/apt-keyring"
 const APTPublicGPGKeyPath = "/etc/catalogue/apt-keyring/public.gpg"
 const APTPrivateGPGKeyPath = "/etc/catalogue/apt-keyring/private.bin"

@@ -1,5 +1,6 @@
 pipe add logs to client
 add delete
+prefix http api with /repositories/{repo}/
 =====
 test download
 check how architecture works in /Release
