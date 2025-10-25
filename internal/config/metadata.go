@@ -99,5 +99,16 @@ func BuildMetadata(metadatas []*TargetMetadata, log *internal.Log, system intern
 			metadata.Architecture = data.Architecture
 		}
 	}
+
+	if len(metadata.Architecture) == 0 {
+		log.Info(7, "metadata.architecture not specified, defaulting to system '%s'", system.Architecture)
+		metadata.Architecture = string(system.Architecture)
+	}
+
+	if len(metadata.Category) == 0 {
+		log.Info(7, "metadata.ategory not specified, defaulting to 'Other'")
+		metadata.Category = "Other"
+	}
+
 	return metadata, nil
 }
