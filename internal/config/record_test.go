@@ -18,8 +18,7 @@ commit_hash='c7t43c374c34yh43fc43'
 
 [metadata]
 dependencies='foo,bar'
-section='utilities'
-priority='normal'
+category='utilities'
 homepage='https://foobar.com'
 description='foo bar'
 maintainer='Bob Doe'
@@ -47,8 +46,7 @@ type='git/semantic_tag'
 		},
 		Metadata: Metadata{
 			Dependencies: "foo,bar",
-			Section:      "utilities",
-			Priority:     "normal",
+			Category:     "utilities",
 			Homepage:     "https://foobar.com",
 			Description:  "foo bar",
 			Maintainer:   "Bob Doe",
@@ -75,8 +73,7 @@ func TestToRecordTOML(t *testing.T) {
 		},
 		Metadata: Metadata{
 			Dependencies: "foo,bar",
-			Section:      "utilities",
-			Priority:     "normal",
+			Category:     "utilities",
 			Homepage:     "https://foobar.com",
 			Description:  "foo bar",
 			Maintainer:   "Bob Doe",
@@ -98,8 +95,7 @@ func TestToRecordTOML(t *testing.T) {
 		},
 		Metadata: MetadataTOML{
 			Dependencies: "foo,bar",
-			Section:      "utilities",
-			Priority:     "normal",
+			Category:     "utilities",
 			Homepage:     "https://foobar.com",
 			Description:  "foo bar",
 			Maintainer:   "Bob Doe",

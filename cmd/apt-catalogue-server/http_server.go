@@ -69,7 +69,7 @@ func (server *HTTPServer) Release(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	output := strings.Builder{}
+	var paragraphs []map[string]string
 
 	for _, pkg := range packages {
 		record, found, err := server.registry.GetPackageRecord(pkg)
@@ -83,25 +83,22 @@ func (server *HTTPServer) Release(writer http.ResponseWriter, request *http.Requ
 			continue
 		}
 
-		data := internal.Deb822{}
-		data.Add("Package", record.Name)
-		data.Add("Version", record.LatestPin.VersionName)
-		data.Add("Filename", record.Name+".deb")
-		data.Add("Depends", record.Metadata.Dependencies)
-		data.Add("Section", record.Metadata.Section)
-		data.Add("Priority", record.Metadata.Priority)
-		data.Add("Homepage", record.Metadata.Homepage)
-		data.Add("Maintainer", record.Metadata.Maintainer)
-		data.Add("Description", record.Metadata.Description)
-		data.Add("Architecture", record.Metadata.Architecture)
-		data.Add("Recommends", record.Metadata.Recommendations)
+		paragraph := make(map[string]string)
+		paragraph["Package"] = record.Name
+		paragraph["Version"] = record.LatestPin.VersionName
+		paragraph["Filename"] = record.Name + ".deb"
+		paragraph["Depends"] = record.Metadata.Dependencies
+		paragraph["Section"] = record.Metadata.Category
+		paragraph["Homepage"] = record.Metadata.Homepage
+		paragraph["Maintainer"] = record.Metadata.Maintainer
+		paragraph["Description"] = record.Metadata.Description
+		paragraph["Architecture"] = record.Metadata.Architecture
 
-		output.WriteString(data.String())
-		output.WriteString("\n")
+		paragraphs = append(paragraphs, paragraph)
 	}
 
 	writer.WriteHeader(http.StatusOK)
-	writer.Write([]byte(output.String()))
+	writer.Write([]byte(internal.SerializeDebFile(paragraphs)))
 
 	/*
 	   Package: myapp

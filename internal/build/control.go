@@ -94,7 +94,7 @@ func copyMetadata(data map[string]string, metadata config.Metadata) map[string]s
 	}
 
 	if len(data["Section"]) == 0 {
-		data["Section"] = metadata.Section
+		data["Section"] = metadata.Category
 	}
 
 	if len(data["Homepage"]) == 0 {
@@ -113,10 +113,6 @@ func copyMetadata(data map[string]string, metadata config.Metadata) map[string]s
 		data["Architecture"] = metadata.Architecture
 	}
 
-	if len(data["Recommends"]) == 0 {
-		data["Recommends"] = metadata.Recommendations
-	}
-
 	return data
 }
 
@@ -127,12 +123,8 @@ func Metadata(metadatas []*config.TargetMetadata, system internal.System) (confi
 			metadata.Dependencies = data.Dependencies
 		}
 
-		if len(metadata.Section) == 0 && len(data.Section) != 0 {
-			metadata.Section = data.Section
-		}
-
-		if len(metadata.Priority) == 0 && len(data.Priority) != 0 {
-			metadata.Priority = data.Priority
+		if len(metadata.Category) == 0 && len(data.Category) != 0 {
+			metadata.Category = data.Category
 		}
 
 		if len(metadata.Homepage) == 0 && len(data.Homepage) != 0 {
@@ -149,10 +141,6 @@ func Metadata(metadatas []*config.TargetMetadata, system internal.System) (confi
 
 		if len(metadata.Architecture) == 0 && len(data.Architecture) != 0 {
 			metadata.Architecture = data.Architecture
-		}
-
-		if len(metadata.Recommendations) == 0 && len(data.Recommendations) != 0 {
-			metadata.Recommendations = data.Recommendations
 		}
 	}
 	return metadata, nil

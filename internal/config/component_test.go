@@ -15,8 +15,7 @@ type='  package  '
 
 [metadata.all]
 dependencies='foo, bar'
-section='utilities'
-priority='normal'
+category='utilities'
 homepage='https://foobar.com'
 description='foo bar'
 maintainer='Bob Doe'
@@ -34,8 +33,7 @@ architecture='amd64'
 		Metadata: map[string]MetadataTOML{
 			"all": {
 				Dependencies: "foo, bar",
-				Section:      "utilities",
-				Priority:     "normal",
+				Category:     "utilities",
 				Homepage:     "https://foobar.com",
 				Description:  "foo bar",
 				Maintainer:   "Bob Doe",
@@ -65,8 +63,7 @@ os_release_id='ubuntu'
 
 [metadata.all]
 dependencies='foo,bar'
-section='utilities'
-priority='normal'
+category='utilities'
 homepage='https://foobar.com'
 description='foo bar'
 maintainer='Bob Doe'
@@ -96,8 +93,7 @@ dst="path://root/usr/bin"
 		Metadata: map[string]MetadataTOML{
 			"all": {
 				Dependencies: "foo,bar",
-				Section:      "utilities",
-				Priority:     "normal",
+				Category:     "utilities",
 				Homepage:     "https://foobar.com",
 				Description:  "foo bar",
 				Maintainer:   "Bob Doe",

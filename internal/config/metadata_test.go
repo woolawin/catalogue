@@ -32,21 +32,18 @@ func TestLoadTargetMetadata(t *testing.T) {
 
 	deserialized := map[string]MetadataTOML{
 		"all": {
-			Dependencies:    " foo,bar ",
-			Section:         "  other ",
-			Priority:        "  normal  ",
-			Homepage:        "   https://foo.com/bar   ",
-			Maintainer:      " me  ",
-			Description:     "  Foo Bar ",
-			Architecture:    " all ",
-			Recommendations: "  baz ",
+			Dependencies: " foo,bar ",
+			Category:     "  other ",
+			Homepage:     "   https://foo.com/bar   ",
+			Maintainer:   " me  ",
+			Description:  "  Foo Bar ",
+			Architecture: " all ",
 		},
 		"ubuntu": {
 			Maintainer: " canonical ",
 		},
 		"arm64-ubuntu": {
-			Homepage:        "https://arm.com/foo",
-			Recommendations: "driver",
+			Homepage: "https://arm.com/foo",
 		},
 	}
 
@@ -63,14 +60,12 @@ func TestLoadTargetMetadata(t *testing.T) {
 		{
 			Target: internal.Target{Name: "all", All: true},
 			Metadata: Metadata{
-				Dependencies:    "foo,bar",
-				Section:         "other",
-				Priority:        "normal",
-				Homepage:        "https://foo.com/bar",
-				Maintainer:      "me",
-				Description:     "Foo Bar",
-				Architecture:    "all",
-				Recommendations: "baz",
+				Dependencies: "foo,bar",
+				Category:     "other",
+				Homepage:     "https://foo.com/bar",
+				Maintainer:   "me",
+				Description:  "Foo Bar",
+				Architecture: "all",
 			},
 		},
 		{
@@ -80,8 +75,7 @@ func TestLoadTargetMetadata(t *testing.T) {
 				OSReleaseID:  "ubuntu",
 			},
 			Metadata: Metadata{
-				Homepage:        "https://arm.com/foo",
-				Recommendations: "driver",
+				Homepage: "https://arm.com/foo",
 			},
 		},
 	}

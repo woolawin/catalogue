@@ -16,9 +16,7 @@ func TestMergeMeta(t *testing.T) {
 			Target: internal.Target{Name: "all", All: true},
 			Metadata: config.Metadata{
 				Dependencies: "foo,bar",
-				Section:      "utilities",
-				Priority:     "normal",
-				Homepage:     "https://foobar.com",
+				Category:     "utilities",
 				Description:  "foo bar",
 				Maintainer:   "Bob Doe",
 			},
@@ -33,7 +31,7 @@ func TestMergeMeta(t *testing.T) {
 		{
 			Target: internal.Target{Name: "arm64", Architecture: internal.ARM64},
 			Metadata: config.Metadata{
-				Recommendations: "happy,puppy",
+				Homepage: "https://foobar.com",
 			},
 		},
 	}
@@ -44,8 +42,7 @@ func TestMergeMeta(t *testing.T) {
 	}
 	expected := config.Metadata{
 		Dependencies: "foo,bar",
-		Section:      "utilities",
-		Priority:     "normal",
+		Category:     "utilities",
 		Homepage:     "https://foobar.com",
 		Description:  "foo bar",
 		Maintainer:   "Jane Doe",

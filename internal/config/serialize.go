@@ -86,14 +86,12 @@ func toVersioningTOML(versioning Versioning) VersioningTOML {
 
 func toMetadataTOML(metadata Metadata) MetadataTOML {
 	return MetadataTOML{
-		Dependencies:    strings.TrimSpace(metadata.Dependencies),
-		Section:         strings.TrimSpace(metadata.Section),
-		Priority:        strings.TrimSpace(metadata.Priority),
-		Homepage:        strings.TrimSpace(metadata.Homepage),
-		Maintainer:      strings.TrimSpace(metadata.Maintainer),
-		Description:     strings.TrimSpace(metadata.Description),
-		Architecture:    strings.TrimSpace(metadata.Architecture),
-		Recommendations: strings.TrimSpace(metadata.Recommendations),
+		Dependencies: strings.TrimSpace(metadata.Dependencies),
+		Category:     strings.TrimSpace(metadata.Category),
+		Homepage:     strings.TrimSpace(metadata.Homepage),
+		Maintainer:   strings.TrimSpace(metadata.Maintainer),
+		Description:  strings.TrimSpace(metadata.Description),
+		Architecture: strings.TrimSpace(metadata.Architecture),
 	}
 
 }
