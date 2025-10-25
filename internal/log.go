@@ -46,7 +46,7 @@ func (log *Log) Stage(stage string) func() {
 }
 
 func (log *Log) Err(cause error, format string, args ...any) {
-	error := ErrOf(cause, fmt.Sprintf(format, args...))
+	error := ErrOf(cause, format, args...)
 	stmt := LogStatement{
 		Logger:    log.logger,
 		Stage:     log.stage,

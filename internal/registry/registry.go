@@ -18,7 +18,7 @@ func NewRegistry() Registry {
 	return Registry{}
 }
 
-const base = "/etc/catalogue/components"
+const base = "/var/lib/catalogue/components"
 const packagesBase = base + "/packages"
 
 func (registry *Registry) ListPackages() ([]string, error) {
