@@ -29,7 +29,7 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 		nil,
 	)
 
-	ok := clone.Clone(opts, log, api)
+	author, ok := clone.Clone(opts, log, api)
 	if !ok {
 		return false
 	}
@@ -47,7 +47,7 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 		return false
 	}
 
-	metadata, err := config.BuildMetadata(component.Metadata, log, system)
+	metadata, err := config.BuildMetadata(component.Metadata, record.Remote, author, log, system)
 	if err != nil {
 		log.Err(err, "failed to build metadata from config.toml")
 		return false

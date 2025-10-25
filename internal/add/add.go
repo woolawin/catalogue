@@ -32,7 +32,7 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 		nil,
 	)
 
-	ok := clone.Clone(opts, log, api)
+	author, ok := clone.Clone(opts, log, api)
 	if !ok {
 		return false
 	}
@@ -50,7 +50,8 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 		return false
 	}
 
-	metadata, err := config.BuildMetadata(component.Metadata, log, system)
+	remote := config.Remote{Protocol: protocol, URL: remoteURL}
+	metadata, err := config.BuildMetadata(component.Metadata, remote, author, log, system)
 	if err != nil {
 		log.Err(err, "failed to build metadata from config.toml at '%s'", remoteStr)
 		return false
@@ -60,8 +61,6 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 		log.Err(nil, "package '%s' not supported", component.Name)
 		return false
 	}
-
-	remote := config.Remote{Protocol: protocol, URL: remoteURL}
 
 	pin, ok := update.PinRepo(local, component.Versioning, log)
 	if !ok {

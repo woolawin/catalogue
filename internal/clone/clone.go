@@ -1,9 +1,11 @@
 package clone
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 
+	gitlib "github.com/go-git/go-git/v6"
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
@@ -20,7 +22,7 @@ func NewOpts(remote config.Remote, local string, path string, pin *config.Pin) O
 	return Opts{remote: remote, local: local, path: path, pin: pin}
 }
 
-func Clone(opts Opts, log *internal.Log, api *ext.API) bool {
+func Clone(opts Opts, log *internal.Log, api *ext.API) (string, bool) {
 	prev := log.Stage("clone")
 	defer prev()
 
@@ -28,21 +30,21 @@ func Clone(opts Opts, log *internal.Log, api *ext.API) bool {
 	exists, _, err := api.Disk.DirExists(localPath)
 	if err != nil {
 		log.Err(err, "failed to check clone destination to '%s'", opts.local)
-		return false
+		return "", false
 	}
 	if exists {
 		log.Err(nil, "clone destination '%s' is not empty", opts.local)
-		return false
+		return "", false
 	}
 	switch opts.remote.Protocol {
 	case config.Git:
 		return gitClone(opts, log)
 	}
 	log.Err(nil, "unsupported clone protocol '%s'", config.ProtocolDebugString(opts.remote.Protocol))
-	return false
+	return "", false
 }
 
-func gitClone(opts Opts, log *internal.Log) bool {
+func gitClone(opts Opts, log *internal.Log) (string, bool) {
 	prev := log.Stage("git")
 	defer prev()
 	// Currently the go git library does not properly support partial clone. So we must use the git CLI
@@ -59,23 +61,39 @@ func gitClone(opts Opts, log *internal.Log) bool {
 	err := cmd.Run()
 	if err != nil {
 		log.Err(err, "failed to clone git repository '%s'", opts.remote.URL.Redacted())
-		return false
+		return "", false
 	}
 
 	if opts.pin != nil {
 		ok := sparseCheckout(opts.pin.CommitHash, opts.local, opts.path, log)
 		if !ok {
-			return false
+			return "", false
 		}
 	} else {
 		hash, ok := getLatestCommitHash(opts.local, log)
 		ok = sparseCheckout(hash, opts.local, opts.path, log)
 		if !ok {
-			return false
+			return "", false
 		}
 	}
+	defaultAuthor := "person <not@known.com>"
 
-	return true
+	repo, err := gitlib.PlainOpen(".")
+	if err != nil {
+		return defaultAuthor, true
+	}
+
+	ref, err := repo.Head()
+	if err != nil {
+		return defaultAuthor, true
+	}
+
+	commit, err := repo.CommitObject(ref.Hash())
+	if err != nil {
+		return defaultAuthor, true
+	}
+
+	return fmt.Sprintf("%s <%s>", commit.Author.Name, commit.Author.Email), true
 }
 
 func sparseCheckout(hash string, local string, path string, log *internal.Log) bool {

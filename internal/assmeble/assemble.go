@@ -27,7 +27,7 @@ func Assemble(dst io.Writer, record config.Record, log *internal.Log, system int
 		".catalogue",
 		&record.LatestPin,
 	)
-	ok := clone.Clone(opts, log, api)
+	_, ok := clone.Clone(opts, log, api)
 	if !ok {
 		return false
 	}

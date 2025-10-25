@@ -132,7 +132,7 @@ func runClone(cmd *cobra.Command, args []string) {
 		path,
 		nil,
 	)
-	ok := clone.Clone(opts, log, api)
+	_, ok := clone.Clone(opts, log, api)
 	if !ok {
 		os.Exit(1)
 	}

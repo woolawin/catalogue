@@ -96,7 +96,7 @@ func (log *DoNothingLogger) Log(stmt *internal.LogStatement) {
 
 }
 
-func TestMergeMeta(t *testing.T) {
+func TestBuildMetadata(t *testing.T) {
 	log := internal.NewLog(&DoNothingLogger{})
 	system := internal.System{Architecture: internal.AMD64}
 
@@ -126,7 +126,7 @@ func TestMergeMeta(t *testing.T) {
 		},
 	}
 
-	actual, err := BuildMetadata(metadatas, log, system)
+	actual, err := BuildMetadata(metadatas, Remote{}, "", log, system)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,6 +136,35 @@ func TestMergeMeta(t *testing.T) {
 		Homepage:     "https://foobar.com",
 		Description:  "foo bar",
 		Maintainer:   "Jane Doe",
+		Architecture: "amd64",
+	}
+
+	if diff := cmp.Diff(actual.Metadata, expected); diff != "" {
+		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+	}
+}
+
+func TestBuildMetadataWithDefaults(t *testing.T) {
+	log := internal.NewLog(&DoNothingLogger{})
+	system := internal.System{Architecture: internal.AMD64}
+
+	metadatas := []*TargetMetadata{
+		{
+			Target:   internal.Target{Name: "amd", Architecture: internal.AMD64},
+			Metadata: Metadata{},
+		},
+	}
+
+	actual, err := BuildMetadata(metadatas, Remote{URL: u("https://foo.com/bar.git")}, "bob <bob@mail.com>", log, system)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := Metadata{
+		Dependencies: "",
+		Category:     "Other",
+		Homepage:     "https://foo.com/bar",
+		Description:  "Description not provided",
+		Maintainer:   "bob <bob@mail.com>",
 		Architecture: "amd64",
 	}
 
