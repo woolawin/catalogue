@@ -94,6 +94,7 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 			"Label":         "Catalogue",
 			"Suite":         system.OSReleaseVersionCodeName,
 			"Codename":      system.OSReleaseVersionCodeName,
+			"Version":       system.APTDistroVersion,
 			"Date":          time.Now().UTC().Truncate(time.Second).Format(time.RFC1123),
 			"Architectures": string(system.Architecture),
 			"Components":    "packages",

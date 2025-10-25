@@ -33,6 +33,9 @@ type System struct {
 	OSReleaseVersion         string
 	OSReleaseVersionID       string
 	OSReleaseVersionCodeName string
+	DistribID                string
+	DistribRelease           string
+	APTDistroVersion         string
 }
 
 type GetTarget interface {

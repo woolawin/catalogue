@@ -49,6 +49,27 @@ func (host *Host) GetSystem() (internal.System, error) {
 	system.OSReleaseVersion, _ = findOSReleaseValue(osRelease, "VERSION")
 	system.OSReleaseVersionID, _ = findOSReleaseValue(osRelease, "VERSION_ID")
 	system.OSReleaseVersionCodeName, _ = findOSReleaseValue(osRelease, "VERSION_CODENAME")
+
+	lsbReleaseBytes, err := os.ReadFile("/etc/upstream-release/lsb-release")
+	if err == nil {
+		lsbRelease := strings.Split(string(lsbReleaseBytes), "\n")
+		system.DistribID, _ = findOSReleaseValue(lsbRelease, "DISTRIB_ID")
+		system.DistribRelease, _ = findOSReleaseValue(lsbRelease, "DISTRIB_RELEASE")
+	}
+
+	configAPTDistroVersion := ""
+	config, err := host.GetConfig()
+	if err == nil {
+		configAPTDistroVersion = config.APTDistroVersion
+	}
+	if len(configAPTDistroVersion) != 0 {
+		system.APTDistroVersion = configAPTDistroVersion
+	} else if len(system.DistribRelease) != 0 {
+		system.APTDistroVersion = system.DistribRelease
+	} else {
+		system.APTDistroVersion = system.OSReleaseVersionID
+	}
+
 	return system, nil
 }
 

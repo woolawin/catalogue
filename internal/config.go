@@ -8,11 +8,13 @@ import (
 )
 
 type Config struct {
-	DefaultUser string
+	DefaultUser      string
+	APTDistroVersion string
 }
 
 type ConfigTOML struct {
-	DefaultUser string `toml:"default_user"`
+	DefaultUser      string `toml:"default_user"`
+	APTDistroVersion string `toml:"apt_distro_version"`
 }
 
 func ParseConfig(src io.Reader) (Config, error) {
@@ -23,7 +25,8 @@ func ParseConfig(src io.Reader) (Config, error) {
 	}
 
 	config := Config{
-		DefaultUser: strings.TrimSpace(deserialized.DefaultUser),
+		DefaultUser:      strings.TrimSpace(deserialized.DefaultUser),
+		APTDistroVersion: strings.TrimSpace(deserialized.APTDistroVersion),
 	}
 
 	return config, nil
