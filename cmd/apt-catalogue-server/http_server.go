@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
@@ -81,6 +82,23 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	var system internal.System
+
+	var output []map[string]string
+	output = append(output, map[string]string{"Hash": "SHA512"})
+	output = append(
+		output,
+		map[string]string{
+			"Origin":        "Catalogue",
+			"Label":         "Catalogue",
+			"Suite":         system.OSReleaseVersionCodeName,
+			"Codename":      system.OSReleaseVersionCodeName,
+			"Date":          time.Now().UTC().Truncate(time.Second).Format(time.RFC1123),
+			"Architectures": string(system.Architecture),
+			"Components":    "packages",
+		},
+	)
 
 	writer.WriteHeader(http.StatusOK)
 	writer.Write([]byte(content))
