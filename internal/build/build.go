@@ -40,7 +40,7 @@ func Build(dst io.Writer, record config.Record, log *internal.Log, system intern
 		return false
 	}
 
-	ok = control(system, record, component, log, api)
+	ok = control(record, log, api)
 	if !ok {
 		return false
 	}

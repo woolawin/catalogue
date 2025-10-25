@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/build"
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
@@ -51,7 +50,7 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 		return false
 	}
 
-	metadata, err := build.Metadata(component.Metadata, system)
+	metadata, err := config.BuildMetadata(component.Metadata, system)
 	if err != nil {
 		log.Err(err, "failed to build metadata from config.toml at '%s'", remoteStr)
 		return false

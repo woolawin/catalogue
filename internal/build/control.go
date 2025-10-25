@@ -9,7 +9,7 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func control(system internal.System, record config.Record, component config.Component, log *internal.Log, api *ext.API) bool {
+func control(record config.Record, log *internal.Log, api *ext.API) bool {
 
 	log.Info(8, "building control.tar.gz")
 
@@ -114,34 +114,4 @@ func copyMetadata(data map[string]string, metadata config.Metadata) map[string]s
 	}
 
 	return data
-}
-
-func Metadata(metadatas []*config.TargetMetadata, system internal.System) (config.TargetMetadata, error) {
-	metadata := config.TargetMetadata{}
-	for _, data := range internal.Ranked(system, metadatas) {
-		if len(metadata.Dependencies) == 0 && len(data.Dependencies) != 0 {
-			metadata.Dependencies = data.Dependencies
-		}
-
-		if len(metadata.Category) == 0 && len(data.Category) != 0 {
-			metadata.Category = data.Category
-		}
-
-		if len(metadata.Homepage) == 0 && len(data.Homepage) != 0 {
-			metadata.Homepage = data.Homepage
-		}
-
-		if len(metadata.Maintainer) == 0 && len(data.Maintainer) != 0 {
-			metadata.Maintainer = data.Maintainer
-		}
-
-		if len(metadata.Description) == 0 && len(data.Description) != 0 {
-			metadata.Description = data.Description
-		}
-
-		if len(metadata.Architecture) == 0 && len(data.Architecture) != 0 {
-			metadata.Architecture = data.Architecture
-		}
-	}
-	return metadata, nil
 }

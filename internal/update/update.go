@@ -9,7 +9,6 @@ import (
 	gitlib "github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/build"
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
@@ -48,7 +47,7 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 		return false
 	}
 
-	metadata, err := build.Metadata(component.Metadata, system)
+	metadata, err := config.BuildMetadata(component.Metadata, system)
 	if err != nil {
 		log.Err(err, "failed to build metadata from config.toml")
 		return false

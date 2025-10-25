@@ -65,3 +65,33 @@ func loadMetadata(toml MetadataTOML) Metadata {
 		Architecture: strings.TrimSpace(toml.Architecture),
 	}
 }
+
+func BuildMetadata(metadatas []*TargetMetadata, system internal.System) (TargetMetadata, error) {
+	metadata := TargetMetadata{}
+	for _, data := range internal.Ranked(system, metadatas) {
+		if len(metadata.Dependencies) == 0 && len(data.Dependencies) != 0 {
+			metadata.Dependencies = data.Dependencies
+		}
+
+		if len(metadata.Category) == 0 && len(data.Category) != 0 {
+			metadata.Category = data.Category
+		}
+
+		if len(metadata.Homepage) == 0 && len(data.Homepage) != 0 {
+			metadata.Homepage = data.Homepage
+		}
+
+		if len(metadata.Maintainer) == 0 && len(data.Maintainer) != 0 {
+			metadata.Maintainer = data.Maintainer
+		}
+
+		if len(metadata.Description) == 0 && len(data.Description) != 0 {
+			metadata.Description = data.Description
+		}
+
+		if len(metadata.Architecture) == 0 && len(data.Architecture) != 0 {
+			metadata.Architecture = data.Architecture
+		}
+	}
+	return metadata, nil
+}

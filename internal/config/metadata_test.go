@@ -84,6 +84,54 @@ func TestLoadTargetMetadata(t *testing.T) {
 		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
 	}
 }
+
 func sortByTarget(a, b internal.GetTarget) int {
 	return strings.Compare(a.GetTarget().Name, b.GetTarget().Name)
+}
+
+func TestMergeMeta(t *testing.T) {
+	system := internal.System{Architecture: internal.AMD64}
+
+	metadatas := []*TargetMetadata{
+		{
+			Target: internal.Target{Name: "all", All: true},
+			Metadata: Metadata{
+				Dependencies: "foo,bar",
+				Category:     "utilities",
+				Homepage:     "https://foobar.com",
+				Description:  "foo bar",
+				Maintainer:   "Bob Doe",
+			},
+		},
+		{
+			Target: internal.Target{Name: "amd64", Architecture: internal.AMD64},
+			Metadata: Metadata{
+				Architecture: "amd64",
+				Maintainer:   "Jane Doe",
+			},
+		},
+		{
+			Target: internal.Target{Name: "arm64", Architecture: internal.ARM64},
+			Metadata: Metadata{
+				Homepage: "https://foobar.com/amd64",
+			},
+		},
+	}
+
+	actual, err := BuildMetadata(metadatas, system)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := Metadata{
+		Dependencies: "foo,bar",
+		Category:     "utilities",
+		Homepage:     "https://foobar.com",
+		Description:  "foo bar",
+		Maintainer:   "Jane Doe",
+		Architecture: "amd64",
+	}
+
+	if diff := cmp.Diff(actual.Metadata, expected); diff != "" {
+		t.Fatalf("Mismatch (-actual +expected):\n%s", diff)
+	}
 }
