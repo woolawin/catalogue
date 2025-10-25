@@ -33,6 +33,7 @@ func (server *HTTPServer) start() error {
 	router.Use(middleware.Recoverer)
 
 	router.Get("/dists/{distro}/Release", server.Release)
+	router.Get("/dists/{distro}/InRelease", server.InRelease)
 	router.Get("/pool/{file}", server.Pool)
 
 	server.server = &http.Server{
@@ -62,11 +63,34 @@ func (server *HTTPServer) Shutdown(ctx context.Context) {
 }
 
 func (server *HTTPServer) Release(writer http.ResponseWriter, request *http.Request) {
-	packages, err := server.registry.ListPackages()
+	content, err := server.packagesFile()
 	if err != nil {
 		slog.Error("failed to list packages", "error", err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	writer.Write([]byte(content))
+}
+
+func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Request) {
+	content, err := server.packagesFile()
+	if err != nil {
+		slog.Error("failed to list packages", "error", err)
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	writer.Write([]byte(content))
+}
+
+func (server *HTTPServer) packagesFile() (string, error) {
+	packages, err := server.registry.ListPackages()
+	if err != nil {
+		slog.Error("failed to list packages", "error", err)
+		return "", err
 	}
 
 	var paragraphs []map[string]string
@@ -97,18 +121,7 @@ func (server *HTTPServer) Release(writer http.ResponseWriter, request *http.Requ
 		paragraphs = append(paragraphs, paragraph)
 	}
 
-	writer.WriteHeader(http.StatusOK)
-	writer.Write([]byte(internal.SerializeDebFile(paragraphs)))
-
-	/*
-	   Package: myapp
-	   Version: 2.3.1-1
-	   Architecture: amd64
-	   Maintainer: Alice Example <alice@example.com>
-	   Filename: pool/main/m/myapp_2.3.1-1_amd64.deb
-	   Size: 53212
-	   SHA256: 7c1e...
-	*/
+	return internal.SerializeDebFile(paragraphs), nil
 }
 
 func (server *HTTPServer) Pool(writer http.ResponseWriter, request *http.Request) {
