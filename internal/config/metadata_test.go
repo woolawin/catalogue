@@ -89,7 +89,15 @@ func sortByTarget(a, b internal.GetTarget) int {
 	return strings.Compare(a.GetTarget().Name, b.GetTarget().Name)
 }
 
+type DoNothingLogger struct {
+}
+
+func (log *DoNothingLogger) Log(stmt *internal.LogStatement) {
+
+}
+
 func TestMergeMeta(t *testing.T) {
+	log := internal.NewLog(&DoNothingLogger{})
 	system := internal.System{Architecture: internal.AMD64}
 
 	metadatas := []*TargetMetadata{
@@ -118,7 +126,7 @@ func TestMergeMeta(t *testing.T) {
 		},
 	}
 
-	actual, err := BuildMetadata(metadatas, system)
+	actual, err := BuildMetadata(metadatas, log, system)
 	if err != nil {
 		t.Fatal(err)
 	}

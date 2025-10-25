@@ -47,7 +47,7 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 		return false
 	}
 
-	metadata, err := config.BuildMetadata(component.Metadata, system)
+	metadata, err := config.BuildMetadata(component.Metadata, log, system)
 	if err != nil {
 		log.Err(err, "failed to build metadata from config.toml")
 		return false
