@@ -3,10 +3,15 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"crypto/sha512"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -76,20 +81,55 @@ func (server *HTTPServer) Release(writer http.ResponseWriter, request *http.Requ
 }
 
 func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Request) {
-	content, err := server.packagesFile()
+	plain, err := server.packagesFile()
 	if err != nil {
 		slog.Error("failed to list packages", "error", err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	plainBytes := []byte(plain)
+
+	checksum := func(in []byte) string {
+		hash := sha256.Sum256(in)
+		slice := hash[:]
+		return hex.EncodeToString(slice)
+	}
+
+	plainHash := checksum(plainBytes)
+
+	var xzHash string
+	xzBytes, err := internal.XZ(plainBytes)
+	if err != nil {
+		slog.Warn("failed to compress package files using xz", "error", err)
+	} else {
+		xzHash = checksum(xzBytes)
+	}
+
+	timestamp := strconv.FormatInt(time.Now().UTC().Unix(), 10)
+
+	err = server.registry.CacheRelease("plain", timestamp, plainBytes)
+	if err != nil {
+		slog.Warn("failed to save plain cache release", "error", err)
+	}
+
+	err = server.registry.CacheRelease("xz", timestamp, xzBytes)
+	if err != nil {
+		slog.Warn("failed to save xz compressed cache release", "error", err)
+	}
+
+	sha256 := []string{
+		"",
+		fmt.Sprintf("%s %d packages/release/plain/%s/Packages", plainHash, len(plainBytes), timestamp),
+		fmt.Sprintf("%s %d packages/release/xz/%s/Packages", xzHash, len(xzBytes), timestamp),
+	}
 
 	var system internal.System
 
-	var output []map[string]string
-	output = append(output, map[string]string{"Hash": "SHA512"})
-	output = append(
-		output,
-		map[string]string{
+	message := internal.SerializeDebFile([]map[string]string{
+		{
+			"Hash": "SHA512",
+		},
+		{
 			"Origin":        "Catalogue",
 			"Label":         "Catalogue",
 			"Suite":         system.OSReleaseVersionCodeName,
@@ -98,11 +138,26 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 			"Date":          time.Now().UTC().Truncate(time.Second).Format(time.RFC1123),
 			"Architectures": string(system.Architecture),
 			"Components":    "packages",
+			"SHA256":        internal.DebMultiLine(sha256),
 		},
-	)
+	})
 
+	messageHash := sha512.Sum512([]byte(message))
+
+	signature, err := internal.PGPSign(nil, messageHash[:])
+	if err != nil {
+		slog.Error("failed to create signature of message", "error", err)
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	output := strings.Builder{}
+	output.WriteString("-----BEGIN PGP SIGNED MESSAGE-----\n")
+	output.WriteString(message)
+	output.WriteString("-----BEGIN PGP SIGNATURE----\n-")
+	output.WriteString(string(signature))
 	writer.WriteHeader(http.StatusOK)
-	writer.Write([]byte(content))
+	writer.Write([]byte(output.String()))
 }
 
 func (server *HTTPServer) packagesFile() (string, error) {

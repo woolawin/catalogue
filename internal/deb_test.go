@@ -38,6 +38,21 @@ func TestSerializeDebFile(t *testing.T) {
 		fmt.Println(strings.TrimSpace(actual))
 
 	})
+
+	t.Run("multi_line", func(t *testing.T) {
+		in := []map[string]string{
+			{
+				"ID":        "1",
+				"Checksums": DebMultiLine([]string{"", "SHA1 YES", "MD5 NO", "SHA256 YES"}),
+				"Active":    "true",
+				"C":         "D",
+			},
+		}
+
+		actual := SerializeDebFile(in)
+		fmt.Println(actual)
+	})
+
 }
 
 func TestDeserialzeDebFile(t *testing.T) {

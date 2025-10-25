@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"slices"
 
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/config"
@@ -18,8 +17,8 @@ func NewRegistry() Registry {
 	return Registry{}
 }
 
-const base = "/var/lib/catalogue/components"
-const packagesBase = base + "/packages"
+const releasesCacheBase = "/var/lib/catalogue/caches/releases"
+const packagesBase = "/var/lib/catalogue/components/packages"
 
 func (registry *Registry) ListPackages() ([]string, error) {
 	entries, err := os.ReadDir(packagesBase)
@@ -35,6 +34,45 @@ func (registry *Registry) ListPackages() ([]string, error) {
 	}
 
 	return dirs, nil
+}
+
+func (registry *Registry) CacheRelease(compression string, hash string, contents []byte) error {
+	if len(contents) == 0 {
+		return nil
+	}
+	path := registry.releaseCachePath(compression, hash)
+	parent := filepath.Dir(path)
+
+	err := os.MkdirAll(parent, 0755)
+	if err != nil {
+		return internal.ErrOf(err, "can not create releases cache directory '%s'", parent)
+	}
+
+	file, err := os.Create(path)
+	if err != nil {
+		return internal.ErrOf(err, "failed to create release cache file '%s'", path)
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, bytes.NewReader(contents))
+	if err != nil {
+		return internal.ErrOf(err, "can not write to file '%s'", path)
+	}
+
+	return nil
+}
+
+func (registry *Registry) ReadReleaseCache(hash string) (string, bool, error) {
+	path := registry.releaseCachePath(hash)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", false, nil
+		}
+		return "", false, err
+	}
+
+	return string(data), true, nil
 }
 
 func (registry *Registry) GetPackageRecord(packageName string) (config.Record, bool, error) {
@@ -112,5 +150,9 @@ func (registry *Registry) HasPackage(name string) (bool, error) {
 }
 
 func (registry *Registry) packagePath(parts ...string) string {
-	return filepath.Join(slices.Insert(parts, 0, string(packagesBase))...)
+	return filepath.Join(append([]string{packagesBase}, parts...)...)
+}
+
+func (registry *Registry) releaseCachePath(parts ...string) string {
+	return filepath.Join(append([]string{releasesCacheBase}, parts...)...)
 }

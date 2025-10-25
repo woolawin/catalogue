@@ -7,6 +7,20 @@ import (
 	"strings"
 )
 
+func DebMultiLine(lines []string) string {
+	str := strings.Builder{}
+	for idx, line := range lines {
+		if idx > 0 {
+			str.WriteString(" ")
+		}
+		str.WriteString(line)
+		if idx < (len(lines) - 1) {
+			str.WriteString("\n")
+		}
+	}
+	return str.String()
+}
+
 func DeserializeDebFile(src io.Reader) ([]map[string]string, error) {
 	var output []map[string]string
 
@@ -95,8 +109,15 @@ func SerializeDebFile(data []map[string]string) string {
 		}
 		for key, value := range paragraph {
 			deb.WriteString(key)
-			deb.WriteString(": ")
-			deb.WriteString(strings.ReplaceAll(value, "\n", " "))
+			deb.WriteString(":")
+			if len(value) == 0 {
+				deb.WriteString("\n")
+				continue
+			}
+			if value[0] != '\n' {
+				deb.WriteString(" ")
+			}
+			deb.WriteString(value)
 			deb.WriteString("\n")
 		}
 		deb.WriteString("\n")
