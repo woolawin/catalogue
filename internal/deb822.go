@@ -99,6 +99,23 @@ func DeserializeDebFile(src io.Reader) ([]map[string]string, error) {
 	return output, nil
 }
 
+func SerializeDebParagraph(data map[string]string) string {
+	if len(data) == 0 {
+		return ""
+	}
+
+	deb := strings.Builder{}
+	for key, value := range data {
+		deb.WriteString(key)
+		deb.WriteString(": ")
+		deb.WriteString(strings.ReplaceAll(value, "\n", " "))
+		deb.WriteString("\n")
+	}
+	deb.WriteString("\n")
+
+	return deb.String()
+}
+
 func SerializeDebFile(data []map[string]string) string {
 	deb := strings.Builder{}
 

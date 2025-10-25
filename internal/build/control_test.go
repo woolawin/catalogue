@@ -1,44 +1,12 @@
 package build
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/config"
 )
-
-func TestControlDataString(t *testing.T) {
-	data := ControlData{
-		Package:      "foo-bar",
-		Version:      "2.3.0",
-		Depends:      "baz,doh",
-		Recommends:   "hello,world",
-		Section:      "other",
-		Priority:     "normal",
-		Homepage:     "https://foobar.com",
-		Architecture: "amd64",
-		Maintainer:   "me",
-		Description:  "meh",
-	}
-
-	actual := strings.TrimSpace(data.String())
-	expected := strings.TrimSpace(`Package: foo-bar
-Version: 2.3.0
-Depends: baz,doh
-Recommends: hello,world
-Section: other
-Priority: normal
-Homepage: https://foobar.com
-Architecture: amd64
-Maintainer: me
-Description: meh
-`)
-	if actual != expected {
-		t.Fatalf("'%s' was not '%s'\n", actual, expected)
-	}
-}
 
 func TestMergeMeta(t *testing.T) {
 	system := internal.System{Architecture: internal.AMD64}

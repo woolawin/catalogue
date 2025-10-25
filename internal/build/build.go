@@ -10,14 +10,18 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func Build(dst io.Writer, log *internal.Log, system internal.System, api *ext.API) bool {
+func Build(dst io.Writer, record config.Record, log *internal.Log, system internal.System, api *ext.API) bool {
 	prev := log.Stage("build")
 	defer prev()
 
 	configPath := api.Disk.Path("config.toml")
-	configData, err := api.Disk.ReadFile(configPath)
+	configData, found, err := api.Disk.ReadFile(configPath)
 	if err != nil {
 		log.Err(err, "failed to read config.toml at '%s'", configPath)
+		return false
+	}
+	if !found {
+		log.Err(err, "config,toml not found")
 		return false
 	}
 
@@ -36,7 +40,7 @@ func Build(dst io.Writer, log *internal.Log, system internal.System, api *ext.AP
 		return false
 	}
 
-	ok = control(system, component, log, api)
+	ok = control(system, record, component, log, api)
 	if !ok {
 		return false
 	}

@@ -34,7 +34,7 @@ func Assemble(dst io.Writer, record config.Record, log *internal.Log, system int
 
 	buildDir := filepath.Join(local, ".catalogue")
 
-	ok = build.Build(dst, log, system, ext.NewAPI(buildDir))
+	ok = build.Build(dst, record, log, system, ext.NewAPI(buildDir))
 	if !ok {
 		return false
 	}

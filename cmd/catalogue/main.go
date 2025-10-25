@@ -5,12 +5,10 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/build"
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/daemon"
@@ -101,51 +99,6 @@ func runAdd(cmd *cobra.Command, cliargs []string) {
 
 }
 
-func runBuild(cmd *cobra.Command, args []string) {
-	system, err := ext.NewHost().GetSystem()
-	if err != nil {
-		fmt.Println("ERROR")
-		fmt.Println(err.Error())
-		os.Exit(1)
-		return
-	}
-	src, _ := cmd.Flags().GetString("src")
-	dst, _ := cmd.Flags().GetString("dst")
-
-	overrideSystem(&system, cmd)
-
-	srcAbs, err := filepath.Abs(src)
-	if err != nil {
-		fmt.Println("BAD COMMAND: source is not a valid path")
-		os.Exit(1)
-	}
-
-	dstAbs, err := filepath.Abs(dst)
-	if err != nil {
-		fmt.Println("BAD COMMAND: destination is not a valid path")
-		os.Exit(1)
-	}
-
-	api := ext.NewAPI(srcAbs)
-	dstFile, err := os.Create(dstAbs)
-	if err != nil {
-		fmt.Println("ERROR")
-		fmt.Println(internal.ErrOf(err, "can not create .deb file '%s'", dstAbs))
-		os.Exit(1)
-		return
-	}
-	defer dstFile.Close()
-
-	log := internal.NewLog(internal.NewStdoutLogger(8))
-
-	ok := build.Build(dstFile, log, system, api)
-	if !ok {
-		os.Exit(1)
-	} else {
-		fmt.Println("COMPLETED")
-	}
-}
-
 func runClone(cmd *cobra.Command, args []string) {
 	remote, _ := cmd.Flags().GetString("remote")
 	local, _ := cmd.Flags().GetString("local")
@@ -194,21 +147,22 @@ func args() *cobra.Command {
 	}
 	add.Flags().String("git", "", "Add from a git repository")
 
-	var build = &cobra.Command{
-		Use:   "build",
-		Short: "Build a package to be installed on your system",
-		Long:  "",
-		Run:   runBuild,
-	}
-	build.Flags().String("src", "", "Source directory to build from")
-	build.Flags().String("dst", "", "Destination of the package archive")
-	build.Flags().String("architecture", "", "Architecture of package to build for")
-	build.Flags().String("os-release-id", "", "OS Release ID of package to build for")
-	build.Flags().String("os-release-version", "", "OS Release version of package to build for")
-	build.Flags().String("os-release-version-id", "", "OS Release version ID of package to build for")
-	build.Flags().String("os-release-version-code-name", "", "OS Release version code name of package to build for")
-	build.MarkFlagRequired("src")
-	build.MarkFlagRequired("dst")
+	/*	var build = &cobra.Command{
+			Use:   "build",
+			Short: "Build a package to be installed on your system",
+			Long:  "",
+			Run:   runBuild,
+		}
+		build.Flags().String("src", "", "Source directory to build from")
+		build.Flags().String("dst", "", "Destination of the package archive")
+		build.Flags().String("architecture", "", "Architecture of package to build for")
+		build.Flags().String("os-release-id", "", "OS Release ID of package to build for")
+		build.Flags().String("os-release-version", "", "OS Release version of package to build for")
+		build.Flags().String("os-release-version-id", "", "OS Release version ID of package to build for")
+		build.Flags().String("os-release-version-code-name", "", "OS Release version code name of package to build for")
+		build.MarkFlagRequired("src")
+		build.MarkFlagRequired("dst")
+	*/
 
 	var printSystem = &cobra.Command{
 		Use:   "system",
@@ -258,7 +212,7 @@ func args() *cobra.Command {
 	}
 
 	root.AddCommand(add)
-	root.AddCommand(build)
+	//	root.AddCommand(build)
 	root.AddCommand(printSystem)
 	root.AddCommand(version)
 	root.AddCommand(clone)

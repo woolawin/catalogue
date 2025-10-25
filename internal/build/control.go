@@ -1,6 +1,7 @@
 package build
 
 import (
+	"bytes"
 	"strings"
 
 	"github.com/woolawin/catalogue/internal"
@@ -8,7 +9,7 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func control(system internal.System, component config.Component, log *internal.Log, api *ext.API) bool {
+func control(system internal.System, record config.Record, component config.Component, log *internal.Log, api *ext.API) bool {
 
 	log.Info(8, "building control.tar.gz")
 
@@ -47,17 +48,34 @@ func control(system internal.System, component config.Component, log *internal.L
 		}
 	}
 
-	data := ControlData{}
+	controlFile := api.Disk.Path("control", "control")
+	var data map[string]string
 
-	md, err := Metadata(component.Metadata, system)
+	controlBytes, found, err := api.Disk.ReadFile(controlFile)
 	if err != nil {
-		log.Err(err, "failed to generate metadata for control")
+		log.Err(err, "failed to read control file at '%s'", controlFile)
 		return false
 	}
-	data.SetFrom(component, md)
 
-	controlFile := api.Disk.Path("control", "control")
-	err = api.Disk.WriteFile(controlFile, strings.NewReader(data.String()))
+	if found {
+		paragraphs, err := internal.DeserializeDebFile(bytes.NewReader(controlBytes))
+		if err != nil {
+			log.Err(err, "failed to deserializ control file at '%s'", controlFile)
+			return false
+		}
+		if len(paragraphs) != 0 {
+			data = paragraphs[0]
+		}
+	} else {
+		data = make(map[string]string)
+	}
+	data = copyMetadata(data, record.Metadata)
+	data["Package"] = record.Name
+	data["Version"] = record.LatestPin.VersionName
+
+	contents := internal.SerializeDebParagraph(data)
+
+	err = api.Disk.WriteFile(controlFile, strings.NewReader(contents))
 	if err != nil {
 		log.Err(err, "failed to create control file at '%s'", controlFile)
 		return false
@@ -68,6 +86,38 @@ func control(system internal.System, component config.Component, log *internal.L
 		log.Err(err, "failed to create data.tar.gz archive")
 	}
 	return err == nil
+}
+
+func copyMetadata(data map[string]string, metadata config.Metadata) map[string]string {
+	if len(data["Depends"]) == 0 {
+		data["Depends"] = metadata.Dependencies
+	}
+
+	if len(data["Section"]) == 0 {
+		data["Section"] = metadata.Section
+	}
+
+	if len(data["Homepage"]) == 0 {
+		data["Homepage"] = metadata.Homepage
+	}
+
+	if len(data["Maintainer"]) == 0 {
+		data["Maintainer"] = metadata.Maintainer
+	}
+
+	if len(data["Description"]) == 0 {
+		data["Description"] = metadata.Description
+	}
+
+	if len(data["Architecture"]) == 0 {
+		data["Architecture"] = metadata.Architecture
+	}
+
+	if len(data["Recommends"]) == 0 {
+		data["Recommends"] = metadata.Recommendations
+	}
+
+	return data
 }
 
 func Metadata(metadatas []*config.TargetMetadata, system internal.System) (config.TargetMetadata, error) {
@@ -106,72 +156,4 @@ func Metadata(metadatas []*config.TargetMetadata, system internal.System) (confi
 		}
 	}
 	return metadata, nil
-}
-
-type ControlData struct {
-	Package      string
-	Version      string
-	Depends      string
-	Recommends   string
-	Section      string
-	Priority     string
-	Homepage     string
-	Architecture string
-	Maintainer   string
-	Description  string
-}
-
-func (data *ControlData) SetFrom(component config.Component, metadata config.TargetMetadata) {
-	if len(data.Package) == 0 {
-		data.Package = component.Name
-	}
-
-	if len(data.Depends) == 0 {
-		data.Depends = metadata.Dependencies
-	}
-
-	if len(data.Section) == 0 {
-		data.Section = metadata.Section
-	}
-
-	if len(data.Priority) == 0 {
-		data.Priority = metadata.Priority
-	}
-
-	if len(data.Homepage) == 0 {
-		data.Homepage = metadata.Homepage
-	}
-
-	if len(data.Architecture) == 0 {
-		data.Architecture = metadata.Architecture
-	}
-
-	if len(data.Maintainer) == 0 {
-		data.Maintainer = metadata.Maintainer
-	}
-
-	if len(data.Description) == 0 {
-		data.Description = metadata.Description
-	}
-
-	if len(data.Recommends) == 0 {
-		data.Recommends = metadata.Recommendations
-	}
-}
-
-func (data *ControlData) String() string {
-	deb := internal.Deb822{}
-
-	deb.Add("Package", data.Package)
-	deb.Add("Version", data.Version)
-	deb.Add("Depends", data.Depends)
-	deb.Add("Recommends", data.Recommends)
-	deb.Add("Section", data.Section)
-	deb.Add("Priority", data.Priority)
-	deb.Add("Homepage", data.Homepage)
-	deb.Add("Architecture", data.Architecture)
-	deb.Add("Maintainer", data.Maintainer)
-	deb.Add("Description", data.Description)
-
-	return deb.String()
 }
