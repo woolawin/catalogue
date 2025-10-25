@@ -13,6 +13,7 @@ import (
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/daemon"
 	"github.com/woolawin/catalogue/internal/ext"
+	"github.com/woolawin/catalogue/internal/setup"
 )
 
 //go:embed version.txt
@@ -28,6 +29,10 @@ func main() {
 
 func runVersion(cmd *cobra.Command, args []string) {
 	fmt.Print(strings.TrimSpace(Version))
+}
+
+func runSetup(cmd *cobra.Command, args []string) {
+	setup.SetUp(internal.NewLog(internal.NewStdoutLogger(5)))
 }
 
 func runUpdate(cmd *cobra.Command, cliargs []string) {
@@ -206,6 +211,13 @@ func args() *cobra.Command {
 		Run:   runUpdate,
 	}
 
+	setup := &cobra.Command{
+		Use:   "setup",
+		Short: "Checks all configuration and requirements are in place to use catalogue",
+		Long:  "",
+		Run:   runSetup,
+	}
+
 	var root = &cobra.Command{
 		Use:   "catalogue",
 		Short: "The missing piece to APT. An APT Repository Middleware",
@@ -218,5 +230,6 @@ func args() *cobra.Command {
 	root.AddCommand(clone)
 	root.AddCommand(config)
 	root.AddCommand(update)
+	root.AddCommand(setup)
 	return root
 }

@@ -209,7 +209,6 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 	output := strings.Builder{}
 	output.WriteString("-----BEGIN PGP SIGNED MESSAGE-----\n")
 	output.WriteString(message)
-	output.WriteString("-----BEGIN PGP SIGNATURE----\n-")
 	output.WriteString(string(signature))
 	writer.WriteHeader(http.StatusOK)
 	writer.Write([]byte(output.String()))

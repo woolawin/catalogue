@@ -13,6 +13,12 @@ import (
 	"github.com/woolawin/catalogue/internal"
 )
 
+const ConfigPath = "/etc/catalogue/config.toml"
+
+const APTKeyRingPath = "/etc/catalogue/apt-keyring"
+const APTPublicGPGKeyPath = "/etc/catalogue/apt-keyring/public.gpg"
+const APTPrivateGPGKeyPath = "/etc/catalogue/apt-keyring/private.bin"
+
 func NewHost() *Host {
 	return &Host{}
 }
@@ -31,7 +37,7 @@ func (host *Host) ResolveAnchor(value string) (string, error) {
 			return "", err
 		}
 		if len(config.DefaultUser) == 0 {
-			return "", internal.Err("no default user specified in '%s' for home anchor", host.GetConfigPath())
+			return "", internal.Err("no default user specified in '%s' for home anchor", ConfigPath)
 		}
 		return "/home/" + config.DefaultUser, nil
 	}
@@ -75,19 +81,12 @@ func (host *Host) GetSystem() (internal.System, error) {
 	return system, nil
 }
 
-const privatePGPKeyPath = "/etc/catalogue/apt-private.bin"
-const publicPGPKeyPath = "/etc/catalogue/apt-public.bin"
-
-func (host *Host) GetConfigPath() string {
-	return "/etc/catalogue/config.toml"
-}
-
 func (host *Host) GetConfig() (internal.Config, error) {
 	if host.config != nil {
 		return *host.config, nil
 	}
 
-	info, err := os.Stat(host.GetConfigPath())
+	info, err := os.Stat(ConfigPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return internal.Config{}, nil
@@ -99,7 +98,7 @@ func (host *Host) GetConfig() (internal.Config, error) {
 		return internal.Config{}, internal.ErrOf(err, "config file is a directory")
 	}
 
-	data, err := os.ReadFile(host.GetConfigPath())
+	data, err := os.ReadFile(ConfigPath)
 	if err != nil {
 		return internal.Config{}, internal.ErrOf(err, "can not read confile file")
 	}
@@ -116,10 +115,10 @@ func (host *Host) GetConfig() (internal.Config, error) {
 }
 
 func loadPrivatePGPKey() *pgplib.Entity {
-	privBytes, err := os.ReadFile(privatePGPKeyPath)
+	privBytes, err := os.ReadFile(APTPrivateGPGKeyPath)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			slog.Error("failed to read private gpg key file", "path", privatePGPKeyPath, "error", err)
+			slog.Error("failed to read private gpg key file", "path", APTPrivateGPGKeyPath, "error", err)
 		}
 		return nil
 	}
