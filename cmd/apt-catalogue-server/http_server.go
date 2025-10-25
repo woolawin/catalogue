@@ -57,6 +57,7 @@ func (server *HTTPServer) start() error {
 	router.Get("/dists/{distro}/Release", server.Release)
 	router.Get("/dists/{distro}/InRelease", server.InRelease)
 	router.Get("/pool/{file}", server.Pool)
+	router.Get("/packages/release/{timestamp}/{file}", server.Packages)
 
 	server.server = &http.Server{
 		Addr:    "localhost:3465",
@@ -94,6 +95,46 @@ func (server *HTTPServer) Release(writer http.ResponseWriter, request *http.Requ
 
 	writer.WriteHeader(http.StatusOK)
 	writer.Write([]byte(content))
+}
+
+func (server *HTTPServer) Packages(writer http.ResponseWriter, request *http.Request) {
+	timestamp := strings.TrimSpace(chi.URLParam(request, "timestamp"))
+	file := strings.TrimSpace(chi.URLParam(request, "file"))
+
+	if len(timestamp) == 0 || len(file) == 0 {
+		slog.Error("bad URL to packages file", "timestamp", timestamp, "file", file)
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	compression := ""
+	if strings.HasSuffix(file, "/Packages") {
+		compression = "plain"
+	} else if strings.HasSuffix(file, "/Packages.xz") {
+		compression = "xz"
+	}
+
+	if compression == "" {
+		slog.Error("packages file compression not supported", "file", file)
+		writer.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	contents, found, err := server.registry.ReadReleaseCache(compression, timestamp)
+	if err != nil {
+		slog.Error("failed to read cached release file", "file", file, "error", err)
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if !found {
+		slog.Warn("did not find cached release file", "file", file)
+		server.Release(writer, request)
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	writer.Write([]byte(contents))
 }
 
 func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Request) {
@@ -135,8 +176,8 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 
 	sha256 := []string{
 		"",
-		fmt.Sprintf("%s %d packages/release/plain/%s/Packages", plainHash, len(plainBytes), timestamp),
-		fmt.Sprintf("%s %d packages/release/xz/%s/Packages", xzHash, len(xzBytes), timestamp),
+		fmt.Sprintf("%s %d packages/release/%s/Packages", plainHash, len(plainBytes), timestamp),
+		fmt.Sprintf("%s %d packages/release/%s/Packages.xz", xzHash, len(xzBytes), timestamp),
 	}
 
 	message := internal.SerializeDebFile([]map[string]string{

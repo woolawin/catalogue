@@ -36,11 +36,11 @@ func (registry *Registry) ListPackages() ([]string, error) {
 	return dirs, nil
 }
 
-func (registry *Registry) CacheRelease(compression string, hash string, contents []byte) error {
+func (registry *Registry) CacheRelease(compression string, timestamp string, contents []byte) error {
 	if len(contents) == 0 {
 		return nil
 	}
-	path := registry.releaseCachePath(compression, hash)
+	path := registry.releaseCachePath(compression, timestamp)
 	parent := filepath.Dir(path)
 
 	err := os.MkdirAll(parent, 0755)
@@ -62,8 +62,8 @@ func (registry *Registry) CacheRelease(compression string, hash string, contents
 	return nil
 }
 
-func (registry *Registry) ReadReleaseCache(hash string) (string, bool, error) {
-	path := registry.releaseCachePath(hash)
+func (registry *Registry) ReadReleaseCache(compression string, timestamp string) (string, bool, error) {
+	path := registry.releaseCachePath(compression, timestamp)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
