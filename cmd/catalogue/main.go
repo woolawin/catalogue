@@ -61,14 +61,14 @@ func runSystem(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	builder := internal.Deb822{}
-	builder.Add("Arhiteture", string(system.Architecture))
-	builder.Add("OSReleaseID", system.OSReleaseID)
-	builder.Add("OSReleaseVersion", system.OSReleaseVersion)
-	builder.Add("OSReleaseVersionID", system.OSReleaseVersionID)
-	builder.Add("OSReleaseVersionCodeName", system.OSReleaseVersionCodeName)
+	data := make(map[string]string)
+	data["Arhiteture"] = string(system.Architecture)
+	data["OSReleaseID"] = system.OSReleaseID
+	data["OSReleaseVersion"] = system.OSReleaseVersion
+	data["OSReleaseVersionID"] = system.OSReleaseVersionID
+	data["OSReleaseVersionCodeName"] = system.OSReleaseVersionCodeName
 
-	fmt.Println(builder.String())
+	fmt.Println(internal.SerializeDebParagraph(data))
 }
 
 func runAdd(cmd *cobra.Command, cliargs []string) {
