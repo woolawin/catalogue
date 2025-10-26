@@ -37,8 +37,8 @@ jobs:
             - name: Verify Task installation
               run: task --version
 
-            - name: Build DEB file
-              run: tag build
+            - name: Build .deb file
+              run: task build
 
             - name: Upload .deb to GitHub Release
               uses: softprops/action-gh-release@v2
