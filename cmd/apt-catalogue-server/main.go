@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,12 +15,23 @@ import (
 func main() {
 	registry := reg.NewRegistry()
 	host := ext.NewHost()
-	server := NewHTTPServer(host, registry)
-
-	err := server.start()
+	config, err := host.GetConfig()
 	if err != nil {
-		fmt.Println("ERROR")
-		fmt.Println(err.Error())
+		slog.Error("failed to get config", "error", err)
+		os.Exit(1)
+	}
+
+	system, err := host.GetSystem()
+	if err != nil {
+		slog.Error("failed to get system", "error", err)
+		os.Exit(1)
+	}
+
+	server := NewHTTPServer(registry, config, system)
+
+	err = server.start()
+	if err != nil {
+		slog.Error("failed to start server", "error", err)
 		os.Exit(1)
 	}
 

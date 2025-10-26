@@ -11,7 +11,6 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -25,42 +24,29 @@ import (
 
 type HTTPServer struct {
 	registry reg.Registry
-	host     *ext.Host
 	server   *http.Server
 	config   internal.Config
 	system   internal.System
 }
 
-func NewHTTPServer(host *ext.Host, registry reg.Registry) *HTTPServer {
-	return &HTTPServer{host: host, registry: registry}
+func NewHTTPServer(registry reg.Registry, config internal.Config, system internal.System) *HTTPServer {
+	return &HTTPServer{registry: registry, config: config, system: system}
 }
 
 func (server *HTTPServer) start() error {
-
-	cfg, err := server.host.GetConfig()
-	if err != nil {
-		return err
-	}
-	server.config = cfg
-
-	system, err := server.host.GetSystem()
-	if err != nil {
-		return err
-	}
-	server.system = system
 
 	router := chi.NewRouter()
 
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 
-	router.Get("/dists/{distro}/Release", server.Release)
-	router.Get("/dists/{distro}/InRelease", server.InRelease)
-	router.Get("/pool/{file}", server.Pool)
-	router.Get("/packages/release/{timestamp}/{file}", server.Packages)
+	router.Get("/repositories/{repo}/dists/{distro}/Release", server.Release)
+	router.Get("/repositories/{repo}/dists/{distro}/InRelease", server.InRelease)
+	router.Get("/repositories/{repo}/pool/{file}", server.Pool)
+	router.Get("/repositories/{repo}/dist/{distro}/packages/binary-{arch}/{file}", server.Packages)
 
 	server.server = &http.Server{
-		Addr:    "localhost:3465",
+		Addr:    fmt.Sprintf("localhost:%d", server.config.Port),
 		Handler: router,
 	}
 
@@ -71,6 +57,8 @@ func (server *HTTPServer) start() error {
 		}
 		slog.Info("stopping http server")
 	}()
+
+	slog.Info("started http server", "port", server.config.Port)
 
 	return nil
 }
@@ -98,11 +86,10 @@ func (server *HTTPServer) Release(writer http.ResponseWriter, request *http.Requ
 }
 
 func (server *HTTPServer) Packages(writer http.ResponseWriter, request *http.Request) {
-	timestamp := strings.TrimSpace(chi.URLParam(request, "timestamp"))
 	file := strings.TrimSpace(chi.URLParam(request, "file"))
 
-	if len(timestamp) == 0 || len(file) == 0 {
-		slog.Error("bad URL to packages file", "timestamp", timestamp, "file", file)
+	if len(file) == 0 {
+		slog.Error("bad URL to packages file", "file", file)
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -120,7 +107,7 @@ func (server *HTTPServer) Packages(writer http.ResponseWriter, request *http.Req
 		return
 	}
 
-	contents, found, err := server.registry.ReadReleaseCache(compression, timestamp)
+	contents, found, err := server.registry.ReadReleaseCache(compression)
 	if err != nil {
 		slog.Error("failed to read cached release file", "file", file, "error", err)
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -162,22 +149,22 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 		xzHash = checksum(xzBytes)
 	}
 
-	timestamp := strconv.FormatInt(time.Now().UTC().Unix(), 10)
-
-	err = server.registry.CacheRelease("plain", timestamp, plainBytes)
+	err = server.registry.CacheRelease("plain", plainBytes)
 	if err != nil {
 		slog.Warn("failed to save plain cache release", "error", err)
 	}
 
-	err = server.registry.CacheRelease("xz", timestamp, xzBytes)
+	err = server.registry.CacheRelease("xz", xzBytes)
 	if err != nil {
 		slog.Warn("failed to save xz compressed cache release", "error", err)
 	}
 
+	arch := server.system.Architecture
+
 	sha256 := []string{
 		"",
-		fmt.Sprintf("%s %d packages/release/%s/Packages", plainHash, len(plainBytes), timestamp),
-		fmt.Sprintf("%s %d packages/release/%s/Packages.xz", xzHash, len(xzBytes), timestamp),
+		fmt.Sprintf("%s %d repositories/catalogue/dist/stable/packages/binary-%s/Packages", plainHash, len(plainBytes), arch),
+		fmt.Sprintf("%s %d repositories/catalogue/dist/stable/packages/binary-%s/Packages.xz", xzHash, len(xzBytes), arch),
 	}
 
 	message := internal.SerializeDebFile([]map[string]string{
@@ -238,7 +225,7 @@ func (server *HTTPServer) packagesFile() (string, error) {
 		paragraph := make(map[string]string)
 		paragraph["Package"] = record.Name
 		paragraph["Version"] = record.LatestPin.VersionName
-		paragraph["Filename"] = record.Name + ".deb"
+		paragraph["Filename"] = fmt.Sprintf("repositories/catalogue/pool/%s.deb", record.Name)
 		paragraph["Depends"] = record.Metadata.Dependencies
 		paragraph["Section"] = record.Metadata.Category
 		paragraph["Homepage"] = record.Metadata.Homepage
@@ -281,11 +268,10 @@ func (server *HTTPServer) Pool(writer http.ResponseWriter, request *http.Request
 	}
 
 	api := ext.NewAPI("/")
-	system, err := api.Host.GetSystem()
 	log := internal.NewLog(internal.NewStdoutLogger(1))
 
 	buffer := bytes.NewBuffer([]byte{})
-	ok := assemble.Assemble(buffer, record, log, system, api, server.registry)
+	ok := assemble.Assemble(buffer, record, log, server.system, api, server.registry)
 	if !ok {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return

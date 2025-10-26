@@ -20,6 +20,14 @@ func SetUp(log *internal.Log) {
 		return
 	}
 
+	alreadyExists, err := internal.CreateLinuxGroup("catalogue")
+	if err != nil {
+		log.Err(err, "failed to create linux group 'catalogue'")
+		return
+	} else if alreadyExists {
+		log.Info(10, "linux group 'catalogue' already exists")
+	}
+
 	cfg := config(log)
 	if err != nil {
 		return
@@ -161,8 +169,8 @@ func aptRepository(config *internal.Config, log *internal.Log) {
 
 	contents.WriteString("deb [signed-by=")
 	contents.WriteString(ext.APTPublicGPGKeyPath)
-	contents.WriteString("] http://localhost:")
-	contents.WriteString(strconv.Itoa(config.Port))
+	contents.WriteString("] ")
+	contents.WriteString(address(config, "catalogue"))
 	contents.WriteString(" stable packages\n")
 
 	_, err = file.Write([]byte(contents.String()))
@@ -174,4 +182,13 @@ func aptRepository(config *internal.Config, log *internal.Log) {
 
 	log.Info(10, "created %s", ext.APTSourceListPath)
 
+}
+
+func address(config *internal.Config, repo string) string {
+	addr := strings.Builder{}
+	addr.WriteString("http://localhost:")
+	addr.WriteString(strconv.Itoa(config.Port))
+	addr.WriteString("/repositories/")
+	addr.WriteString(repo)
+	return addr.String()
 }

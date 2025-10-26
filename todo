@@ -1,6 +1,6 @@
 pipe add logs to client
 add delete
-prefix http api with /repositories/{repo}/
+remove registry struct
 =====
 test download
 check how architecture works in /Release
