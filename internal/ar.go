@@ -34,13 +34,15 @@ func CreateAR(files []string, dst io.Writer, log *Log) bool {
 		return false
 	}
 
-	file, err := os.Open(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		log.Err(err, "failed to open file %s", path)
 		return false
 	}
+	// defer file.Close()
 
-	_, err = io.Copy(dst, file)
+	// _, err = io.Copy(dst, file)
+	_, err = dst.Write(data)
 	if err != nil {
 		log.Err(err, "failed to copy ar file %s", path)
 		return false

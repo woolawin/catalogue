@@ -40,7 +40,12 @@ func BuildDebFile(in string, outPath string, log *internal.Log) bool {
 		log.Err(err, "failed to open %s", outPath)
 		return false
 	}
-	defer file.Close()
+	defer func() {
+		err = file.Close()
+		if err != nil {
+			log.Err(err, "failed to close file")
+		}
+	}()
 
 	return internal.CreateAR(files, file, log)
 }
