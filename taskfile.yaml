@@ -35,4 +35,4 @@ tasks:
             - install -D ./build/apt-server ./build/deb/usr/bin/catalogue-apt-server
             - install -D ./build/catalogue ./build/deb/usr/bin/catalogue
             - install -D ./apt-server.service ./build/deb/lib/systemd/system/catalogue-apt-server.service
-            - dpkg-deb -b ./build/deb ./build/catalogue.deb
+            - dpkg-deb -b ./build/deb ./build/catalogue-{{.VERSION}}.deb
