@@ -1,55 +1,51 @@
 package internal
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"time"
-
-	arlib "github.com/blakesmith/ar"
 )
 
-func CreateAR(input map[string]string, dst io.Writer) error {
+func CreateAR(files []string, dst io.Writer, log *Log) bool {
+	prev := log.Stage("deb")
+	defer prev()
 
-	writer := arlib.NewWriter(dst)
-	err := writer.WriteGlobalHeader()
+	err := os.MkdirAll("/tmp/catalogue-ar", 0755)
 	if err != nil {
-		return ErrOf(err, "failed to write ar header")
+		log.Err(err, "failed to make tmp dir /tmp/catalogue-ar")
+		return false
 	}
 
-	for name, path := range input {
-		err := addFileToAr(writer, name, string(path), 0644)
-		if err != nil {
-			return ErrOf(err, "can not add file '%s' to .deb", name)
-		}
+	path := fmt.Sprintf("/tmp/catalogue-ar/%d.ar", time.Now().UnixMilli())
+
+	args := make([]string, len(files)+2)
+	args[0] = "rcs"
+	args[1] = path
+	for idx, file := range files {
+		args[idx+2] = file
 	}
 
-	return nil
-}
-
-func addFileToAr(writer *arlib.Writer, name string, filePath string, mode int64) error {
-	data, err := os.ReadFile(filePath)
+	ar := exec.Command("ar", args...)
+	stdout, err := ar.CombinedOutput()
 	if err != nil {
-		return ErrOf(err, "can not read file '%s'", filePath)
+		log.Err(Err(string(stdout)), "failed to archive file %s", "path")
+		return false
 	}
 
-	header := &arlib.Header{
-		Name:    name,
-		ModTime: time.Now().UTC(),
-		Uid:     0,
-		Gid:     0,
-		Mode:    mode,
-		Size:    int64(len(data)),
-	}
-
-	err = writer.WriteHeader(header)
+	file, err := os.Open(path)
 	if err != nil {
-		return ErrOf(err, "can not write header for file '%s'", name)
+		log.Err(err, "failed to open file %s", path)
+		return false
 	}
 
-	_, err = writer.Write(data)
+	_, err = io.Copy(dst, file)
 	if err != nil {
-		return ErrOf(err, "can not write file '%s'", name)
+		log.Err(err, "failed to copy ar file %s", path)
+		return false
 	}
 
-	return nil
+	return true
+
 }

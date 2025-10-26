@@ -162,6 +162,8 @@ func findOSReleaseValue(lines []string, key string) (string, bool) {
 	return "", false
 }
 
+const TmpPath = "/tmp/catalogue"
+
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func (host *Host) RandomTmpDir() string {

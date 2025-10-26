@@ -50,18 +50,13 @@ func Build(dst io.Writer, record config.Record, log *internal.Log, system intern
 		return false
 	}
 
-	files := map[string]string{
-		"debian-binary":  string(api.Disk.Path("debian-binary")),
-		"control.tar.gz": string(api.Disk.Path("control.tar.gz")),
-		"data.tar.gz":    string(api.Disk.Path("data.tar.gz")),
+	files := []string{
+		string(api.Disk.Path("debian-binary")),
+		string(api.Disk.Path("control.tar.gz")),
+		string(api.Disk.Path("data.tar.gz")),
 	}
 
-	err = internal.CreateAR(files, dst)
-	if err != nil {
-		log.Err(err, "could not create .deb file")
-		return false
-	}
-	return true
+	return internal.CreateAR(files, dst, log)
 }
 
 func debianBinary(log *internal.Log, api *ext.API) bool {

@@ -29,10 +29,10 @@ func BuildDebFile(in string, outPath string, log *internal.Log) bool {
 		return false
 	}
 
-	files := map[string]string{
-		"debian-binary":  string(disk.Path("debian-binary")),
-		"control.tar.gz": string(disk.Path("control.tar.gz")),
-		"data.tar.gz":    string(disk.Path("data.tar.gz")),
+	files := []string{
+		string(disk.Path("debian-binary")),
+		string(disk.Path("control.tar.gz")),
+		string(disk.Path("data.tar.gz")),
 	}
 
 	file, err := os.Create(outPath)
@@ -42,10 +42,5 @@ func BuildDebFile(in string, outPath string, log *internal.Log) bool {
 	}
 	defer file.Close()
 
-	err = internal.CreateAR(files, file)
-	if err != nil {
-		log.Err(err, "failed to create archive %s", outPath)
-		return false
-	}
-	return true
+	return internal.CreateAR(files, file, log)
 }
