@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -11,7 +12,11 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
+//go:embed version.txt
+var Version string
+
 func main() {
+	slog.Info("booting catalogue-apt-server", "version", Version)
 	host := ext.NewHost()
 	config, err := host.GetConfig()
 	if err != nil {

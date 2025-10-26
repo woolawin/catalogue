@@ -42,7 +42,7 @@ func (server *HTTPServer) start() error {
 	router.Get("/repositories/{repo}/dists/{distro}/Release", server.Release)
 	router.Get("/repositories/{repo}/dists/{distro}/InRelease", server.InRelease)
 	router.Get("/repositories/{repo}/pool/{package}/{version}/{commit}/install.deb", server.Pool)
-	router.Get("/repositories/{repo}/dist/{distro}/packages/binary-{arch}/{file}", server.Packages)
+	router.Get("/repositories/{repo}/dists/{distro}/packages/{arch}/{file}", server.Packages)
 
 	server.server = &http.Server{
 		Addr:    fmt.Sprintf("localhost:%d", server.config.Port),
@@ -162,8 +162,8 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 
 	sha256 := []string{
 		"",
-		fmt.Sprintf("%s %d repositories/catalogue/dist/stable/packages/binary-%s/Packages", plainHash, len(plainBytes), arch),
-		fmt.Sprintf("%s %d repositories/catalogue/dist/stable/packages/binary-%s/Packages.xz", xzHash, len(xzBytes), arch),
+		fmt.Sprintf("%s %d packages/binary-%s/Packages", plainHash, len(plainBytes), arch),
+		fmt.Sprintf("%s %d packages/binary-%s/Packages.xz", xzHash, len(xzBytes), arch),
 	}
 
 	message := internal.SerializeDebFile([]map[string]string{
@@ -230,7 +230,7 @@ func (server *HTTPServer) packagesFile() (string, error) {
 
 func packageFilename(record config.Record) string {
 	filename := strings.Builder{}
-	filename.WriteString("repositories/catalogue/pool/")
+	filename.WriteString("pool/")
 	filename.WriteString(record.Name)
 	filename.WriteString("/")
 	filename.WriteString(record.LatestPin.VersionName)

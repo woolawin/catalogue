@@ -28,6 +28,7 @@ tasks:
         cmds:
             - rm -rf ./build
             - echo -n "{{.VERSION}}" > ./cmd/catalogue/version.txt
+            - echo -n "{{.VERSION}}" > ./cmd/apt-catalogue-server/version.txt
             - mkdir -p build
             - sed 's/__VERSION__/{{.VERSION}}/g' control-template.txt > ./build/control.txt
             - task: compile
