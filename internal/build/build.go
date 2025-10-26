@@ -79,7 +79,7 @@ func debianBinary(log *internal.Log, api *ext.API) bool {
 		log.Info(8, "debian-binary already exists")
 		return true
 	}
-	err = api.Disk.WriteFile(path, strings.NewReader("2.0"))
+	err = api.Disk.WriteFile(path, strings.NewReader("2.0\n"))
 	if err != nil {
 		log.Err(err, "failed to write debian-binary file at '%s'", path)
 		return false

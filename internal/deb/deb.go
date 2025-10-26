@@ -11,7 +11,7 @@ import (
 func BuildDebFile(in string, outPath string, log *internal.Log) bool {
 	disk := ext.NewDisk(in)
 
-	err := disk.WriteFile(disk.Path("debian-binary"), strings.NewReader("2.0"))
+	err := disk.WriteFile(disk.Path("debian-binary"), strings.NewReader("2.0\n"))
 	if err != nil {
 		log.Err(err, "failed to write debian-binary file")
 		return false

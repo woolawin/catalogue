@@ -26,13 +26,13 @@ tasks:
         requires:
             vars: [VERSION]
         cmds:
+            - rm -rf ./build
             - echo -n "{{.VERSION}}" > ./cmd/catalogue/version.txt
             - mkdir -p build
             - sed 's/__VERSION__/{{.VERSION}}/g' control-template.txt > ./build/control.txt
             - task: compile
-            - rm -rf ./deb
-            - install -D ./build/control.txt ./deb/control/control
-            - install -D ./build/apt-server ./deb/data/usr/bin/catalogue-apt-server
-            - install -D ./build/catalogue ./deb/data/usr/bin/catalogue
-            - install -D ./apt-server.service ./deb/data/lib/systemd/system/catalogue-apt-server.service
-            - ./build/catalogue deb --in ./deb --out ./build/catalogue.deb
+            - install -D ./build/control.txt ./build/deb/control/control
+            - install -D ./build/apt-server ./build/deb/data/usr/bin/catalogue-apt-server
+            - install -D ./build/catalogue ./build/deb/data/usr/bin/catalogue
+            - install -D ./apt-server.service ./build/deb/data/lib/systemd/system/catalogue-apt-server.service
+            - ./build/catalogue deb --in ./build/deb --out ./build/catalogue.deb

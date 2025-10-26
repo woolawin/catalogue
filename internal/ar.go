@@ -11,7 +11,8 @@ import (
 func CreateAR(input map[string]string, dst io.Writer) error {
 
 	writer := arlib.NewWriter(dst)
-	if err := writer.WriteGlobalHeader(); err != nil {
+	err := writer.WriteGlobalHeader()
+	if err != nil {
 		return ErrOf(err, "failed to write ar header")
 	}
 
