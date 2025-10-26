@@ -38,7 +38,7 @@ jobs:
               run: task --version
 
             - name: Build .deb file
-              run: task build
+              run: task build VERSION="${{ steps.get_tag.outputs.TAG_NAME }}"
 
             - name: Upload .deb to GitHub Release
               uses: softprops/action-gh-release@v2
