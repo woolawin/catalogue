@@ -31,8 +31,7 @@ go.work.sum
 # .idea/
 # .vscode/
 
-/catalogue
-/catalogue-daemon
-/catalogue-apt-server
+/build
 /playground
 *.deb
+/deb

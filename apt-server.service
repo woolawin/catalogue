@@ -1,0 +1,13 @@
+[Unit]
+Description=Catalogue Local APT Repository Server
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/catalogue-apt-server
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/catalogue-apt-server.log
+StandardError=append:/var/log/catalogue-apt-server.log
+
+[Install]
+WantedBy=multi-user.target

@@ -1,19 +1,28 @@
 version: "3"
 
 tasks:
+    compile:
+        cmds:
+            - task: compile-cmd
+            - task: compile-daemon
+            - task: compile-apt-server
+
+    compile-daemon:
+        cmds:
+            - go build -o ./build/daemon ./cmd/daemon
+    compile-cmd:
+        cmds:
+            - go build -o ./build/catalogue ./cmd/catalogue
+
+    compile-apt-server:
+        cmds:
+            - go build -o ./build/apt-server ./cmd/apt-catalogue-server
+
     build:
         cmds:
-            - task: build-cmd
-            - task: build-daemon
-            - task: build-apt-server
-
-    build-daemon:
-        cmds:
-            - go build -o catalogue-daemon ./cmd/daemon
-    build-cmd:
-        cmds:
-            - go build -o catalogue ./cmd/catalogue
-
-    build-apt-server:
-        cmds:
-            - go build -o catalogue-apt-server ./cmd/apt-catalogue-server
+            - task: compile
+            - rm -rf ./deb
+            - install -D ./control.txt ./deb/control/control
+            - install -D ./build/apt-server ./deb/data/usr/bin/catalogue-apt-server
+            - install -D ./apt-server.service ./deb/data/lib/systemd/system/catalogue-apt-server.service
+            - ./build/catalogue deb --in ./deb --out ./build/catalogue.deb

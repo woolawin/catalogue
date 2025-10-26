@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -12,6 +13,7 @@ import (
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/daemon"
+	"github.com/woolawin/catalogue/internal/deb"
 	"github.com/woolawin/catalogue/internal/ext"
 	"github.com/woolawin/catalogue/internal/setup"
 )
@@ -33,6 +35,30 @@ func runVersion(cmd *cobra.Command, args []string) {
 
 func runSetup(cmd *cobra.Command, args []string) {
 	setup.SetUp(internal.NewLog(internal.NewStdoutLogger(5)))
+}
+
+func runDeb(cmd *cobra.Command, args []string) {
+	in, _ := cmd.Flags().GetString("in")
+	out, _ := cmd.Flags().GetString("out")
+
+	log := internal.NewLog(internal.NewStdoutLogger(5))
+
+	inPath, err := filepath.Abs(in)
+	if err != nil {
+		log.Err(err, "invalid in '%s'", in)
+		os.Exit(1)
+	}
+
+	outPath, err := filepath.Abs(out)
+	if err != nil {
+		log.Err(err, "invalid out '%s'", in)
+		os.Exit(1)
+	}
+
+	ok := deb.BuildDebFile(inPath, outPath, log)
+	if !ok {
+		os.Exit(1)
+	}
 }
 
 func runUpdate(cmd *cobra.Command, cliargs []string) {
@@ -218,6 +244,17 @@ func args() *cobra.Command {
 		Run:   runSetup,
 	}
 
+	deb := &cobra.Command{
+		Use:   "deb",
+		Short: "Creates a deb file from a directory containing the data and control directories",
+		Long:  "",
+		Run:   runDeb,
+	}
+	deb.Flags().String("in", "", "The location of the directory with data and control directory")
+	deb.Flags().String("out", "", "The location to create the deb file at")
+	deb.MarkFlagRequired("in")
+	deb.MarkFlagRequired("out")
+
 	var root = &cobra.Command{
 		Use:   "catalogue",
 		Short: "The missing piece to APT. An APT Repository Middleware",
@@ -231,5 +268,6 @@ func args() *cobra.Command {
 	root.AddCommand(config)
 	root.AddCommand(update)
 	root.AddCommand(setup)
+	root.AddCommand(deb)
 	return root
 }
