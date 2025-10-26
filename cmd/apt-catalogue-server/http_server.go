@@ -94,9 +94,9 @@ func (server *HTTPServer) Packages(writer http.ResponseWriter, request *http.Req
 	}
 
 	compression := ""
-	if strings.HasSuffix(file, "/Packages") {
+	if file == "Packages" {
 		compression = "plain"
-	} else if strings.HasSuffix(file, "/Packages.xz") {
+	} else if file == "Packages.xz" {
 		compression = "xz"
 	}
 
