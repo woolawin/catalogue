@@ -1,0 +1,7 @@
+Name: Catalogue
+Version: __VERSION__
+Depends: git
+Homepage: https://github.com/woolawin/catalogue
+Maintainer: Blair Harris <woolawin@gmail.com>
+Description: Local APT repository to connect APT to git repositories
+Architecture: amd64

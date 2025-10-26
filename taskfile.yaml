@@ -18,11 +18,20 @@ tasks:
         cmds:
             - go build -o ./build/apt-server ./cmd/apt-catalogue-server
 
-    build:
+    clean:
         cmds:
+            - rm -rf ./build
+
+    build:
+        requires:
+            vars: [VERSION]
+        cmds:
+            - echo -n "{{.VERSION}}" > ./cmd/catalogue/version.txt
+            - mkdir build
+            - sed 's/__VERSION__/{{.VERSION}}/g' control-template.txt > ./build/control.txt
             - task: compile
             - rm -rf ./deb
-            - install -D ./control.txt ./deb/control/control
+            - install -D ./build/control.txt ./deb/control/control
             - install -D ./build/apt-server ./deb/data/usr/bin/catalogue-apt-server
             - install -D ./build/catalogue ./deb/data/usr/bin/catalogue
             - install -D ./apt-server.service ./deb/data/lib/systemd/system/catalogue-apt-server.service
