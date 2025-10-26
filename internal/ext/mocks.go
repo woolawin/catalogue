@@ -18,13 +18,6 @@ func (mock *MockDisk) Path(parts ...string) DiskPath {
 	return DiskPath(filepath.Join(parts...))
 }
 
-func (mock *MockDisk) FileExists(path DiskPath) (bool, bool, error) {
-	if slices.Contains(mock.Files, string(path)) {
-		return true, true, nil
-	}
-	return false, false, nil
-}
-
 func (mock *MockDisk) DirExists(path DiskPath) (bool, bool, error) {
 	if slices.Contains(mock.Dirs, string(path)) {
 		return true, true, nil
@@ -59,16 +52,7 @@ func (mock *MockDisk) List(path DiskPath) ([]DiskPath, []DiskPath, error) {
 	return files, dirs, nil
 }
 
-func (mock *MockDisk) ArchiveDir(src, dst DiskPath) error {
-	return nil
-}
-
 func (mock *MockDisk) WriteFile(path DiskPath, data io.Reader) error {
-	return nil
-}
-
-func (mock *MockDisk) CreateDir(path DiskPath) error {
-	mock.Dirs = append(mock.Dirs, string(path))
 	return nil
 }
 
@@ -76,21 +60,8 @@ func (mock *MockDisk) ListRec(path DiskPath) ([]DiskPath, error) {
 	return nil, nil
 }
 
-func (mock *MockDisk) CreateTar(path DiskPath) error {
-	mock.Files = append(mock.Files, string(path))
-	return nil
-}
-
-func (mock *MockDisk) Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool, log *internal.Log) bool {
-	return false
-}
-
 func (mock *MockDisk) Transfer(disk Disk, toPath string, fromPath DiskPath, files []DiskPath, log *internal.Log) bool {
 	return false
-}
-
-func (mock *MockDisk) CreateDeb(path string, files map[string]DiskPath) error {
-	return nil
 }
 
 func (mock *MockDisk) Unsafe(path DiskPath) bool {

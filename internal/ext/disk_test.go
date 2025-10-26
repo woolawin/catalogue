@@ -16,14 +16,3 @@ func TestFilePath(t *testing.T) {
 		t.Fatalf("'%s' not correct", path)
 	}
 }
-
-func TestArchiveFilePath(t *testing.T) {
-	actual, err := arhiveFilePath("/foo/bar/baz", "/foo/bar/baz/doh/data.txt")
-	if err != nil {
-		t.Fatal(err)
-	}
-	expected := "/doh/data.txt"
-	if actual != expected {
-		t.Fatalf("expected '%s' to be '%s'", actual, expected)
-	}
-}
