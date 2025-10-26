@@ -93,6 +93,10 @@ func (mock *MockDisk) CreateDeb(path string, files map[string]DiskPath) error {
 	return nil
 }
 
+func (mock *MockDisk) Unsafe(path DiskPath) bool {
+	return false
+}
+
 func (mock *MockDisk) ReadFile(path DiskPath) ([]byte, bool, error) {
 	return nil, false, nil
 }
