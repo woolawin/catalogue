@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"crypto/rand"
 	"fmt"
 	"testing"
 )
@@ -17,16 +16,11 @@ func TestSignPGP(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	message := make([]byte, 64)
-	_, err = rand.Read(message)
+	message := "Hello World"
+	signature, err := PGPSign(priv, []byte(message))
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	signature, err := PGPSign(priv, message)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	fmt.Println("============================")
 	fmt.Println(string(signature))
 }

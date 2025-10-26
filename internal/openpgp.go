@@ -6,22 +6,18 @@ import (
 	"time"
 
 	pgplib "github.com/ProtonMail/go-crypto/openpgp"
-	armorlib "github.com/ProtonMail/go-crypto/openpgp/armor"
+	clearsign "github.com/ProtonMail/go-crypto/openpgp/clearsign"
 	packetlib "github.com/ProtonMail/go-crypto/openpgp/packet"
 )
 
 func PGPSign(key *pgplib.Entity, data []byte) (string, error) {
 	var buf bytes.Buffer
-	armored, err := armorlib.Encode(&buf, "PGP SIGNATURE", nil)
-	if err != nil {
-		return "", err
-	}
-	defer armored.Close()
 
-	writer, err := pgplib.Sign(armored, key, nil, nil)
+	writer, err := clearsign.Encode(&buf, key.PrivateKey, nil)
 	if err != nil {
 		return "", err
 	}
+
 	_, err = writer.Write(data)
 	if err != nil {
 		return "", err
@@ -31,10 +27,6 @@ func PGPSign(key *pgplib.Entity, data []byte) (string, error) {
 		return "", err
 	}
 
-	err = armored.Close()
-	if err != nil {
-		return "", err
-	}
 	return buf.String(), nil
 }
 

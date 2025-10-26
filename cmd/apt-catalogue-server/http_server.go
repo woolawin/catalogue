@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"crypto/sha512"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -169,9 +168,6 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 
 	message := internal.SerializeDebFile([]map[string]string{
 		{
-			"Hash": "SHA512",
-		},
-		{
 			"Origin":        "Catalogue",
 			"Label":         "Catalogue",
 			"Suite":         "stable",
@@ -184,21 +180,14 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 		},
 	})
 
-	messageHash := sha512.Sum512([]byte(message))
-
-	signature, err := internal.PGPSign(server.config.PrivateAPTKey, messageHash[:])
+	signature, err := internal.PGPSign(server.config.PrivateAPTKey, []byte(message))
 	if err != nil {
 		slog.Error("failed to create signature of message", "error", err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	output := strings.Builder{}
-	output.WriteString("-----BEGIN PGP SIGNED MESSAGE-----\n")
-	output.WriteString(message)
-	output.WriteString(string(signature))
-	writer.WriteHeader(http.StatusOK)
-	writer.Write([]byte(output.String()))
+	writer.Write([]byte(signature))
 }
 
 func (server *HTTPServer) packagesFile() (string, error) {
