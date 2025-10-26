@@ -24,5 +24,6 @@ tasks:
             - rm -rf ./deb
             - install -D ./control.txt ./deb/control/control
             - install -D ./build/apt-server ./deb/data/usr/bin/catalogue-apt-server
+            - install -D ./build/catalogue ./deb/data/usr/bin/catalogue
             - install -D ./apt-server.service ./deb/data/lib/systemd/system/catalogue-apt-server.service
             - ./build/catalogue deb --in ./deb --out ./build/catalogue.deb
