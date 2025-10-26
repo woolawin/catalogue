@@ -1,6 +1,6 @@
 pipe add logs to client
 add delete
-remove registry struct
+pass Disk separatly from api
 =====
 test download
 check how architecture works in /Release

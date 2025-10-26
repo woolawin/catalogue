@@ -76,31 +76,6 @@ func Build(dst io.Writer, record config.Record, log *internal.Log, system intern
 		return false
 	}
 
-	/*
-		ok := debianBinary(log, api)
-		if !ok {
-			return false
-		}
-
-		ok = control(record, log, api)
-		if !ok {
-			return false
-		}
-	*/
-
-	/* 	ok := data(system, component, log, api)
-	   	if !ok {
-	   		return false
-	   	}
-
-	   	files := []string{
-	   		string(api.Disk.Path("debian-binary")),
-	   		string(api.Disk.Path("control.tar.gz")),
-	   		string(api.Disk.Path("data.tar.gz")),
-	   	}
-
-	   	return internal.CreateAR(files, dst, log)
-	*/
 	return true
 }
 
