@@ -1,0 +1,49 @@
+name: On Release Tag
+
+on:
+    push:
+        tags:
+            - "*"
+
+jobs:
+    build_deb:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            actions: write
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.ref }}
+
+            - name: Get Tag Name
+              id: get_tag
+              run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+            - name: Show Tag Name and Current Commit
+              run: |
+                  echo "The workflow was triggered by the tag: ${{ steps.get_tag.outputs.TAG_NAME }}"
+                  echo "The current commit is: $(git rev-parse HEAD)"
+
+            - name: Set up Go
+              uses: actions/setup-go@v5
+              with:
+                  go-version: "1.25"
+
+            - name: Install Task
+              uses: arduino/setup-task@v2
+
+            - name: Verify Task installation
+              run: task --version
+
+            - name: Build DEB file
+              run: tag build
+
+            - name: Upload .deb to GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: |
+                      build/*.deb
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
