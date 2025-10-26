@@ -18,6 +18,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/woolawin/catalogue/internal"
 	assemble "github.com/woolawin/catalogue/internal/assmeble"
+	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
 	"github.com/woolawin/catalogue/internal/registry"
 )
@@ -41,7 +42,7 @@ func (server *HTTPServer) start() error {
 
 	router.Get("/repositories/{repo}/dists/{distro}/Release", server.Release)
 	router.Get("/repositories/{repo}/dists/{distro}/InRelease", server.InRelease)
-	router.Get("/repositories/{repo}/pool/{file}", server.Pool)
+	router.Get("/repositories/{repo}/pool/{package}/{version}/{commit}/install.deb", server.Pool)
 	router.Get("/repositories/{repo}/dist/{distro}/packages/binary-{arch}/{file}", server.Packages)
 
 	server.server = &http.Server{
@@ -224,7 +225,7 @@ func (server *HTTPServer) packagesFile() (string, error) {
 		paragraph := make(map[string]string)
 		paragraph["Package"] = record.Name
 		paragraph["Version"] = record.LatestPin.VersionName
-		paragraph["Filename"] = fmt.Sprintf("repositories/catalogue/pool/%s.deb", record.Name)
+		paragraph["Filename"] = packageFilename(record)
 		paragraph["Depends"] = record.Metadata.Dependencies
 		paragraph["Section"] = record.Metadata.Category
 		paragraph["Homepage"] = record.Metadata.Homepage
@@ -238,32 +239,43 @@ func (server *HTTPServer) packagesFile() (string, error) {
 	return internal.SerializeDebFile(paragraphs), nil
 }
 
+func packageFilename(record config.Record) string {
+	filename := strings.Builder{}
+	filename.WriteString("repositories/catalogue/pool/")
+	filename.WriteString(record.Name)
+	filename.WriteString("/")
+	filename.WriteString(record.LatestPin.VersionName)
+	filename.WriteString("/")
+	filename.WriteString(record.LatestPin.CommitHash)
+	filename.WriteString("/install.deb")
+	return filename.String()
+}
+
 func (server *HTTPServer) Pool(writer http.ResponseWriter, request *http.Request) {
-	file := strings.TrimSpace(chi.URLParam(request, "file"))
-	if len(file) == 0 {
+	pkg := strings.TrimSpace(chi.URLParam(request, "package"))
+	if len(pkg) == 0 {
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	dot := strings.Index(file, ".")
-	if dot == -1 {
-		slog.Error("faile did not contain dot", "file", file)
-		writer.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	version := strings.TrimSpace(chi.URLParam(request, "version"))
+	commit := strings.TrimSpace(chi.URLParam(request, "commit"))
 
-	packageName := file[:dot]
-	record, found, err := registry.GetPackageRecord(packageName)
+	record, found, err := registry.GetPackageRecord(pkg)
 	if err != nil {
-		slog.Error("could not get record file for package", "package", packageName, "error", err)
+		slog.Error("could not get record file for package", "package", pkg, "error", err)
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if !found {
-		slog.Error("could not find package", "package", packageName)
+		slog.Error("could not find package", "package", pkg)
 		writer.WriteHeader(http.StatusNotFound)
 		return
+	}
+
+	if len(version) != 0 && len(commit) != 0 {
+		record.LatestPin = config.Pin{VersionName: version, CommitHash: commit}
 	}
 
 	api := ext.NewAPI("/")
@@ -279,7 +291,7 @@ func (server *HTTPServer) Pool(writer http.ResponseWriter, request *http.Request
 	writer.WriteHeader(http.StatusOK)
 	_, err = io.Copy(writer, buffer)
 	if err != nil {
-		slog.Error("could not write file to response", "package", packageName, "error", err)
+		slog.Error("could not write file to response", "package", pkg, "error", err)
 		writer.WriteHeader(http.StatusInternalServerError)
 	}
 }
