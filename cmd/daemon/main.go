@@ -11,12 +11,10 @@ import (
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/daemon"
 	"github.com/woolawin/catalogue/internal/ext"
-	reg "github.com/woolawin/catalogue/internal/registry"
 )
 
 func main() {
 
-	registry := reg.NewRegistry()
 	api := ext.NewAPI("/")
 	system, err := api.Host.GetSystem()
 	if err != nil {
@@ -27,7 +25,7 @@ func main() {
 
 	logger := internal.NewStdoutLogger(5)
 
-	server := daemon.NewServer(logger, system, api, registry)
+	server := daemon.NewServer(logger, system, api)
 
 	err = server.Start()
 	if err != nil {

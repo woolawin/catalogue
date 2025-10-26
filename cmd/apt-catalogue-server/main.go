@@ -9,11 +9,9 @@ import (
 	"time"
 
 	"github.com/woolawin/catalogue/internal/ext"
-	reg "github.com/woolawin/catalogue/internal/registry"
 )
 
 func main() {
-	registry := reg.NewRegistry()
 	host := ext.NewHost()
 	config, err := host.GetConfig()
 	if err != nil {
@@ -27,7 +25,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	server := NewHTTPServer(registry, config, system)
+	server := NewHTTPServer(config, system)
 
 	err = server.start()
 	if err != nil {

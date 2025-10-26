@@ -9,11 +9,11 @@ import (
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
-	reg "github.com/woolawin/catalogue/internal/registry"
+	"github.com/woolawin/catalogue/internal/registry"
 	"github.com/woolawin/catalogue/internal/update"
 )
 
-func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system internal.System, api *ext.API, registry reg.Registry) bool {
+func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system internal.System, api *ext.API) bool {
 	prev := log.Stage("add")
 	defer prev()
 

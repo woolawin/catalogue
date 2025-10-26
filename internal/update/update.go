@@ -12,10 +12,10 @@ import (
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
-	reg "github.com/woolawin/catalogue/internal/registry"
+	"github.com/woolawin/catalogue/internal/registry"
 )
 
-func Update(record config.Record, log *internal.Log, system internal.System, api *ext.API, regsitry reg.Registry) bool {
+func Update(record config.Record, log *internal.Log, system internal.System, api *ext.API) bool {
 	prev := log.Stage("update")
 	defer prev()
 
@@ -66,7 +66,7 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 	record.Metadata = metadata.Metadata
 	record.LatestPin = pin
 
-	err = regsitry.WriteRecord(record)
+	err = registry.WriteRecord(record)
 	if err != nil {
 		log.Err(err, "failed to write record.toml")
 		return false

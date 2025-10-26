@@ -11,10 +11,9 @@ import (
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
-	reg "github.com/woolawin/catalogue/internal/registry"
 )
 
-func Assemble(dst io.Writer, record config.Record, log *internal.Log, system internal.System, api *ext.API, registry reg.Registry) bool {
+func Assemble(dst io.Writer, record config.Record, log *internal.Log, system internal.System, api *ext.API) bool {
 	prev := log.Stage("assemble")
 	defer prev()
 	log.Info(10, "assembling package '%s'", record.Name)

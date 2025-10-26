@@ -19,18 +19,17 @@ import (
 	"github.com/woolawin/catalogue/internal"
 	assemble "github.com/woolawin/catalogue/internal/assmeble"
 	"github.com/woolawin/catalogue/internal/ext"
-	reg "github.com/woolawin/catalogue/internal/registry"
+	"github.com/woolawin/catalogue/internal/registry"
 )
 
 type HTTPServer struct {
-	registry reg.Registry
-	server   *http.Server
-	config   internal.Config
-	system   internal.System
+	server *http.Server
+	config internal.Config
+	system internal.System
 }
 
-func NewHTTPServer(registry reg.Registry, config internal.Config, system internal.System) *HTTPServer {
-	return &HTTPServer{registry: registry, config: config, system: system}
+func NewHTTPServer(config internal.Config, system internal.System) *HTTPServer {
+	return &HTTPServer{config: config, system: system}
 }
 
 func (server *HTTPServer) start() error {
@@ -107,7 +106,7 @@ func (server *HTTPServer) Packages(writer http.ResponseWriter, request *http.Req
 		return
 	}
 
-	contents, found, err := server.registry.ReadReleaseCache(compression)
+	contents, found, err := registry.ReadReleaseCache(compression)
 	if err != nil {
 		slog.Error("failed to read cached release file", "file", file, "error", err)
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -149,12 +148,12 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 		xzHash = checksum(xzBytes)
 	}
 
-	err = server.registry.CacheRelease("plain", plainBytes)
+	err = registry.CacheRelease("plain", plainBytes)
 	if err != nil {
 		slog.Warn("failed to save plain cache release", "error", err)
 	}
 
-	err = server.registry.CacheRelease("xz", xzBytes)
+	err = registry.CacheRelease("xz", xzBytes)
 	if err != nil {
 		slog.Warn("failed to save xz compressed cache release", "error", err)
 	}
@@ -202,7 +201,7 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 }
 
 func (server *HTTPServer) packagesFile() (string, error) {
-	packages, err := server.registry.ListPackages()
+	packages, err := registry.ListPackages()
 	if err != nil {
 		slog.Error("failed to list packages", "error", err)
 		return "", err
@@ -211,7 +210,7 @@ func (server *HTTPServer) packagesFile() (string, error) {
 	var paragraphs []map[string]string
 
 	for _, pkg := range packages {
-		record, found, err := server.registry.GetPackageRecord(pkg)
+		record, found, err := registry.GetPackageRecord(pkg)
 		if err != nil {
 			slog.Error("failed to get package config", "package", pkg, "error", err)
 			continue
@@ -254,7 +253,7 @@ func (server *HTTPServer) Pool(writer http.ResponseWriter, request *http.Request
 	}
 
 	packageName := file[:dot]
-	record, found, err := server.registry.GetPackageRecord(packageName)
+	record, found, err := registry.GetPackageRecord(packageName)
 	if err != nil {
 		slog.Error("could not get record file for package", "package", packageName, "error", err)
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -271,7 +270,7 @@ func (server *HTTPServer) Pool(writer http.ResponseWriter, request *http.Request
 	log := internal.NewLog(internal.NewStdoutLogger(1))
 
 	buffer := bytes.NewBuffer([]byte{})
-	ok := assemble.Assemble(buffer, record, log, server.system, api, server.registry)
+	ok := assemble.Assemble(buffer, record, log, server.system, api)
 	if !ok {
 		writer.WriteHeader(http.StatusInternalServerError)
 		return

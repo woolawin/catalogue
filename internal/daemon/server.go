@@ -13,7 +13,7 @@ import (
 	"github.com/woolawin/catalogue/internal/add"
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
-	reg "github.com/woolawin/catalogue/internal/registry"
+	"github.com/woolawin/catalogue/internal/registry"
 	"github.com/woolawin/catalogue/internal/update"
 )
 
@@ -23,19 +23,18 @@ var ErrUnknownAction = errors.New("unknown action")
 const path = "/var/run/catalogue.sock"
 
 type Server struct {
-	system   internal.System
-	api      *ext.API
-	registry reg.Registry
-	logger   internal.Logger
-	log      *internal.Log
+	system internal.System
+	api    *ext.API
+	logger internal.Logger
+	log    *internal.Log
 
 	listener net.Listener
 }
 
-func NewServer(logger internal.Logger, system internal.System, api *ext.API, registry reg.Registry) *Server {
+func NewServer(logger internal.Logger, system internal.System, api *ext.API) *Server {
 	log := internal.NewLog(logger)
 	log.Stage("server")
-	return &Server{log: log, logger: logger, system: system, api: api, registry: registry}
+	return &Server{log: log, logger: logger, system: system, api: api}
 }
 
 func (server *Server) Start() error {
@@ -182,13 +181,13 @@ func (server *Server) add(session *Session) {
 		return
 	}
 
-	ok = add.Add(config.Protocol(protocol), remote, server.log, server.system, server.api, server.registry)
+	ok = add.Add(config.Protocol(protocol), remote, server.log, server.system, server.api)
 	session.end(ok, nil)
 }
 
 func (server *Server) list(session *Session) {
 	session.log.Stage("server")
-	packages, err := server.registry.ListPackages()
+	packages, err := registry.ListPackages()
 	if err != nil {
 		session.log.Err(err, "failed to list packages")
 		return
@@ -211,7 +210,7 @@ func (server *Server) update(session *Session) {
 		return
 	}
 
-	record, found, err := server.registry.GetPackageRecord(component)
+	record, found, err := registry.GetPackageRecord(component)
 	if err != nil {
 		session.log.Err(err, "failed to get package record")
 		session.end(false, nil)
@@ -224,6 +223,6 @@ func (server *Server) update(session *Session) {
 		return
 	}
 
-	ok := update.Update(record, session.log, server.system, server.api, server.registry)
+	ok := update.Update(record, session.log, server.system, server.api)
 	session.end(ok, nil)
 }

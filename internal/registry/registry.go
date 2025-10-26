@@ -10,17 +10,10 @@ import (
 	"github.com/woolawin/catalogue/internal/config"
 )
 
-type Registry struct {
-}
-
-func NewRegistry() Registry {
-	return Registry{}
-}
-
 const releasesCacheBase = "/var/lib/catalogue/caches/releases"
 const packagesBase = "/var/lib/catalogue/components/packages"
 
-func (registry *Registry) ListPackages() ([]string, error) {
+func ListPackages() ([]string, error) {
 	entries, err := os.ReadDir(packagesBase)
 	if err != nil {
 		return nil, internal.ErrOf(err, "can not list directory '%s'", packagesBase)
@@ -36,11 +29,11 @@ func (registry *Registry) ListPackages() ([]string, error) {
 	return dirs, nil
 }
 
-func (registry *Registry) CacheRelease(compression string, contents []byte) error {
+func CacheRelease(compression string, contents []byte) error {
 	if len(contents) == 0 {
 		return nil
 	}
-	path := registry.releaseCachePath(compression, "latest")
+	path := releaseCachePath(compression, "latest")
 	parent := filepath.Dir(path)
 
 	err := os.MkdirAll(parent, 0755)
@@ -62,8 +55,8 @@ func (registry *Registry) CacheRelease(compression string, contents []byte) erro
 	return nil
 }
 
-func (registry *Registry) ReadReleaseCache(compression string) (string, bool, error) {
-	path := registry.releaseCachePath(compression, "latest")
+func ReadReleaseCache(compression string) (string, bool, error) {
+	path := releaseCachePath(compression, "latest")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -75,8 +68,8 @@ func (registry *Registry) ReadReleaseCache(compression string) (string, bool, er
 	return string(data), true, nil
 }
 
-func (registry *Registry) GetPackageRecord(packageName string) (config.Record, bool, error) {
-	path := registry.packagePath(packageName, "record.toml")
+func GetPackageRecord(packageName string) (config.Record, bool, error) {
+	path := packagePath(packageName, "record.toml")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -91,8 +84,8 @@ func (registry *Registry) GetPackageRecord(packageName string) (config.Record, b
 	return record, true, nil
 }
 
-func (registry *Registry) AddPackage(record config.Record) error {
-	exists, err := registry.HasPackage(record.Name)
+func AddPackage(record config.Record) error {
+	exists, err := HasPackage(record.Name)
 	if err != nil {
 		return internal.ErrOf(err, "failed tocheck if package '%s' already exists", record.Name)
 	}
@@ -100,7 +93,7 @@ func (registry *Registry) AddPackage(record config.Record) error {
 		return internal.Err("package '%s' already exists", record.Name)
 	}
 
-	err = registry.WriteRecord(record)
+	err = WriteRecord(record)
 	if err != nil {
 		return err
 	}
@@ -108,8 +101,8 @@ func (registry *Registry) AddPackage(record config.Record) error {
 	return nil
 }
 
-func (registry *Registry) WriteRecord(record config.Record) error {
-	path := registry.packagePath(record.Name, "record.toml")
+func WriteRecord(record config.Record) error {
+	path := packagePath(record.Name, "record.toml")
 
 	parent := filepath.Dir(path)
 	err := os.MkdirAll(parent, 0755)
@@ -137,8 +130,8 @@ func (registry *Registry) WriteRecord(record config.Record) error {
 	return nil
 }
 
-func (registry *Registry) HasPackage(name string) (bool, error) {
-	path := registry.packagePath(name)
+func HasPackage(name string) (bool, error) {
+	path := packagePath(name)
 	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -149,10 +142,10 @@ func (registry *Registry) HasPackage(name string) (bool, error) {
 	return true, nil
 }
 
-func (registry *Registry) packagePath(parts ...string) string {
+func packagePath(parts ...string) string {
 	return filepath.Join(append([]string{packagesBase}, parts...)...)
 }
 
-func (registry *Registry) releaseCachePath(parts ...string) string {
+func releaseCachePath(parts ...string) string {
 	return filepath.Join(append([]string{releasesCacheBase}, parts...)...)
 }
