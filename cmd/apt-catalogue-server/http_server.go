@@ -140,22 +140,9 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 
 	plainHash := checksum(plainBytes)
 
-	var xzHash string
-	xzBytes, err := internal.XZ(plainBytes)
-	if err != nil {
-		slog.Warn("failed to compress package files using xz", "error", err)
-	} else {
-		xzHash = checksum(xzBytes)
-	}
-
 	err = registry.CacheRelease("plain", plainBytes)
 	if err != nil {
 		slog.Warn("failed to save plain cache release", "error", err)
-	}
-
-	err = registry.CacheRelease("xz", xzBytes)
-	if err != nil {
-		slog.Warn("failed to save xz compressed cache release", "error", err)
 	}
 
 	arch := server.system.Architecture
@@ -163,7 +150,6 @@ func (server *HTTPServer) InRelease(writer http.ResponseWriter, request *http.Re
 	sha256 := []string{
 		"",
 		fmt.Sprintf("%s %d packages/binary-%s/Packages", plainHash, len(plainBytes), arch),
-		fmt.Sprintf("%s %d packages/binary-%s/Packages.xz", xzHash, len(xzBytes), arch),
 	}
 
 	message := internal.SerializeDebFile([]map[string]string{
