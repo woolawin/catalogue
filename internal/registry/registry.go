@@ -10,7 +10,7 @@ import (
 	"github.com/woolawin/catalogue/internal/config"
 )
 
-const releasesCacheBase = "/var/lib/catalogue/caches/releases"
+const releasesCacheBase = "/tmp/catalogue/releases"
 const packagesBase = "/var/lib/catalogue/components/packages"
 
 func ListPackages() ([]string, error) {
