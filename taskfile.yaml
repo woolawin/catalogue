@@ -31,8 +31,8 @@ tasks:
             - mkdir -p build
             - sed 's/__VERSION__/{{.VERSION}}/g' control-template.txt > ./build/control.txt
             - task: compile
-            - install -D ./build/control.txt ./build/deb/control/control
-            - install -D ./build/apt-server ./build/deb/data/usr/bin/catalogue-apt-server
-            - install -D ./build/catalogue ./build/deb/data/usr/bin/catalogue
-            - install -D ./apt-server.service ./build/deb/data/lib/systemd/system/catalogue-apt-server.service
-            - ./build/catalogue deb --in ./build/deb --out ./build/catalogue.deb
+            - install -D ./build/control.txt ./build/deb/DEBIAN/control
+            - install -D ./build/apt-server ./build/deb/usr/bin/catalogue-apt-server
+            - install -D ./build/catalogue ./build/deb/usr/bin/catalogue
+            - install -D ./apt-server.service ./build/deb/lib/systemd/system/catalogue-apt-server.service
+            - dpkg-deb -b ./build/deb ./build/catalogue.deb

@@ -20,6 +20,8 @@ func CreateAR(files []string, dst io.Writer, log *Log) bool {
 
 	path := fmt.Sprintf("/tmp/catalogue-ar/%d.ar", time.Now().UnixMilli())
 
+	log.Info(10, "using tmp file '%s'", path)
+
 	args := make([]string, len(files)+2)
 	args[0] = "rcs"
 	args[1] = path

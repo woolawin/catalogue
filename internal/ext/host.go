@@ -177,6 +177,17 @@ func (host *Host) RandomTmpDir() string {
 	return "/tmp/catalogue/" + randomDir.String()
 }
 
+func (host *Host) RandomTmpFile(ext string) string {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	b := make([]byte, 12)
+	for i := range b {
+		b[i] = letters[r.Intn(len(letters))]
+	}
+	name := strings.Builder{}
+	name.Write(b)
+	return "/tmp/catalogue/" + name.String() + ext
+}
+
 func (host *Host) ReadTmpFile(path string) ([]byte, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {

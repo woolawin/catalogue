@@ -85,6 +85,10 @@ func (mock *MockDisk) Move(toPath DiskPath, fromPath DiskPath, files []DiskPath,
 	return false
 }
 
+func (mock *MockDisk) Transfer(disk Disk, toPath string, fromPath DiskPath, files []DiskPath, log *internal.Log) bool {
+	return false
+}
+
 func (mock *MockDisk) CreateDeb(path string, files map[string]DiskPath) error {
 	return nil
 }

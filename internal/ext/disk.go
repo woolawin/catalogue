@@ -27,6 +27,7 @@ type Disk interface {
 	CreateTar(path DiskPath) error
 	ArchiveDir(src, dst DiskPath) error
 	Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool, log *internal.Log) bool
+	Transfer(disk Disk, toPath string, fromPath DiskPath, files []DiskPath, log *internal.Log) bool
 }
 
 func NewDisk(base string) Disk {
@@ -59,6 +60,11 @@ func (disk *diskImpl) ReadFile(path DiskPath) ([]byte, bool, error) {
 func (disk *diskImpl) WriteFile(path DiskPath, data io.Reader) error {
 	if disk.unsafe(path) {
 		return errFileBlocked(path, "read")
+	}
+	parent := filepath.Dir(string(path))
+	err := os.MkdirAll(parent, 0755)
+	if err != nil {
+		return internal.ErrOf(err, "failed to create directory for file '%s'", path)
 	}
 	file, err := os.Create(string(path))
 	if err != nil {
@@ -171,6 +177,37 @@ func (disk *diskImpl) CreateTar(path DiskPath) error {
 	tarWriter := tar.NewWriter(gzipWriter)
 	defer tarWriter.Close()
 	return nil
+}
+
+func (disk *diskImpl) Transfer(toDisk Disk, toPath string, fromPath DiskPath, files []DiskPath, log *internal.Log) bool {
+	transferPath := toDisk.Path(toPath)
+	for _, file := range files {
+		newPath := filepath.Join(string(transferPath), string(file))
+		/* if disk.unsafe(DiskPath(newPath)) {
+		log.Err(nil, "file not permitted '%s'", newPath)
+		return false
+		}*/
+		oldPath := filepath.Join(string(fromPath), string(file))
+		if disk.unsafe(DiskPath(oldPath)) {
+			log.Err(nil, "file not permitted '%s'", oldPath)
+			return false
+		}
+		_, err := os.Stat(newPath)
+		if err == nil {
+			continue
+		} else if !os.IsNotExist(err) {
+			continue
+		}
+		os.MkdirAll(filepath.Dir(newPath), 0755)
+		err = os.Rename(oldPath, newPath)
+		if err != nil {
+			log.Err(err, "failed to transfer file from '%s' to '%s'", oldPath, transferPath)
+			return false
+		}
+		log.Info(8, "transfered file from '%s'", oldPath)
+	}
+
+	return true
 }
 
 func (disk *diskImpl) Move(toPath DiskPath, fromPath DiskPath, files []DiskPath, overwrite bool, log *internal.Log) bool {
