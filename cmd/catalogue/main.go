@@ -53,6 +53,27 @@ func runUpdate(cmd *cobra.Command, cliargs []string) {
 	}
 }
 
+func runDelete(cmd *cobra.Command, cliargs []string) {
+	logger := internal.NewStdoutLogger(5)
+	log := internal.NewLog(logger)
+	log.Stage("cli")
+	log.Info(7, "delete")
+
+	client := daemon.NewClient(logger)
+	component := ""
+	if len(cliargs) != 0 {
+		component = cliargs[0]
+	} else {
+		log.Err(nil, "no package name expecified")
+		os.Exit(1)
+	}
+	args := map[string]any{"component": component}
+	ok, _, err := client.Send(daemon.Delete, args)
+	if err != nil || !ok {
+		os.Exit(1)
+	}
+}
+
 func runConfig(cmd *cobra.Command, args []string) {
 	config, _ := ext.NewHost().GetConfig()
 	fmt.Println("DefaultUser: ", config.DefaultUser)
@@ -218,6 +239,13 @@ func args() *cobra.Command {
 		Run:   runSetup,
 	}
 
+	delete := &cobra.Command{
+		Use:   "delete",
+		Short: "Delete a package from the catalogue registry, this does not uninstall the package!",
+		Long:  "",
+		Run:   runDelete,
+	}
+
 	var root = &cobra.Command{
 		Use:   "catalogue",
 		Short: "The missing piece to APT. An APT Repository Middleware",
@@ -231,5 +259,6 @@ func args() *cobra.Command {
 	root.AddCommand(config)
 	root.AddCommand(update)
 	root.AddCommand(setup)
+	root.AddCommand(delete)
 	return root
 }

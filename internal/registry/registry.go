@@ -13,6 +13,17 @@ import (
 const releasesCacheBase = "/tmp/catalogue/releases"
 const packagesBase = "/var/lib/catalogue/components/packages"
 
+func RemovePackage(name string) (bool, error) {
+	err := os.Remove(packagePath(name))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
 func ListPackages() ([]string, error) {
 	entries, err := os.ReadDir(packagesBase)
 	if err != nil {

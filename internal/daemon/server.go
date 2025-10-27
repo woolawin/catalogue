@@ -151,6 +151,8 @@ func (server *Server) handle(conn net.Conn) {
 		server.update(&session)
 	case ListPackages:
 		server.list(&session)
+	case Delete:
+		server.delete(&session)
 	}
 
 }
@@ -193,6 +195,38 @@ func (server *Server) list(session *Session) {
 		return
 	}
 	session.end(true, packages)
+}
+
+func (server *Server) delete(session *Session) {
+	session.log.Stage("server")
+
+	name, found, err := session.msg.Cmd.StringArg("component")
+	if err != nil {
+		session.log.Err(err, "failed to get component argument from command")
+		session.end(false, nil)
+		return
+	}
+
+	if !found {
+		session.log.Err(nil, "missing component argument from client")
+		session.end(false, nil)
+		return
+	}
+
+	notExists, err := registry.RemovePackage(name)
+	if err != nil {
+		session.log.Err(err, "failed to remove package '%s'", name)
+		session.end(false, nil)
+		return
+	}
+
+	if notExists {
+		session.log.Err(nil, "package '%s' does not exists", name)
+		session.end(false, nil)
+		return
+	}
+
+	session.end(true, nil)
 }
 
 func (server *Server) update(session *Session) {

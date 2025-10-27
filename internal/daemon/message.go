@@ -22,6 +22,7 @@ const (
 	HasPackage   Command = 2
 	ListPackages Command = 3
 	Update       Command = 4
+	Delete       Command = 5
 )
 
 type Cmd struct {
