@@ -181,7 +181,7 @@ func (server *Server) add(session *Session) {
 		return
 	}
 
-	ok = add.Add(config.Protocol(protocol), remote, server.log, server.system, server.api)
+	ok = add.Add(config.Protocol(protocol), remote, session.log, server.system, server.api)
 	session.end(ok, nil)
 }
 

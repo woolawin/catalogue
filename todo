@@ -1,4 +1,3 @@
-pipe add logs to client
 add delete
 pass Disk separatly from api
 use Disk everywhere
