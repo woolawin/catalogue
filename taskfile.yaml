@@ -27,13 +27,16 @@ tasks:
             vars: [VERSION]
         cmds:
             - rm -rf ./build
-            - echo -n "{{.VERSION}}" > ./cmd/catalogue/version.txt
-            - echo -n "{{.VERSION}}" > ./cmd/apt-catalogue-server/version.txt
+            - echo -n "{{.VERSION}}" > cmd/catalogue/version.txt
+            - echo -n "{{.VERSION}}" > cmd/apt-catalogue-server/version.txt
             - mkdir -p build
-            - sed 's/__VERSION__/{{.VERSION}}/g' control-template.txt > ./build/control.txt
+            - sed 's/__VERSION__/{{.VERSION}}/g' deb/control-template.txt > build/control.txt
             - task: compile
-            - install -D ./build/control.txt ./build/deb/DEBIAN/control
-            - install -D ./build/apt-server ./build/deb/usr/bin/catalogue-apt-server
-            - install -D ./build/catalogue ./build/deb/usr/bin/catalogue
-            - install -D ./apt-server.service ./build/deb/lib/systemd/system/catalogue-apt-server.service
-            - dpkg-deb -b ./build/deb ./build/catalogue-{{.VERSION}}.deb
+            - install -D build/control.txt build/deb/DEBIAN/control
+            - install -D deb/postinst.sh build/deb/DEBIAN/postinst
+            - install -D build/apt-server build/deb/usr/bin/catalogue-apt-server
+            - install -D build/daemon build/deb/usr/bin/catalogue-daemon
+            - install -D build/catalogue build/deb/usr/bin/catalogue
+            - install -D deb/apt-server.service build/deb/lib/systemd/system/catalogue-apt-server.service
+            - install -D deb/daemon.service build/deb/lib/systemd/system/catalogue-daemon.service
+            - dpkg-deb -b build/deb build/catalogue-{{.VERSION}}.deb

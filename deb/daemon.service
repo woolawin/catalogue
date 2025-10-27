@@ -1,0 +1,13 @@
+[Unit]
+Description=Catalogue Daemon
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/catalogue-daemon
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/catalogue-daemon.log
+StandardError=append:/var/log/catalogue-daemon.log
+
+[Install]
+WantedBy=multi-user.target
