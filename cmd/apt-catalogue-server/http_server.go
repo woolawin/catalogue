@@ -279,10 +279,11 @@ func (server *HTTPServer) Pool(writer http.ResponseWriter, request *http.Request
 			continue
 		}
 		wanted = &build
+		break
 	}
 
 	if wanted == nil {
-		slog.Error("unable to find buold", "package", pkg, "version", version, "commit", commit)
+		slog.Error("unable to find build", "package", pkg, "version", version, "commit", commit)
 		writer.WriteHeader(http.StatusNotFound)
 		return
 	}

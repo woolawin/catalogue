@@ -14,10 +14,10 @@ const releasesCacheBase = "/tmp/catalogue/releases"
 const packagesBase = "/var/lib/catalogue/components/packages"
 
 func RemovePackage(name string) (bool, error) {
-	err := os.Remove(packagePath(name))
+	err := os.RemoveAll(packagePath(name))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, nil
+			return true, nil
 		}
 		return false, err
 	}

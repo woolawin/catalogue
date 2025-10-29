@@ -3,7 +3,7 @@ package update
 import (
 	"bytes"
 	"crypto/sha256"
-	"encoding/base64"
+	"encoding/hex"
 	"io"
 	"path/filepath"
 
@@ -85,7 +85,7 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 		return config.Record{}, config.BuildFile{}, false
 	}
 
-	digest := base64.StdEncoding.EncodeToString(hasher.Sum(nil))
+	digest := hex.EncodeToString(hasher.Sum(nil))
 	build := config.BuildFile{
 		Version:    pin.VersionName,
 		CommitHash: pin.CommitHash,

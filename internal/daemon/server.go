@@ -213,15 +213,15 @@ func (server *Server) delete(session *Session) {
 		return
 	}
 
-	notExists, err := registry.RemovePackage(name)
+	ok, err := registry.RemovePackage(name)
 	if err != nil {
 		session.log.Err(err, "failed to remove package '%s'", name)
 		session.end(false, nil)
 		return
 	}
 
-	if notExists {
-		session.log.Err(nil, "package '%s' does not exists", name)
+	if !ok {
+		session.log.Err(nil, "failed to remove package '%s'", name)
 		session.end(false, nil)
 		return
 	}

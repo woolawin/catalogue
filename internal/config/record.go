@@ -102,6 +102,17 @@ func loadRecord(toml RecordTOML) (Record, error) {
 		VersionName: strings.TrimSpace(toml.LatestPin.VersionName),
 		CommitHash:  strings.TrimSpace(toml.LatestPin.CommitHash),
 	}
+
+	for _, build := range toml.Builds {
+		record.Builds = append(record.Builds, BuildFile{
+			Path:       strings.TrimSpace(build.Path),
+			Version:    strings.TrimSpace(build.Version),
+			CommitHash: strings.TrimSpace(build.CommitHash),
+			Size:       build.Size,
+			SHA245:     strings.TrimSpace(build.SHA245),
+		})
+	}
+
 	record.Metadata = loadMetadata(toml.Metadata)
 	return record, nil
 }
@@ -129,7 +140,15 @@ func toRecordTOML(record Record) RecordTOML {
 		},
 		Metadata: toMetadataTOML(record.Metadata),
 	}
-
+	for _, build := range record.Builds {
+		toml.Builds = append(toml.Builds, BuildFileTOML{
+			Path:       strings.TrimSpace(build.Path),
+			Version:    strings.TrimSpace(build.Version),
+			CommitHash: strings.TrimSpace(build.CommitHash),
+			Size:       build.Size,
+			SHA245:     strings.TrimSpace(build.SHA245),
+		})
+	}
 	return toml
 }
 

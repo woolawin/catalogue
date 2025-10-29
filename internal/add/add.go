@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"crypto/sha256"
-	"encoding/base64"
+	"encoding/hex"
 	"io"
 
 	"github.com/woolawin/catalogue/internal"
@@ -100,7 +100,7 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 		return false
 	}
 
-	digest := base64.StdEncoding.EncodeToString(hasher.Sum(nil))
+	digest := hex.EncodeToString(hasher.Sum(nil))
 	build := config.BuildFile{
 		Version:    pin.VersionName,
 		CommitHash: pin.CommitHash,
