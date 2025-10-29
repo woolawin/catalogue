@@ -26,12 +26,21 @@ type Pin struct {
 	CommitHash  string
 }
 
+type BuildFile struct {
+	Version    string
+	CommitHash string
+	Path       string
+	Size       int64
+	SHA245     string
+}
+
 type Record struct {
 	Name       string
 	LatestPin  Pin
 	Remote     Remote
 	Versioning Versioning
 	Metadata   Metadata
+	Builds     []BuildFile
 }
 
 type RemoteTOML struct {
@@ -44,12 +53,21 @@ type PinTOML struct {
 	CommitHash  string `toml:"commit_hash"`
 }
 
+type BuildFileTOML struct {
+	Version    string `toml:"version"`
+	CommitHash string `toml:"commit_hash"`
+	Path       string `toml:"path"`
+	Size       int64  `toml:"size"`
+	SHA245     string `toml:"sha256"`
+}
+
 type RecordTOML struct {
-	Name       string         `toml:"name"`
-	LatestPin  PinTOML        `toml:"latest_pin"`
-	Remote     RemoteTOML     `toml:"remote"`
-	Versioning VersioningTOML `toml:"versioning"`
-	Metadata   MetadataTOML   `toml:"metadata"`
+	Name       string          `toml:"name"`
+	LatestPin  PinTOML         `toml:"latest_pin"`
+	Remote     RemoteTOML      `toml:"remote"`
+	Versioning VersioningTOML  `toml:"versioning"`
+	Metadata   MetadataTOML    `toml:"metadata"`
+	Builds     []BuildFileTOML `toml:"builds"`
 }
 
 func DeserializeRecord(src io.Reader) (Record, error) {

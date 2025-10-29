@@ -112,6 +112,11 @@ func AddPackage(record config.Record) error {
 	return nil
 }
 
+func PackageBuildFile(record config.Record, hash string) (*os.File, error) {
+	path := packagePath(record.Name, "caches", hash, "build.deb")
+	return os.Create(path)
+}
+
 func WriteRecord(record config.Record) error {
 	path := packagePath(record.Name, "record.toml")
 

@@ -257,6 +257,6 @@ func (server *Server) update(session *Session) {
 		return
 	}
 
-	_, ok := update.Update(record, session.log, server.system, server.api)
+	_, _, ok := update.Update(record, session.log, server.system, server.api)
 	session.end(ok, nil)
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -10,6 +9,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -17,7 +18,6 @@ import (
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/woolawin/catalogue/internal"
-	assemble "github.com/woolawin/catalogue/internal/assmeble"
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
 	"github.com/woolawin/catalogue/internal/registry"
@@ -205,7 +205,7 @@ func (server *HTTPServer) packagesFile() (string, error) {
 			}
 
 			log := internal.NewLog(internal.NewStdoutLogger(5))
-			updated, ok := update.Update(record, log, server.system, server.api)
+			updated, build, ok := update.Update(record, log, server.system, server.api)
 			if ok {
 				record = updated
 			}
@@ -220,6 +220,8 @@ func (server *HTTPServer) packagesFile() (string, error) {
 			paragraph["Maintainer"] = record.Metadata.Maintainer
 			paragraph["Description"] = record.Metadata.Description
 			paragraph["Architecture"] = record.Metadata.Architecture
+			paragraph["SHA256"] = build.SHA245
+			paragraph["Size"] = strconv.FormatInt(build.Size, 10)
 
 			mutex.Lock()
 			defer mutex.Unlock()
@@ -271,18 +273,30 @@ func (server *HTTPServer) Pool(writer http.ResponseWriter, request *http.Request
 		record.LatestPin = config.Pin{VersionName: version, CommitHash: commit}
 	}
 
-	api := ext.NewAPI("/")
-	log := internal.NewLog(internal.NewStdoutLogger(1))
+	var wanted *config.BuildFile
+	for _, build := range record.Builds {
+		if build.Version != version || build.CommitHash != commit {
+			continue
+		}
+		wanted = &build
+	}
 
-	buffer := bytes.NewBuffer([]byte{})
-	ok := assemble.Assemble(buffer, record, log, server.system, api)
-	if !ok {
-		writer.WriteHeader(http.StatusInternalServerError)
+	if wanted == nil {
+		slog.Error("unable to find buold", "package", pkg, "version", version, "commit", commit)
+		writer.WriteHeader(http.StatusNotFound)
 		return
 	}
 
+	file, err := os.Open(wanted.Path)
+	if err != nil {
+		slog.Error("could not open file", "path", wanted.Path, "error", err)
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
 	writer.WriteHeader(http.StatusOK)
-	_, err = io.Copy(writer, buffer)
+	_, err = io.Copy(writer, file)
 	if err != nil {
 		slog.Error("could not write file to response", "package", pkg, "error", err)
 		writer.WriteHeader(http.StatusInternalServerError)

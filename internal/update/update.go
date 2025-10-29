@@ -2,6 +2,9 @@ package update
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
+	"io"
 	"path/filepath"
 	"strconv"
 
@@ -9,13 +12,14 @@ import (
 	gitlib "github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/woolawin/catalogue/internal"
+	"github.com/woolawin/catalogue/internal/assmeble"
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
 	"github.com/woolawin/catalogue/internal/registry"
 )
 
-func Update(record config.Record, log *internal.Log, system internal.System, api *ext.API) (config.Record, bool) {
+func Update(record config.Record, log *internal.Log, system internal.System, api *ext.API) (config.Record, config.BuildFile, bool) {
 	prev := log.Stage("update")
 	defer prev()
 
@@ -31,47 +35,84 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 
 	author, ok := clone.Clone(opts, log, api)
 	if !ok {
-		return config.Record{}, false
+		return config.Record{}, config.BuildFile{}, false
 	}
 
 	configPath := filepath.Join(local, ".catalogue", "config.toml")
 	configData, err := api.Host.ReadTmpFile(configPath)
 	if err != nil {
 		log.Err(err, "failed to read config.toml")
-		return config.Record{}, false
+		return config.Record{}, config.BuildFile{}, false
 	}
 
 	component, err := config.Parse(bytes.NewReader(configData))
 	if err != nil {
 		log.Err(err, "failed to deserialize config.toml")
-		return config.Record{}, false
+		return config.Record{}, config.BuildFile{}, false
 	}
 
 	metadata, err := config.BuildMetadata(component.Metadata, record.Remote, author, log, system)
 	if err != nil {
 		log.Err(err, "failed to build metadata from config.toml")
-		return config.Record{}, false
+		return config.Record{}, config.BuildFile{}, false
 	}
 
 	if len(internal.Ranked(system, component.SupportedTargets)) == 0 {
 		log.Err(nil, "package not supported")
-		return config.Record{}, false
+		return config.Record{}, config.BuildFile{}, false
 	}
 
 	pin, ok := PinRepo(local, component.Versioning, log)
 	if !ok {
-		return config.Record{}, false
+		return config.Record{}, config.BuildFile{}, false
 	}
 
 	record.Metadata = metadata.Metadata
 	record.LatestPin = pin
 
+	file, err := registry.PackageBuildFile(record, pin.CommitHash)
+	if err != nil {
+		log.Err(err, "failed to assemle package '%s'", record.Name)
+		return config.Record{}, config.BuildFile{}, false
+	}
+	defer file.Close()
+
+	hasher := sha256.New()
+	counter := WriteCounter{}
+
+	writer := io.MultiWriter(file, hasher, &counter)
+
+	ok = assemble.Assemble(writer, record, log, system, api)
+	if !ok {
+		return config.Record{}, config.BuildFile{}, false
+	}
+
+	digest := base64.StdEncoding.EncodeToString(hasher.Sum(nil))
+	build := config.BuildFile{
+		Version:    pin.VersionName,
+		CommitHash: pin.CommitHash,
+		Path:       file.Name(),
+		Size:       counter.count,
+		SHA245:     digest,
+	}
+
+	record.Builds = append(record.Builds, build)
+
 	err = registry.WriteRecord(record)
 	if err != nil {
 		log.Err(err, "failed to write record.toml")
-		return config.Record{}, false
+		return config.Record{}, config.BuildFile{}, false
 	}
-	return record, true
+	return record, build, true
+}
+
+type WriteCounter struct {
+	count int64
+}
+
+func (counter *WriteCounter) Write(p []byte) (int, error) {
+	counter.count += int64(len(p))
+	return len(p), nil
 }
 
 func PinRepo(dir string, versioning config.Versioning, log *internal.Log) (config.Pin, bool) {
