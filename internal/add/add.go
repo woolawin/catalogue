@@ -5,7 +5,12 @@ import (
 	"net/url"
 	"path/filepath"
 
+	"crypto/sha256"
+	"encoding/base64"
+	"io"
+
 	"github.com/woolawin/catalogue/internal"
+	"github.com/woolawin/catalogue/internal/build"
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
@@ -28,7 +33,7 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 	opts := clone.NewOpts(
 		config.Remote{Protocol: protocol, URL: remoteURL},
 		local,
-		".catalogue/config.toml",
+		".catalogue",
 		nil,
 	)
 
@@ -74,15 +79,43 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 		Versioning: component.Versioning,
 	}
 
-	if component.Type == config.Package {
-		err = registry.AddPackage(record)
-		if err != nil {
-			log.Err(err, "failed to add package '%s' to registry", component.Name)
-			return false
-		}
-		return true
+	if component.Type != config.Package {
+		log.Err(nil, "only packages can be added right now")
+		return false
 	}
 
-	log.Err(nil, "only packages can be added right now")
-	return false
+	file, err := registry.PackageBuildFile(record, pin.CommitHash)
+	if err != nil {
+		log.Err(err, "failed to assemle package '%s'", record.Name)
+		return false
+	}
+	defer file.Close()
+
+	hasher := sha256.New()
+	counter := internal.BytesCounter{}
+
+	writer := io.MultiWriter(file, hasher, &counter)
+
+	buildPath := filepath.Join(local, ".catalogue")
+	ok = build.Build(writer, record, log, system, ext.NewAPI(buildPath))
+	if !ok {
+		return false
+	}
+
+	digest := base64.StdEncoding.EncodeToString(hasher.Sum(nil))
+	build := config.BuildFile{
+		Version:    pin.VersionName,
+		CommitHash: pin.CommitHash,
+		Path:       file.Name(),
+		Size:       counter.Count(),
+		SHA245:     digest,
+	}
+
+	record.Builds = []config.BuildFile{build}
+	err = registry.AddPackage(record)
+	if err != nil {
+		log.Err(err, "failed to add package '%s' to registry", component.Name)
+		return false
+	}
+	return true
 }

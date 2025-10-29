@@ -240,7 +240,7 @@ func args() *cobra.Command {
 	}
 
 	delete := &cobra.Command{
-		Use:   "delete",
+		Use:   "del",
 		Short: "Delete a package from the catalogue registry, this does not uninstall the package!",
 		Long:  "",
 		Run:   runDelete,

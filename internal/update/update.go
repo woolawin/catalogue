@@ -12,7 +12,7 @@ import (
 	gitlib "github.com/go-git/go-git/v6"
 	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/woolawin/catalogue/internal"
-	"github.com/woolawin/catalogue/internal/assmeble"
+	"github.com/woolawin/catalogue/internal/build"
 	"github.com/woolawin/catalogue/internal/clone"
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
@@ -29,7 +29,7 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 	opts := clone.NewOpts(
 		record.Remote,
 		local,
-		".catalogue/config.toml",
+		".catalogue",
 		nil,
 	)
 
@@ -78,11 +78,12 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 	defer file.Close()
 
 	hasher := sha256.New()
-	counter := WriteCounter{}
+	counter := internal.BytesCounter{}
 
 	writer := io.MultiWriter(file, hasher, &counter)
 
-	ok = assemble.Assemble(writer, record, log, system, api)
+	buildPath := filepath.Join(local, ".catalogue")
+	ok = build.Build(writer, record, log, system, ext.NewAPI(buildPath))
 	if !ok {
 		return config.Record{}, config.BuildFile{}, false
 	}
@@ -92,7 +93,7 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 		Version:    pin.VersionName,
 		CommitHash: pin.CommitHash,
 		Path:       file.Name(),
-		Size:       counter.count,
+		Size:       counter.Count(),
 		SHA245:     digest,
 	}
 
@@ -104,15 +105,6 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 		return config.Record{}, config.BuildFile{}, false
 	}
 	return record, build, true
-}
-
-type WriteCounter struct {
-	count int64
-}
-
-func (counter *WriteCounter) Write(p []byte) (int, error) {
-	counter.count += int64(len(p))
-	return len(p), nil
 }
 
 func PinRepo(dir string, versioning config.Versioning, log *internal.Log) (config.Pin, bool) {

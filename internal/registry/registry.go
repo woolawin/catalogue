@@ -114,6 +114,11 @@ func AddPackage(record config.Record) error {
 
 func PackageBuildFile(record config.Record, hash string) (*os.File, error) {
 	path := packagePath(record.Name, "caches", hash, "build.deb")
+	parent := filepath.Dir(path)
+	err := os.MkdirAll(parent, 0755)
+	if err != nil {
+		return nil, internal.ErrOf(err, "can not create directory '%s'", parent)
+	}
 	return os.Create(path)
 }
 
@@ -147,7 +152,7 @@ func WriteRecord(record config.Record) error {
 }
 
 func HasPackage(name string) (bool, error) {
-	path := packagePath(name)
+	path := packagePath(name, "record.toml")
 	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
