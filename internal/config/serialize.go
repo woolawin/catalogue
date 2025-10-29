@@ -23,8 +23,6 @@ func Serialize(config Component, writer io.Writer) error {
 		toml.SupportedTargets = append(toml.SupportedTargets, supported.Name)
 	}
 
-	toml.Versioing = toVersioningTOML(config.Versioning)
-
 	for _, tgt := range config.Targets {
 		if tgt.BuiltIn {
 			continue
@@ -71,19 +69,6 @@ func Serialize(config Component, writer io.Writer) error {
 	return nil
 }
 
-func toVersioningTOML(versioning Versioning) VersioningTOML {
-	toml := VersioningTOML{}
-	switch versioning.Type {
-	case GitLatestCommit:
-		toml.Type = GitLatestCommitValue
-	case GitSemanticTag:
-		toml.Type = GitSemanticTagValue
-	}
-
-	toml.Branch = versioning.Branch
-	return toml
-}
-
 func toMetadataTOML(metadata Metadata) MetadataTOML {
 	return MetadataTOML{
 		Dependencies: strings.TrimSpace(metadata.Dependencies),
@@ -93,5 +78,4 @@ func toMetadataTOML(metadata Metadata) MetadataTOML {
 		Description:  strings.TrimSpace(metadata.Description),
 		Architecture: strings.TrimSpace(metadata.Architecture),
 	}
-
 }

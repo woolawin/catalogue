@@ -15,7 +15,6 @@ import (
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
 	"github.com/woolawin/catalogue/internal/registry"
-	"github.com/woolawin/catalogue/internal/update"
 )
 
 func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system internal.System, api *ext.API) bool {
@@ -67,16 +66,15 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 		return false
 	}
 
-	pin, ok := update.PinRepo(local, component.Versioning, log)
+	pin, ok := clone.CheckoutLatestVersion(local, log)
 	if !ok {
 		return false
 	}
 	record := config.Record{
-		Name:       component.Name,
-		LatestPin:  pin,
-		Remote:     remote,
-		Metadata:   metadata.Metadata,
-		Versioning: component.Versioning,
+		Name:      component.Name,
+		LatestPin: pin,
+		Remote:    remote,
+		Metadata:  metadata.Metadata,
 	}
 
 	if component.Type != config.Package {

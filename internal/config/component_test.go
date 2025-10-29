@@ -54,10 +54,6 @@ name='foobar'
 type='package'
 supported_targets=['foo', 'bar']
 
-[versioning]
-type='git/latest_commit'
-branch='main'
-
 [target.ubuntu]
 os_release_id='ubuntu'
 
@@ -86,10 +82,6 @@ dst="path://root/usr/bin"
 		Name:             "foobar",
 		Type:             "package",
 		SupportedTargets: []string{"foo", "bar"},
-		Versioing: VersioningTOML{
-			Type:   GitLatestCommitValue,
-			Branch: "main",
-		},
 		Metadata: map[string]MetadataTOML{
 			"all": {
 				Dependencies: "foo,bar",

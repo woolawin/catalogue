@@ -5,7 +5,9 @@ import (
 	"os/exec"
 	"strings"
 
+	semverlib "github.com/Masterminds/semver/v3"
 	gitlib "github.com/go-git/go-git/v6"
+	"github.com/go-git/go-git/v6/plumbing"
 	"github.com/woolawin/catalogue/internal"
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
@@ -136,4 +138,65 @@ func getLatestCommitHash(local string, log *internal.Log) (string, bool) {
 		return "", false
 	}
 	return strings.TrimSpace(string(out)), true
+}
+
+func CheckoutLatestVersion(dir string, log *internal.Log) (config.Pin, bool) {
+	repo, err := gitlib.PlainOpen(dir)
+	if err != nil {
+		log.Err(err, "failed to open repository at '%s'", dir)
+		return config.Pin{}, false
+	}
+
+	tags, err := repo.Tags()
+	if err != nil {
+		log.Err(err, "failed to get repository tags")
+		return config.Pin{}, false
+	}
+	defer tags.Close()
+
+	var latest *semverlib.Version
+	var hash string
+
+	err = tags.ForEach(func(ref *plumbing.Reference) error {
+		tagName := ref.Name().Short()
+
+		version, err := semverlib.NewVersion(tagName)
+		if err != nil {
+			return nil
+		}
+
+		if latest != nil && latest.GreaterThan(version) {
+			return nil
+		}
+
+		tagObj, err := repo.TagObject(ref.Hash())
+		if err == nil {
+			commit, err := tagObj.Commit()
+			if err != nil {
+				return nil
+			}
+			latest = version
+			hash = commit.Hash.String()
+		} else {
+			commit, err := repo.CommitObject(ref.Hash())
+			if err != nil {
+				return nil
+			}
+			latest = version
+			hash = commit.Hash.String()
+		}
+		return nil
+	})
+
+	if latest == nil {
+		log.Err(nil, "no semantic versioned tags found")
+		return config.Pin{}, false
+	}
+
+	pin := config.Pin{
+		VersionName: latest.String(),
+		CommitHash:  hash,
+	}
+
+	return pin, true
 }

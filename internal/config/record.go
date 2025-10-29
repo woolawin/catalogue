@@ -35,12 +35,11 @@ type BuildFile struct {
 }
 
 type Record struct {
-	Name       string
-	LatestPin  Pin
-	Remote     Remote
-	Versioning Versioning
-	Metadata   Metadata
-	Builds     []BuildFile
+	Name      string
+	LatestPin Pin
+	Remote    Remote
+	Metadata  Metadata
+	Builds    []BuildFile
 }
 
 type RemoteTOML struct {
@@ -62,12 +61,11 @@ type BuildFileTOML struct {
 }
 
 type RecordTOML struct {
-	Name       string          `toml:"name"`
-	LatestPin  PinTOML         `toml:"latest_pin"`
-	Remote     RemoteTOML      `toml:"remote"`
-	Versioning VersioningTOML  `toml:"versioning"`
-	Metadata   MetadataTOML    `toml:"metadata"`
-	Builds     []BuildFileTOML `toml:"builds"`
+	Name      string          `toml:"name"`
+	LatestPin PinTOML         `toml:"latest_pin"`
+	Remote    RemoteTOML      `toml:"remote"`
+	Metadata  MetadataTOML    `toml:"metadata"`
+	Builds    []BuildFileTOML `toml:"builds"`
 }
 
 func DeserializeRecord(src io.Reader) (Record, error) {
@@ -100,11 +98,6 @@ func loadRecord(toml RecordTOML) (Record, error) {
 		record.Remote.URL = parsed
 	}
 
-	versioning, err := loadVersioning(toml.Versioning)
-	if err != nil {
-		return Record{}, err
-	}
-	record.Versioning = versioning
 	record.LatestPin = Pin{
 		VersionName: strings.TrimSpace(toml.LatestPin.VersionName),
 		CommitHash:  strings.TrimSpace(toml.LatestPin.CommitHash),
@@ -134,8 +127,7 @@ func toRecordTOML(record Record) RecordTOML {
 			Protocol: ProtocolDebugString(record.Remote.Protocol),
 			URL:      record.Remote.URL.String(),
 		},
-		Versioning: toVersioningTOML(record.Versioning),
-		Metadata:   toMetadataTOML(record.Metadata),
+		Metadata: toMetadataTOML(record.Metadata),
 	}
 
 	return toml

@@ -27,9 +27,6 @@ architecture='amd64'
 [remote]
 protocol='git'
 url='https://github.com/foo/bar.git'
-
-[versioning]
-type='git/semantic_tag'
 `
 
 	actual, err := DeserializeRecord(strings.NewReader(value))
@@ -51,9 +48,6 @@ type='git/semantic_tag'
 			Description:  "foo bar",
 			Maintainer:   "Bob Doe",
 			Architecture: "amd64",
-		},
-		Versioning: Versioning{
-			Type: GitSemanticTag,
 		},
 	}
 
@@ -79,10 +73,6 @@ func TestToRecordTOML(t *testing.T) {
 			Maintainer:   "Bob Doe",
 			Architecture: "amd64",
 		},
-		Versioning: Versioning{
-			Type:   GitSemanticTag,
-			Branch: "something",
-		},
 	}
 
 	actual := toRecordTOML(record)
@@ -100,10 +90,6 @@ func TestToRecordTOML(t *testing.T) {
 			Description:  "foo bar",
 			Maintainer:   "Bob Doe",
 			Architecture: "amd64",
-		},
-		Versioning: VersioningTOML{
-			Type:   GitSemanticTagValue,
-			Branch: "something",
 		},
 	}
 
