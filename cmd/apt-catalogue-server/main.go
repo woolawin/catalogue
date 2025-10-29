@@ -17,20 +17,20 @@ var Version string
 
 func main() {
 	slog.Info("booting catalogue-apt-server", "version", Version)
-	host := ext.NewHost()
-	config, err := host.GetConfig()
+	api := ext.NewAPI("/")
+	config, err := api.Host.GetConfig()
 	if err != nil {
 		slog.Error("failed to get config", "error", err)
 		os.Exit(1)
 	}
 
-	system, err := host.GetSystem()
+	system, err := api.Host.GetSystem()
 	if err != nil {
 		slog.Error("failed to get system", "error", err)
 		os.Exit(1)
 	}
 
-	server := NewHTTPServer(config, system)
+	server := NewHTTPServer(config, system, api)
 
 	err = server.start()
 	if err != nil {

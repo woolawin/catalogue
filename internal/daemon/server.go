@@ -239,7 +239,7 @@ func (server *Server) update(session *Session) {
 	}
 
 	if !found {
-		// support updating all later on
+		session.log.Err(nil, "missing package name from client")
 		session.end(true, nil)
 		return
 	}
@@ -257,6 +257,6 @@ func (server *Server) update(session *Session) {
 		return
 	}
 
-	ok := update.Update(record, session.log, server.system, server.api)
+	_, ok := update.Update(record, session.log, server.system, server.api)
 	session.end(ok, nil)
 }

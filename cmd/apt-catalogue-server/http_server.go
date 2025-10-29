@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/middleware"
@@ -20,16 +21,18 @@ import (
 	"github.com/woolawin/catalogue/internal/config"
 	"github.com/woolawin/catalogue/internal/ext"
 	"github.com/woolawin/catalogue/internal/registry"
+	"github.com/woolawin/catalogue/internal/update"
 )
 
 type HTTPServer struct {
 	server *http.Server
 	config internal.Config
 	system internal.System
+	api    *ext.API
 }
 
-func NewHTTPServer(config internal.Config, system internal.System) *HTTPServer {
-	return &HTTPServer{config: config, system: system}
+func NewHTTPServer(config internal.Config, system internal.System, api *ext.API) *HTTPServer {
+	return &HTTPServer{config: config, system: system, api: api}
 }
 
 func (server *HTTPServer) start() error {
@@ -183,33 +186,48 @@ func (server *HTTPServer) packagesFile() (string, error) {
 		return "", err
 	}
 
+	group := sync.WaitGroup{}
+	mutex := sync.Mutex{}
 	var paragraphs []map[string]string
 
 	for _, pkg := range packages {
-		record, found, err := registry.GetPackageRecord(pkg)
-		if err != nil {
-			slog.Error("failed to get package config", "package", pkg, "error", err)
-			continue
-		}
+		group.Go(func() {
 
-		if !found {
-			slog.Error("no record for package", "package", pkg, "error", err)
-			continue
-		}
+			record, found, err := registry.GetPackageRecord(pkg)
+			if err != nil {
+				slog.Error("failed to get package config", "package", pkg, "error", err)
+				return
+			}
 
-		paragraph := make(map[string]string)
-		paragraph["Package"] = record.Name
-		paragraph["Version"] = record.LatestPin.VersionName
-		paragraph["Filename"] = packageFilename(record)
-		paragraph["Depends"] = record.Metadata.Dependencies
-		paragraph["Section"] = record.Metadata.Category
-		paragraph["Homepage"] = record.Metadata.Homepage
-		paragraph["Maintainer"] = record.Metadata.Maintainer
-		paragraph["Description"] = record.Metadata.Description
-		paragraph["Architecture"] = record.Metadata.Architecture
+			if !found {
+				slog.Error("no record for package", "package", pkg, "error", err)
+				return
+			}
 
-		paragraphs = append(paragraphs, paragraph)
+			log := internal.NewLog(internal.NewStdoutLogger(5))
+			updated, ok := update.Update(record, log, server.system, server.api)
+			if ok {
+				record = updated
+			}
+
+			paragraph := make(map[string]string)
+			paragraph["Package"] = record.Name
+			paragraph["Version"] = record.LatestPin.VersionName
+			paragraph["Filename"] = packageFilename(record)
+			paragraph["Depends"] = record.Metadata.Dependencies
+			paragraph["Section"] = record.Metadata.Category
+			paragraph["Homepage"] = record.Metadata.Homepage
+			paragraph["Maintainer"] = record.Metadata.Maintainer
+			paragraph["Description"] = record.Metadata.Description
+			paragraph["Architecture"] = record.Metadata.Architecture
+
+			mutex.Lock()
+			defer mutex.Unlock()
+			paragraphs = append(paragraphs, paragraph)
+		})
 	}
+
+	group.Wait()
 
 	return internal.SerializeDebFile(paragraphs), nil
 }

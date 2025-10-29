@@ -15,7 +15,7 @@ import (
 	"github.com/woolawin/catalogue/internal/registry"
 )
 
-func Update(record config.Record, log *internal.Log, system internal.System, api *ext.API) bool {
+func Update(record config.Record, log *internal.Log, system internal.System, api *ext.API) (config.Record, bool) {
 	prev := log.Stage("update")
 	defer prev()
 
@@ -31,36 +31,36 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 
 	author, ok := clone.Clone(opts, log, api)
 	if !ok {
-		return false
+		return config.Record{}, false
 	}
 
 	configPath := filepath.Join(local, ".catalogue", "config.toml")
 	configData, err := api.Host.ReadTmpFile(configPath)
 	if err != nil {
 		log.Err(err, "failed to read config.toml")
-		return false
+		return config.Record{}, false
 	}
 
 	component, err := config.Parse(bytes.NewReader(configData))
 	if err != nil {
 		log.Err(err, "failed to deserialize config.toml")
-		return false
+		return config.Record{}, false
 	}
 
 	metadata, err := config.BuildMetadata(component.Metadata, record.Remote, author, log, system)
 	if err != nil {
 		log.Err(err, "failed to build metadata from config.toml")
-		return false
+		return config.Record{}, false
 	}
 
 	if len(internal.Ranked(system, component.SupportedTargets)) == 0 {
 		log.Err(nil, "package not supported")
-		return false
+		return config.Record{}, false
 	}
 
 	pin, ok := PinRepo(local, component.Versioning, log)
 	if !ok {
-		return false
+		return config.Record{}, false
 	}
 
 	record.Metadata = metadata.Metadata
@@ -69,9 +69,9 @@ func Update(record config.Record, log *internal.Log, system internal.System, api
 	err = registry.WriteRecord(record)
 	if err != nil {
 		log.Err(err, "failed to write record.toml")
-		return false
+		return config.Record{}, false
 	}
-	return true
+	return record, true
 }
 
 func PinRepo(dir string, versioning config.Versioning, log *internal.Log) (config.Pin, bool) {
