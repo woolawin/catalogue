@@ -26,7 +26,7 @@ func Build(dst io.Writer, record config.Record, log *internal.Log, system intern
 		return false
 	}
 
-	component, err := config.ParseWithFileSystems(bytes.NewReader(configData), api.Disk)
+	component, err := config.ParseWithFileMaps(bytes.NewReader(configData), api.Disk)
 	if err != nil {
 		log.Err(err, "failed to deserialize config.toml at '%s'", configPath)
 		return false
@@ -44,7 +44,7 @@ func Build(dst io.Writer, record config.Record, log *internal.Log, system intern
 	if !ok {
 		return false
 	}
-	ok = filesystem(system, component.FileSystems, log, tmp, api)
+	ok = filemap(system, component.FileMaps, log, tmp, api)
 	if !ok {
 		return false
 	}
@@ -79,22 +79,22 @@ func Build(dst io.Writer, record config.Record, log *internal.Log, system intern
 	return true
 }
 
-func filesystem(system internal.System, filesystems map[string][]*config.FileSystem, log *internal.Log, dst ext.Disk, api *ext.API) bool {
-	prev := log.Stage("build.filesystem")
+func filemap(system internal.System, filemaps map[string][]*config.FileMap, log *internal.Log, dst ext.Disk, api *ext.API) bool {
+	prev := log.Stage("build.filemaps")
 	defer prev()
-	for anchor, targets := range filesystems {
-		for _, filesystem := range internal.Ranked(system, targets) {
+	for anchor, targets := range filemaps {
+		for _, filemap := range internal.Ranked(system, targets) {
 
-			path := api.Disk.Path("filesystem", filesystem.ID)
+			path := api.Disk.Path("filemaps", filemap.ID)
 			files, err := api.Disk.ListRec(path)
 			if err != nil {
-				log.Err(err, "failed to list files in filesystem '%s' directory at '%s'", filesystem.ID, path)
+				log.Err(err, "failed to list files in filemap '%s' directory at '%s'", filemap.ID, path)
 				return false
 			}
 
 			anchorPath, err := api.Host.ResolveAnchor(anchor)
 			if err != nil {
-				log.Err(err, "filesystem '%s' has unknown anchor '%s'", filesystem.ID, anchor)
+				log.Err(err, "filemap '%s' has unknown anchor '%s'", filemap.ID, anchor)
 				return false
 			}
 
@@ -105,7 +105,7 @@ func filesystem(system internal.System, filesystems map[string][]*config.FileSys
 		}
 	}
 
-	log.Info(9, "completed filesystems")
+	log.Info(9, "completed filemaps")
 
 	return true
 }
@@ -131,17 +131,17 @@ func download(system internal.System, downloads map[string][]*config.Download, l
 		dstPath := dst.Path(anchorPath, file.Path)
 		data, err := api.Http.Fetch(tgt.Source)
 		if err != nil {
-			log.Err(err, "failed to download filesystem '%s' file '%s'", tgt.ID, tgt.Source.Redacted())
+			log.Err(err, "failed to download filemap '%s' file '%s'", tgt.ID, tgt.Source.Redacted())
 			return false
 		}
 
 		err = dst.WriteFile(dstPath, bytes.NewReader(data))
 		if err != nil {
-			log.Err(err, "failed to write filesystem '%s' file '%s'", tgt.ID, dstPath)
+			log.Err(err, "failed to write filemap '%s' file '%s'", tgt.ID, dstPath)
 			return false
 		}
 
-		log.Info(8, "downloaded filesystem '%s' file file '%s'", tgt.ID, tgt.Source.Redacted())
+		log.Info(8, "downloaded filemap '%s' file file '%s'", tgt.ID, tgt.Source.Redacted())
 	}
 
 	return true

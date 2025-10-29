@@ -9,7 +9,7 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-func TestLoadFileSystems(t *testing.T) {
+func TestLoadFileMaps(t *testing.T) {
 	targets := []internal.Target{
 		{
 			Name:         "amd64",
@@ -31,19 +31,19 @@ func TestLoadFileSystems(t *testing.T) {
 
 	disk := ext.MockDisk{
 		Dirs: []string{
-			"filesystem",
-			"filesystem/root.all",
-			"filesystem/root.amd64",
-			"filesystem/root.amd64-ubuntu",
+			"filemaps",
+			"filemaps/root.all",
+			"filemaps/root.amd64",
+			"filemaps/root.amd64-ubuntu",
 		},
 	}
 
-	actual, err := loadFileSystems(targets, &disk)
+	actual, err := loadFileMaps(targets, &disk)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expected := map[string][]*FileSystem{
+	expected := map[string][]*FileMap{
 		"root": {
 			{
 				ID:     "root.all",

@@ -5,24 +5,24 @@ import (
 	"github.com/woolawin/catalogue/internal/ext"
 )
 
-type FileSystem struct {
+type FileMap struct {
 	ID     string
 	Anchor string
 	Target internal.Target
 }
 
-func (fs *FileSystem) GetTarget() internal.Target {
+func (fs *FileMap) GetTarget() internal.Target {
 	return fs.Target
 }
 
-func loadFileSystems(targets []internal.Target, disk ext.Disk) (map[string][]*FileSystem, error) {
-	fsPath := disk.Path("filesystem")
+func loadFileMaps(targets []internal.Target, disk ext.Disk) (map[string][]*FileMap, error) {
+	fsPath := disk.Path("filemaps")
 	exists, asDir, err := disk.DirExists(fsPath)
 	if err != nil {
 		return nil, internal.ErrOf(err, "can not check if directory %s exists", fsPath)
 	}
 	if !asDir {
-		return nil, internal.Err("filesystem directory is not adirectory")
+		return nil, internal.Err("filemap directory is not adirectory")
 	}
 
 	if !exists {
@@ -31,27 +31,27 @@ func loadFileSystems(targets []internal.Target, disk ext.Disk) (map[string][]*Fi
 
 	_, dirs, err := disk.List(fsPath)
 	if err != nil {
-		return nil, internal.ErrOf(err, "can not list filesystem %s files", fsPath)
+		return nil, internal.ErrOf(err, "can not list filemap %s files", fsPath)
 	}
 
-	filesystems := make(map[string][]*FileSystem)
+	filemaps := make(map[string][]*FileMap)
 	for _, dir := range dirs {
 		anchor, targetNames, err := internal.ValidateNameAndTarget(string(dir))
 		if err != nil {
-			return nil, internal.ErrOf(err, "invalid filesystem reference '%s'", dir)
+			return nil, internal.ErrOf(err, "invalid filemap reference '%s'", dir)
 		}
 
 		tgt, err := internal.BuildTarget(targets, targetNames)
 		if err != nil {
-			return nil, internal.ErrOf(err, "invalid filesystem target %s", dir)
+			return nil, internal.ErrOf(err, "invalid filemap target %s", dir)
 		}
-		filesystem := FileSystem{
+		filemap := FileMap{
 			ID:     string(dir),
 			Anchor: anchor,
 			Target: tgt,
 		}
-		filesystems[anchor] = append(filesystems[anchor], &filesystem)
+		filemaps[anchor] = append(filemaps[anchor], &filemap)
 	}
 
-	return filesystems, nil
+	return filemaps, nil
 }

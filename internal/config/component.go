@@ -51,7 +51,7 @@ type Component struct {
 	Metadata         []*TargetMetadata
 	Targets          []internal.Target
 	Downloads        map[string][]*Download
-	FileSystems      map[string][]*FileSystem
+	FileMaps         map[string][]*FileMap
 }
 
 type Versioning struct {
@@ -67,7 +67,7 @@ func Parse(src io.Reader) (Component, error) {
 	return load(&deserialized)
 }
 
-func ParseWithFileSystems(src io.Reader, disk ext.Disk) (Component, error) {
+func ParseWithFileMaps(src io.Reader, disk ext.Disk) (Component, error) {
 	deserialized, err := deserialize(src)
 	if err != nil {
 		return Component{}, err
@@ -77,11 +77,11 @@ func ParseWithFileSystems(src io.Reader, disk ext.Disk) (Component, error) {
 	if err != nil {
 		return Component{}, err
 	}
-	filesystems, err := loadFileSystems(config.Targets, disk)
+	filemaps, err := loadFileMaps(config.Targets, disk)
 	if err != nil {
 		return Component{}, err
 	}
-	config.FileSystems = filesystems
+	config.FileMaps = filemaps
 	return config, nil
 }
 
