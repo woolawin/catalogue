@@ -39,7 +39,6 @@ func runUpdate(cmd *cobra.Command, cliargs []string) {
 	logger := internal.NewStdoutLogger(5)
 	log := internal.NewLog(logger)
 	log.Stage("cli")
-	log.Info(7, "updating")
 
 	client := daemon.NewClient(logger)
 	component := ""
@@ -57,7 +56,6 @@ func runDelete(cmd *cobra.Command, cliargs []string) {
 	logger := internal.NewStdoutLogger(5)
 	log := internal.NewLog(logger)
 	log.Stage("cli")
-	log.Info(7, "delete")
 
 	client := daemon.NewClient(logger)
 	component := ""
@@ -80,10 +78,10 @@ func runConfig(cmd *cobra.Command, args []string) {
 }
 
 func runSystem(cmd *cobra.Command, args []string) {
+	log := internal.NewLog(internal.NewStdoutLogger(5))
 	system, err := ext.NewHost().GetSystem()
 	if err != nil {
-		fmt.Println("ERROR")
-		fmt.Println(err.Error())
+		log.Err(err, "failed to get system information")
 		os.Exit(1)
 	}
 
@@ -113,8 +111,7 @@ func runAdd(cmd *cobra.Command, cliargs []string) {
 	args := map[string]any{"protocol": protocol, "remote": remote}
 	ok, _, err := client.Send(daemon.Add, args)
 	if err != nil {
-		fmt.Println("ERROR")
-		fmt.Println(err.Error())
+		log.Err(err, "failed to communicate with daemon")
 		os.Exit(1)
 	}
 

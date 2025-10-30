@@ -18,9 +18,10 @@ type Disk interface {
 	ReadFile(path DiskPath) ([]byte, bool, error)
 	WriteFile(path DiskPath, data io.Reader) error
 	DirExists(path DiskPath) (bool, bool, error)
+	FileExists(path DiskPath) (bool, bool, error)
 	List(path DiskPath) ([]DiskPath, []DiskPath, error)
 	ListRec(path DiskPath) ([]DiskPath, error)
-	Transfer(disk Disk, toPath string, fromPath DiskPath, files []DiskPath, log *internal.Log) bool
+	MoveFileTo(toDisk Disk, dstPath DiskPath, srcPath DiskPath) error
 	Unsafe(path DiskPath) bool
 }
 
@@ -87,6 +88,20 @@ func (disk *diskImpl) DirExists(path DiskPath) (bool, bool, error) {
 	return true, info.IsDir(), nil
 }
 
+func (disk *diskImpl) FileExists(path DiskPath) (bool, bool, error) {
+	if disk.Unsafe(path) {
+		return false, false, errFileBlocked(path, "read")
+	}
+	info, err := os.Stat(string(path))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, true, nil
+		}
+		return false, false, err
+	}
+	return true, !info.IsDir(), nil
+}
+
 func (disk *diskImpl) List(path DiskPath) ([]DiskPath, []DiskPath, error) {
 	if disk.Unsafe(path) {
 		return nil, nil, errFileBlocked(path, "read")
@@ -130,6 +145,32 @@ func (disk *diskImpl) ListRec(path DiskPath) ([]DiskPath, error) {
 		return nil, internal.ErrOf(err, "can not recusrivly list directory %s", path)
 	}
 	return files, nil
+}
+
+func (disk *diskImpl) MoveFileTo(toDisk Disk, dstPath DiskPath, srcPath DiskPath) error {
+
+	if toDisk.Unsafe(dstPath) {
+		return errFileBlocked(dstPath, "written")
+	}
+
+	if disk.Unsafe(srcPath) {
+		return errFileBlocked(srcPath, "read")
+	}
+
+	_, err := os.Stat(string(dstPath))
+	if err == nil {
+		return internal.Err("file '%s' already exists", dstPath)
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	os.MkdirAll(filepath.Dir(string(dstPath)), 0755)
+	err = os.Rename(string(srcPath), string(dstPath))
+	if err != nil {
+		return internal.ErrOf(err, "failed to move file")
+	}
+
+	return nil
 }
 
 func (disk *diskImpl) Transfer(toDisk Disk, toPath string, fromPath DiskPath, files []DiskPath, log *internal.Log) bool {

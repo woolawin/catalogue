@@ -5,8 +5,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-
-	"github.com/woolawin/catalogue/internal"
 )
 
 type MockDisk struct {
@@ -22,6 +20,10 @@ func (mock *MockDisk) DirExists(path DiskPath) (bool, bool, error) {
 	if slices.Contains(mock.Dirs, string(path)) {
 		return true, true, nil
 	}
+	return false, false, nil
+}
+
+func (mock *MockDisk) FileExists(path DiskPath) (bool, bool, error) {
 	return false, false, nil
 }
 
@@ -60,8 +62,8 @@ func (mock *MockDisk) ListRec(path DiskPath) ([]DiskPath, error) {
 	return nil, nil
 }
 
-func (mock *MockDisk) Transfer(disk Disk, toPath string, fromPath DiskPath, files []DiskPath, log *internal.Log) bool {
-	return false
+func (mock *MockDisk) MoveFileTo(disk Disk, toPath DiskPath, fromPath DiskPath) error {
+	return nil
 }
 
 func (mock *MockDisk) Unsafe(path DiskPath) bool {

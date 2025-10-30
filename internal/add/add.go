@@ -54,6 +54,17 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 		return false
 	}
 
+	exists, err := registry.HasPackage(component.Name)
+	if err != nil {
+		log.Err(err, "failed to check if package  already exists")
+		return false
+	}
+
+	if exists {
+		log.Err(nil, "package with name '%s' already exists")
+		return false
+	}
+
 	remote := config.Remote{Protocol: protocol, URL: remoteURL}
 	metadata, err := config.BuildMetadata(component.Metadata, remote, author, log, system)
 	if err != nil {
@@ -110,7 +121,7 @@ func Add(protocol config.Protocol, remoteStr string, log *internal.Log, system i
 	}
 
 	record.Builds = []config.BuildFile{build}
-	err = registry.AddPackage(record)
+	err = registry.WriteRecord(record)
 	if err != nil {
 		log.Err(err, "failed to add package '%s' to registry", component.Name)
 		return false

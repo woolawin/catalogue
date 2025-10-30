@@ -17,7 +17,7 @@ func RemovePackage(name string) (bool, error) {
 	err := os.RemoveAll(packagePath(name))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return true, nil
+			return false, nil
 		}
 		return false, err
 	}
@@ -95,23 +95,6 @@ func GetPackageRecord(packageName string) (config.Record, bool, error) {
 	return record, true, nil
 }
 
-func AddPackage(record config.Record) error {
-	exists, err := HasPackage(record.Name)
-	if err != nil {
-		return internal.ErrOf(err, "failed tocheck if package '%s' already exists", record.Name)
-	}
-	if exists {
-		return internal.Err("package '%s' already exists", record.Name)
-	}
-
-	err = WriteRecord(record)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func PackageBuildFile(record config.Record, hash string) (*os.File, error) {
 	path := packagePath(record.Name, "caches", hash, "build.deb")
 	parent := filepath.Dir(path)
@@ -152,7 +135,7 @@ func WriteRecord(record config.Record) error {
 }
 
 func HasPackage(name string) (bool, error) {
-	path := packagePath(name, "record.toml")
+	path := packagePath(name)
 	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {

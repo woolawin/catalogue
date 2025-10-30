@@ -98,9 +98,25 @@ func filemap(system internal.System, filemaps map[string][]*config.FileMap, log 
 				return false
 			}
 
-			ok := api.Disk.Transfer(dst, anchorPath, path, files, log)
-			if !ok {
-				return false
+			for _, file := range files {
+				dstPath := dst.Path(anchorPath, string(file))
+				srcPath := api.Disk.Path("filemaps", filemap.ID, string(file))
+				exists, _, err := dst.FileExists(dstPath)
+				if err != nil {
+					log.Err(err, "failed to check if file '/%s' already exists", file)
+					continue
+				}
+
+				if exists {
+					log.Info(8, "file '/%s' has already been mapped", string(file))
+					continue
+				}
+				err = api.Disk.MoveFileTo(dst, dstPath, srcPath)
+				if err != nil {
+					log.Err(err, "failed to move mapfile '/%s' from '%s'", file, filemap.ID)
+					return false
+				}
+				log.Info(8, "mapped file '/%s' from '%s'", file, filemap.ID)
 			}
 		}
 	}

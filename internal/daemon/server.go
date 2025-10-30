@@ -226,6 +226,8 @@ func (server *Server) delete(session *Session) {
 		return
 	}
 
+	session.log.Info(9, "removed package '%s'", name)
+
 	session.end(true, nil)
 }
 
